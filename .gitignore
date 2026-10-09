@@ -11,4 +11,8 @@ __pycache__/
 
 
 
+app/flatfairproj/assets/training/photo_data
+app/flatfairproj/assets/training/photo_embeddings.npz
+app/flatfairproj/assets/training/__pycache__/
+app/flatfairproj/assets/training/check_runs/
 
