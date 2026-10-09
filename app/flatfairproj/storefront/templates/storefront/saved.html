@@ -1,0 +1,197 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Saved · FlatFair{% endblock %}
+{% load estate_tags static %}
+{% load humanize %}
+{% block extra_head %}<script src="{% static 'storefront/role_details.js' %}" defer></script>{% endblock %}
+{% block content %}
+  <div class="role-page buyer-saved-page saved-page">
+  <header class="saved-head">
+    <h1>Saved flats</h1>
+  </header>
+  <div class="coll-bar">
+    <nav class="chips-row coll-tabs" aria-label="Your lists">
+      {% for c in collections %}
+        <a class="fchip {% if c == current %}on{% endif %}" href="?c={{ c.pk }}"{% if c == current %} aria-current="page"{% endif %}>{{ c.name }} <span>{{ c.listingIds|length }}</span></a>
+      {% endfor %}
+      <details class="coll-menu">
+        <summary class="btn btn-ghost btn-sm">{% include "storefront/ui_icon.html" with name="plus" %}New list</summary>
+        <form class="coll-pop coll-new" method="post" action="{% url 'collection_create' %}">
+          {% csrf_token %}
+          <label class="mini-field">Name of the new list<input name="name" maxlength="40" required placeholder="e.g. Near my parents"></label>
+          <button class="btn btn-brand btn-sm">Create list</button>
+        </form>
+      </details>
+    </nav>
+    {% if current %}
+      <div class="coll-tools">
+        <details class="coll-menu">
+          <summary class="btn btn-ghost btn-sm"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></svg>Edit list</summary>
+          <div class="coll-pop">
+            <form class="coll-rename" method="post" action="{% url 'collection_rename' current.pk %}">
+              {% csrf_token %}
+              <label class="mini-field">Rename this list<input name="name" maxlength="40" required value="{{ current.name }}"></label>
+              <button class="btn btn-ghost btn-sm">Save name</button>
+            </form>
+            <form method="post" action="{% url 'collection_delete' current.pk %}" data-ask="Delete the list ‘{{ current.name }}’? The flats stay on FlatFair." data-yes="Delete list" data-no="Keep list">
+              {% csrf_token %}
+              <button class="btn btn-link danger-link">Delete this list</button>
+            </form>
+          </div>
+        </details>
+      </div>
+    {% endif %}
+  </div>
+  <section class="saved-section" aria-labelledby="saved-flats-title">
+    <h2 id="saved-flats-title" class="visually-hidden">{% if current %}{{ current.name }}{% else %}Saved flats{% endif %}</h2>
+    {% if activeSaved %}
+      <div class="activity-saved-grid">
+      {% for flat in activeSaved %}
+        {% include 'storefront/saved_card.html' %}
+      {% endfor %}
+      </div>
+    {% elif not soldSaved %}
+      <div class="saved-empty">
+        <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="heart" %}</span>
+        <h3>{% if current %}This list is empty{% else %}No saved flats yet{% endif %}</h3>
+        <a class="btn btn-brand" href="{% url 'listings' %}">Browse flats</a>
+      </div>
+    {% endif %}
+    {% if soldSaved %}
+      <details class="fold" id="saved-sold">
+        <summary>Sold flats <span class="fold-hint">{{ soldSaved|length }}</span></summary>
+        <div class="fold-body activity-saved-grid">
+          {% for flat in soldSaved %}{% include 'storefront/saved_card.html' %}{% endfor %}
+        </div>
+      </details>
+    {% endif %}
+  </section>
+  {% if listings|length > 1 %}
+  <section id="saved-comparison" class="saved-section cmp-panel{% if listings|length > 3 %} cmp-wide{% endif %}{% if listings|length > 6 %} cmp-widest{% endif %}">
+        <h2>Compare these flats</h2>
+        <p>{{ current.name }} · {{ listings|length }} flats side by side.</p>
+        <div class="saved-compare-body">
+        <p class="table-scroll-hint">Scroll for more →</p>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Compare saved flats">
+          <table class="tbl listing-comparison-table">
+            <caption class="visually-hidden">Compare {{ current.name }}</caption>
+            <thead>
+              <tr>
+                <th></th>
+                {% for f in listings %}
+                  <th><a href="{% url 'listing_detail' f.publicId %}">Blk {{ f.block }} {{ f.town|title }}</a><small>{{ f.flatType|flat_label }}{% if f.status == 'sold' %} · sold{% endif %}</small></th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Asking price</th>
+                {% for f in listings %}
+                  <td class="num">${{ f.askingPrice|intcomma }}</td>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th>Price per sqm</th>
+                {% for f in listings %}
+                  <td class="num">${{ f.pricePerSqm|intcomma }}</td>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th>Size</th>
+                {% for f in listings %}
+                  <td class="num">{{ f.floorAreaSqm|floatformat:'-1' }} sqm<small class="muted"> · {{ f.floorAreaSqft|intcomma }}&nbsp;sq&nbsp;ft</small></td>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th>Bedrooms</th>
+                {% for f in listings %}
+                  <td class="num">{{ f.bedrooms }}</td>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th>Bathrooms</th>
+                {% for f in listings %}
+                  <td class="num">{{ f.bathrooms }}</td>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th>Balcony</th>
+                {% for f in listings %}
+                  <td class="num">{% if f.hasBalcony %}Yes{% else %}No{% endif %}</td>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th>Floor</th>
+                {% for f in listings %}
+                  <td class="num">{{ f.storey }}</td>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th>Years left on lease</th>
+                {% for f in listings %}
+                  <td class="num">About {{ f.remainingLease }} years</td>
+                {% endfor %}
+              </tr>
+              <tr>
+                <th>Fair price</th>
+                {% for f in listings %}<td class="num">{% include 'storefront/fair_status.html' %}</td>{% endfor %}
+              </tr>
+              <tr>
+                <th>Estimated price</th>
+                {% for f in listings %}
+                  <td class="num">{% if f.estimatedPrice %}{{ f.estimatedPrice|typical_price }}{% else %}No estimate{% endif %}</td>
+                {% endfor %}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="cmp-cards">
+          {% for f in listings %}
+            <article class="cmp-card">
+              <h3><a href="{% url 'listing_detail' f.publicId %}">Blk {{ f.block }} {{ f.town|title }}</a></h3>
+              <p class="cmp-card-type">{{ f.flatType|flat_label }}{% if f.status == 'sold' %} · sold{% endif %}</p>
+              <dl>
+                <div><dt>Asking price</dt><dd>${{ f.askingPrice|intcomma }}</dd></div>
+                <div><dt>Estimated price</dt><dd>{% if f.estimatedPrice %}{{ f.estimatedPrice|typical_price }}{% else %}No estimate{% endif %}</dd></div>
+                <div><dt>Price per sqm</dt><dd>${{ f.pricePerSqm|intcomma }}</dd></div>
+                <div><dt>Size</dt><dd>{{ f.floorAreaSqm|floatformat:'-1' }} sqm · {{ f.floorAreaSqft|intcomma }} sq ft</dd></div>
+                <div><dt>Bedrooms</dt><dd>{{ f.bedrooms }}</dd></div>
+                <div><dt>Bathrooms</dt><dd>{{ f.bathrooms }}</dd></div>
+                <div><dt>Balcony</dt><dd>{% if f.hasBalcony %}Yes{% else %}No{% endif %}</dd></div>
+                <div><dt>Floor</dt><dd>{{ f.storey }}</dd></div>
+                <div><dt>Years left on lease</dt><dd>About {{ f.remainingLease }} years</dd></div>
+                <div><dt>Fair price</dt><dd>{% include 'storefront/fair_status.html' %}</dd></div>
+              </dl>
+            </article>
+          {% endfor %}
+        </div>
+        </div>
+      </section>
+  {% endif %}
+  <section class="saved-section" id="saved-searches" aria-labelledby="saved-searches-title">
+    <h2 id="saved-searches-title">Saved searches</h2>
+    <p>We’ll alert you to new matches and price drops. You can save up to 5.</p>
+    {% for search in savedSearches %}
+      <div class="saved-search-row">
+        <span class="saved-search-name">{{ search.name }}</span>
+        {% if search.isActive %}{% include "sellerpanel/status_badge.html" with tone="good" icon="dot" label="Alerts on" %}{% else %}{% include "sellerpanel/status_badge.html" with tone="grey" icon="eye-off" label="Paused" %}{% endif %}
+        <a class="btn btn-ghost btn-sm" href="{{ search.searchUrl }}">View search <span class="visually-hidden">{{ search.name }}</span></a>
+        <details class="coll-menu">
+          <summary class="btn btn-ghost btn-sm"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></svg>Edit <span class="visually-hidden">{{ search.name }}</span></summary>
+          <div class="coll-pop">
+            <form method="post" action="{% url 'change_search' search.pk %}">
+              {% csrf_token %}
+              <button class="btn btn-ghost btn-sm" name="action" value="{% if search.isActive %}pause{% else %}resume{% endif %}">{% if search.isActive %}Pause alerts{% else %}Resume alerts{% endif %} <span class="visually-hidden">for {{ search.name }}</span></button>
+            </form>
+            <form method="post" action="{% url 'change_search' search.pk %}">
+              {% csrf_token %}
+              <button class="btn btn-link danger-link" name="action" value="delete">Delete search <span class="visually-hidden">{{ search.name }}</span></button>
+            </form>
+          </div>
+        </details>
+      </div>
+    {% empty %}
+      <p class="muted">No saved searches yet. Set your filters on <a href="{% url 'listings' %}">Flats for sale</a>, then save the search.</p>
+    {% endfor %}
+  </section>
+  </div>
+{% endblock %}

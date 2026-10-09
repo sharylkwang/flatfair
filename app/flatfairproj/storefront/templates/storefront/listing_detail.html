@@ -1,0 +1,181 @@
+{% extends 'storefront/base.html' %}
+{% block title %}{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} · FlatFair{% endblock %}
+{% load estate_tags %}
+{% load humanize static estate_tags offer_tags %}
+{% block extra_head %}<script src="{% static 'storefront/lightbox.js' %}" defer></script><script src="{% static 'storefront/listing_detail.js' %}" defer></script>{% endblock %}
+{% block content %}
+  {% if flat.status == "sold" %}
+    <p class="listing-status-note">Sold</p>
+  {% elif flat.status == "paused" %}
+    <p class="listing-status-note">Paused by the seller</p>
+  {% endif %}
+  {% if staffPreview %}
+    <p class="listing-status-note">Staff preview: {{ flat.get_status_display|lower }}</p>
+  {% endif %}
+  {% if staffPreview %}
+    {% url 'admin_queue' as queue_url %}
+    {% include 'storefront/nav_back.html' with fallback=queue_url label='Back to moderation' %}
+    <a class="back" href="{{ queue_url }}#queue-{{ flat.pk }}">← Back to moderation</a>
+  {% else %}
+    {% url 'listings' as back_url %}
+    {% include 'storefront/nav_back.html' with fallback=back_url return_url=browseReturn %}
+    <a class="back" href="{{ browseReturn }}#flat-{{ flat.publicId }}">← Browse flats</a>
+  {% endif %}
+  <div class="listing-detail">
+    {% with photos=flat.orderedPhotos %}
+      <div class="listing-gallery" data-photo-count="{{ photos|length }}" data-lightbox-group>
+        <div class="listing-stage">
+          <div class="listing-slides">
+            {% for photo in photos %}
+              <a
+                class="listing-slide"
+                id="photo-{{ forloop.counter }}"
+                href="#photo-{{ forloop.counter }}"
+                data-lightbox
+                aria-label="Photo {{ forloop.counter }} of {{ photos|length }}: {{ photo.get_room_display }}">
+                <span class="gallery-counter">{{ forloop.counter }} / {{ photos|length }}</span>
+                <img
+                  src="{{ photo.publicUrl }}"
+                  alt="{{ photo.get_room_display }}"
+                  width="1536"
+                  height="1024"
+                  loading="{% if forloop.first %}eager{% else %}lazy{% endif %}"
+                  {% if forloop.first %}fetchpriority="high"{% endif %}
+                  decoding="async">
+              </a>
+            {% empty %}
+              <div class="listing-slide">
+                <img
+                  src="{% townCover flat.town as townImage %}{% static townImage %}?r=4"
+                  alt="{% if 'storefront/towns/' in townImage %}HDB estate in {{ flat.town|title }}{% else %}An HDB estate in Singapore{% endif %}"
+                  width="1536"
+                  height="1024">
+              </div>
+            {% endfor %}
+          </div>
+          {% if not photos %}<p class="gallery-note">Estate photo, not this flat<span class="visually-hidden">. The seller hasn’t added room photos yet</span></p>{% endif %}
+          {% if photos %}<a class="listing-photo-search" href="{% url 'lens' %}?photo={{ photos.0.pk }}#results">{% include "storefront/ui_icon.html" with name="search" only %}Find similar rooms</a>{% endif %}
+          {% if photos|length > 1 %}<a class="gallery-view-all" href="#listing-thumbs">View all {{ photos|length }} photos</a>{% endif %}
+        </div>
+        {% if photos|length > 1 %}
+          <div class="gallery listing-thumbs" id="listing-thumbs">
+            {% for photo in photos %}
+              <figure>
+                <a
+                  href="#photo-{{ forloop.counter }}"
+                  data-lightbox
+                  aria-label="Show {{ photo.get_room_display }}">
+                  <img
+                    src="{{ photo.publicUrl }}"
+                    alt="{{ photo.get_room_display }}"
+                    width="1536"
+                    height="1024"
+                    loading="lazy"
+                    decoding="async">
+                </a>
+                <figcaption>
+                  {{ photo.get_room_display }} ·
+                  <a href="{% url 'lens' %}?photo={{ photo.pk }}#results">Find similar</a>
+                </figcaption>
+              </figure>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% endwith %}
+    <aside class="listing-summary" aria-label="Price and actions">
+      <div class="listing-key-facts">
+        <h1>{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</h1>
+        <p class="meta">{{ flat.flatType|flat_label }} · {{ flat.bedrooms }}&nbsp;bed · {{ flat.bathrooms }}&nbsp;bath · {{ flat.floorAreaSqm|floatformat:'-1' }}&nbsp;sqm · {{ flat.storey|ordinal }}&nbsp;floor</p>
+        <div class="askbox"><span class="price big">${{ flat.askingPrice|intcomma }}</span>{% if flat.status == 'live' %}{% if savedIds is not None %}{% include 'storefront/save_menu.html' with big=True %}{% elif not user.is_authenticated %}<a class="btn btn-ghost btn-sm save-btn" id="save-{{ flat.publicId }}" href="{% save_signin flat %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 5c-2.2 4.6-9.2 9-9.2 9z"/></svg>Save</a>{% endif %}{% endif %}<div class="listing-tags">{% if flat.fairPrice and flat.status != 'sold' %}{% include 'storefront/tag_fair.html' %}{% endif %}{% if flat.adTag %}{% include 'storefront/tag_ad.html' with tag=flat.adTag extra='' %}{% endif %}{% if flat.status == 'live' and flat.underOffer and myOffer.status != 'accepted' %}<span class="pill pill--under" title="Someone’s offer was accepted, but you can still make one.">Under offer</span>{% endif %}</div></div>
+        {% if flat.status == 'live' %}{% share_links flat as share %}<p class="share-row" id="share">Share this flat: <a href="{{ share.whatsapp }}" target="_blank" rel="noopener noreferrer">WhatsApp<span class="visually-hidden"> (opens in new tab)</span></a> · <a href="{{ share.email }}">Email</a></p>{% endif %}
+      </div>
+      <div class="listing-action-area">{% if user.is_staff %}<div class="listing-role-note"><span class="chip brand">Staff view · {{ flat.get_status_display }}</span>{% if staffPreview and flat.status == 'review' %}<a class="btn btn-brand btn-block" href="{% url 'admin_queue' %}#queue-{{ flat.pk }}">Decide in the moderation queue</a>{% else %}<p class="muted">Staff can’t make offers or book viewings.</p>{% endif %}</div>{% elif user.is_authenticated and flat.seller_id == user.pk %}<div class="listing-owner"><span class="chip brand">Your listing</span><a class="btn btn-brand btn-block" href="{% url 'my_listings' %}">Manage in Seller centre</a><a class="btn btn-ghost btn-block" href="{% url 'my_listings' %}#listing-{{ flat.publicId }}-price">Edit price</a></div>{% else %}{% include 'storefront/listing_actions.html' %}{% endif %}</div>
+    </aside>
+    <div class="listing-main">
+      <section class="listing-about" aria-labelledby="listing-about-title">
+        <h2 id="listing-about-title">About this flat</h2>
+        <dl class="listing-facts">
+          <div class="listing-lease-fact">
+            <dt>{% include "storefront/ui_icon.html" with name="clock" only %}Lease left</dt>
+            <dd><strong>{{ flat.remainingLease }}</strong> <small>years</small><meter min="0" max="99" value="{{ flat.remainingLease }}" aria-label="About {{ flat.remainingLease }} years left of a 99-year lease">{{ flat.remainingLease }} / 99 years</meter></dd>
+          </div>
+          <div><dt>{% include "storefront/flat_icon.html" with name="floor" only %}Floor</dt><dd><strong>{{ flat.storey }}</strong></dd></div>
+          <div><dt>{% include "storefront/flat_icon.html" with name="size" only %}Size</dt><dd><strong>{{ flat.floorAreaSqm|floatformat:"-1" }}</strong> <small>sqm</small></dd></div>
+          <div><dt>{% include "storefront/flat_icon.html" with name="bed" only %}Bedrooms</dt><dd><strong>{{ flat.bedrooms }}</strong></dd></div>
+          <div><dt>{% include "storefront/flat_icon.html" with name="bath" only %}Bathrooms</dt><dd><strong>{{ flat.bathrooms }}</strong></dd></div>
+          <div><dt>{% include "storefront/flat_icon.html" with name="balcony" only %}Balcony</dt><dd><strong>{% if flat.hasBalcony %}Yes{% else %}No{% endif %}</strong></dd></div>
+        </dl>
+        <div class="listing-about-meta">
+          <p class="listing-secondary-facts">{{ flat.flatModel }} · Lease from {{ flat.leaseCommenceYear }}{% if flat.postalCode %} · Postal code {{ flat.postalCode }}{% endif %}</p>
+          {% if flat.intentToSellValid and flat.status != 'sold' %}<details class="evidence-method"><summary><span>{% include "storefront/ui_icon.html" with name="calendar" only %}Intent to Sell · {{ flat.intentToSellDate|date:'j M Y' }} · seller-declared</span></summary><p class="meta">Registered {{ flat.intentToSellDate|date:'j M Y' }}. FlatFair hasn’t verified the HDB Intent to Sell registration.</p></details>{% endif %}
+        </div>
+        {% if flat.description %}
+          <div class="listing-description" data-listing-description>
+            <p class="listing-description-preview">{{ flat.description|linebreaksbr }}</p>
+            <details hidden>
+              <summary><span class="description-read-more">Read more</span><span class="description-read-less">Read less</span><span class="visually-hidden"> about this flat</span></summary>
+              <p>{{ flat.description|linebreaksbr }}</p>
+            </details>
+          </div>
+        {% endif %}
+      </section>
+      {% with features=flat.photoTags|fixedFeatures %}
+        {% if features %}
+          <section class="listing-features" aria-labelledby="listing-features-title">
+            <h2 id="listing-features-title">Comes with the flat</h2>
+            <ul class="listing-feature-pills">
+              {% for feature in features %}<li class="chip">{% include "storefront/flat_icon.html" with name=feature.icon only %}<span>{{ feature.label }}</span></li>{% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+      {% endwith %}
+      {% include 'storefront/listing_worth.html' %}
+      {% load humanize estate_tags static %}
+<details class="fold glance-fold glance-sales">
+  <summary>{% include "storefront/ui_icon.html" with name="receipt" only %}Recent sales nearby <span class="fold-hint">{% if glance.sales %}Median {{ glance.median|short_money }} · {{ glance.sales|length }} sale{{ glance.sales|length|pluralize }}{% else %}None yet{% endif %}</span></summary>
+  <div class="fold-body" id="recent-sales">
+    {% if glance.sales %}
+      <div class="glance-sale-visual">
+        <p class="glance-chart-key"><span class="glance-sale-key">Sales</span><span class="glance-ask-key">Asking {{ flat.askingPrice|short_money }}</span></p>
+        <svg class="glance-sale-chart" viewBox="0 0 360 174" role="img" aria-label="{{ glance.saleChart.label }}">
+          <path class="glance-chart-axis" d="M20 145H340"/>
+          <path class="glance-asking-line" d="M20 {{ glance.saleChart.askingY|stringformat:'.1f' }}H340"/>
+          {% for point in glance.saleChart.points %}
+            <path class="glance-sale-stem" d="M{{ point.x|stringformat:'.1f' }} 145V{{ point.y|stringformat:'.1f' }}"/>
+            <circle cx="{{ point.x|stringformat:'.1f' }}" cy="{{ point.y|stringformat:'.1f' }}" r="6"/>
+            <text x="{{ point.x|stringformat:'.1f' }}" y="{{ point.labelY|stringformat:'.1f' }}">{{ point.price|short_money }}</text>
+            <text class="glance-sale-number" x="{{ point.x|stringformat:'.1f' }}" y="165">{{ point.number }}</text>
+          {% endfor %}
+        </svg>
+      </div>
+      {% include "storefront/recent_sales.html" with sales=glance.sales providedSales=True collapsible=False bare=True %}
+    {% else %}
+      <p class="glance-empty">No recent sales like this to compare yet.</p>
+    {% endif %}
+  </div>
+</details>
+{% include "storefront/floor_prices.html" %}
+{% include "storefront/floor_plan.html" %}
+{% include "storefront/listing_location.html" with nearest=glance.nearest nextStation=glance.nextStation %}
+{% with shop=glance.shop %}{% load static %}
+<details class="fold glance-fold glance-shop vision-panel" id="shop-the-look" data-vision-state="{% if shop.pending %}pending{% else %}complete{% endif %}">
+  <summary>{% include "storefront/ui_icon.html" with name="cart" only %}Shop the look <span class="fold-hint vision-count">{% if shop.total %}{{ shop.total }} item{{ shop.total|pluralize }}{% elif shop.pending %}Checking photos{% elif shop.failed or not shop.enabled %}Couldn’t check photos{% else %}No items found{% endif %}</span></summary>
+  <div class="fold-body">
+    {% if shop.enabled %}
+      {% include "vision/panel_content.html" with panels=shop.panels total=shop.total pending=shop.pending failed=shop.failed picking=shop.picking %}
+    {% else %}
+      <p class="glance-empty" data-vision-empty role="status">We couldn’t check these photos. Try again later.</p>
+    {% endif %}
+  </div>
+  <noscript><style>.glance-shop .vision-photo[hidden] { display: block; }.glance-shop .vision-tabs { display: none; }</style></noscript>
+</details>
+{% if shop.enabled %}<script src="{% static 'vision/vision.js' %}?v=4" defer></script>{% endif %}
+{% endwith %}
+
+    </div>
+  </div>
+  {% if canTransact and not user.is_staff and flat.seller_id != user.pk %}
+    <nav class="listing-mobile-actions" aria-label="Listing actions"><span>${{ flat.askingPrice|intcomma }}</span><a class="btn btn-brand" href="#listing-action-card">Offer or visit</a></nav>
+  {% endif %}
+{% endblock %}

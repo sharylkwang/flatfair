@@ -1,0 +1,150 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Packages · FlatFair{% endblock %}
+{% load humanize offer_tags %}
+{% block content %}
+  <div class="packages-page">
+  <header class="packages-intro">
+    <h1 id="package-title">List free. Pay only for extras.</h1>
+    <p class="muted">Prices shown are before GST.</p>
+  </header>
+  {% if isSeller %}
+    <div class="packages-status" aria-label="Your flat and cart">
+      <p>{% if selectedFlat %}<strong>Your flat: Blk {{ selectedFlat.block }} {{ selectedFlat.town|title }}</strong>{% else %}Choose a flat first.{% endif %}</p>
+      <nav aria-label="Package links">
+        <a href="{% url 'my_listings' %}">{% if selectedFlat %}Change flat{% else %}Choose flat{% endif %}</a>
+        <a class="packages-cart{% if cartCount %} btn btn-brand btn-sm{% endif %}" href="{% url 'cart' %}">{% include 'storefront/ui_icon.html' with name='cart' %}View cart ({{ cartCount }})</a>
+      </nav>
+    </div>
+  {% endif %}
+  {% if canBuy and not canSell %}
+    <p class="service-note buyer-gating-banner" role="note">Packages are for sellers. <a href="{% url 'start_selling' %}">Start selling</a> with this account.</p>
+  {% elif user.is_authenticated and not isSeller %}
+    <p class="service-note buyer-gating-banner" role="note">Packages are for sellers. Staff accounts can't buy them.</p>
+  {% endif %}
+  <section class="service-section package-section" aria-labelledby="package-title">
+    <div class="packages-comparison">
+      <article id="package-free" class="pkg package-tier package-free">
+        <div class="package-recommendation-slot"></div>
+        <h3>Free listing</h3>
+        <div class="package-price-group"><p class="pkg-price"><b>$0</b></p></div>
+        <p class="package-duration">Until sold</p>
+        <ul>
+          <li><span class="benefit-check" aria-hidden="true">{% include 'storefront/ui_icon.html' with name='check' %}</span><span>Shown in search, newest first</span></li>
+          <li><span class="benefit-check" aria-hidden="true">{% include 'storefront/ui_icon.html' with name='check' %}</span><span>Offers and viewings</span></li>
+          <li><span class="benefit-check" aria-hidden="true">{% include 'storefront/ui_icon.html' with name='check' %}</span><span>Fair price tag if your price is fair</span></li>
+        </ul>
+        <div class="package-action">
+          {% if hasFlat %}
+            <a class="btn btn-ghost btn-block" href="{% url 'my_listings' %}">View my listing</a>
+          {% elif isSeller or not user.is_authenticated %}
+            <a class="btn btn-sell btn-block" href="{{ listingAction }}">List my flat free</a>
+          {% else %}
+            <p class="pkg-status">Free for sellers</p>
+          {% endif %}
+        </div>
+      </article>
+      {% for p in packages %}
+      <article id="package-{{ p.pk }}" class="pkg package-tier package-tier--{{ p.name|slugify }}{% if p.pk == packageRecommendation.product.pk %} package-recommended{% endif %}">
+        <div class="package-recommendation-slot">
+          {% if p.pk == packageRecommendation.product.pk %}
+            <p class="package-ribbon">Recommended for your flat</p>
+            <p class="package-reason">{{ recommendationReason }}</p>
+          {% endif %}
+        </div>
+        <h3>{% if p.image %}<img class="pkg-thumb" src="{{ p.image.url }}" alt="" width="48" height="48" loading="lazy">{% endif %}{{ p.name }}</h3>
+        <div class="package-price-group">
+          <p class="pkg-price"><b>${{ p.price|intcomma }}</b></p>
+          {% include 'storefront/product_rating.html' %}
+        </div>
+        <p class="package-duration">{% if p.durationDays %}{{ p.durationDays }} days{% else %}Until sold{% endif %}</p>
+        <ul>{% for benefit in p.benefits|slice:':3' %}<li><span class="benefit-check" aria-hidden="true">{% include 'storefront/ui_icon.html' with name='check' %}</span><span>{{ benefit }}</span></li>{% endfor %}</ul>
+        <div class="package-action">{% include 'storefront/package_cta.html' %}</div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% if isSeller %}{% photo_upsell selectedFlat as upsell %}{% if upsell %}{% include "sellerpanel/photo_upsell.html" %}{% endif %}{% endif %}
+  {% if addons %}
+  <section class="service-section packages-services" aria-labelledby="services-title">
+    <h2 id="services-title">Extra services</h2>
+    <div class="packages-service-grid">
+      {% for p in addons %}
+        <article id="package-{{ p.pk }}" class="pkg package-addon">
+          {% if p.image %}<img class="addon-photo" src="{{ p.image.url }}" alt="Photo of {{ p.name }}" width="480" height="320" loading="lazy">{% elif addonPhotos %}<span class="addon-photo addon-photo-none" aria-hidden="true">{% include 'storefront/ui_icon.html' with name='offer' %}</span>{% endif %}
+          <h3>{{ p.name }}</h3>
+          <div class="package-price-group">
+            <p class="pkg-price"><b>${{ p.price|intcomma }}</b></p>
+            {% include 'storefront/product_rating.html' %}
+          </div>
+          <div class="package-action">{% include 'storefront/package_cta.html' with quiet=True %}</div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  <section class="service-section packages-more" aria-label="More about packages">
+    {% if packageRecommendation %}
+      <details class="fold packages-why">
+        <summary>Why this plan?</summary>
+        <div class="fold-body"><p>{{ packageRecommendation.reason }}</p></div>
+      </details>
+    {% endif %}
+    <details class="fold packages-details">
+      <summary>Details and GST prices</summary>
+      <div class="fold-body">
+        <div class="table-scroll">
+          <table class="tbl packages-table">
+            <caption class="visually-hidden">Packages and services in detail</caption>
+            <thead><tr><th>Name</th><th>What you get</th><th>Lasts</th><th class="num">With GST</th></tr></thead>
+            <tbody>
+              {% for p in packages %}
+                <tr data-product="{{ p.pk }}">
+                  <td data-label="Name">{{ p.name }}</td>
+                  <td data-label="What you get">{{ p.benefits|join:". " }}. Place in search: {{ p.place|lower }}.</td>
+                  <td data-label="Lasts">{% if p.durationDays %}{{ p.durationDays }} days{% else %}Until sold{% endif %}{% if p.runningPlan.expiry %}, active until {{ p.runningPlan.expiry|date:'j M' }}{% endif %}</td>
+                  <td class="num" data-label="With GST">${{ p.includingGst|floatformat:2 }} with GST</td>
+                </tr>
+              {% endfor %}
+              {% for p in addons %}
+                <tr data-product="{{ p.pk }}">
+                  <td data-label="Name">{{ p.name }}</td>
+                  <td data-label="What you get">{{ p.description }}</td>
+                  <td data-label="Lasts">One time</td>
+                  <td class="num" data-label="With GST">${{ p.includingGst|floatformat:2 }} with GST</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+    {% if reviews %}
+      <details class="fold reviews-section">
+        <summary>What sellers say <span class="fold-hint">{{ reviews|length }} review{{ reviews|length|pluralize }}</span></summary>
+        <div class="fold-body">
+          <div class="review-grid" id="reviews" tabindex="-1">
+            {% for r in reviews %}<article class="review-card">
+  <p class="review-stars" role="img" aria-label="{{ r.rating }} out of 5 stars">{% for n in starRange %}<span{% if n <= r.rating %} class="is-on"{% endif %}>{% include 'storefront/ui_icon.html' with name='star' %}</span>{% endfor %}</p>
+  <blockquote>“{{ r.comment }}”</blockquote>
+  <p class="review-by"><b>{{ r.firstName }}</b> · {{ r.orderItem.product.name }} · {{ r.createdAt|date:'M Y' }}</p>
+</article>{% endfor %}
+          </div>
+        </div>
+      </details>
+    {% endif %}
+    <details class="fold service-faq">
+      <summary>Common questions</summary>
+      <div class="fold-body">
+        <dl class="packages-faq">
+          <div><dt>Do I need a package?</dt><dd>No. Free listings get offers, viewings and checks too.</dd></div>
+          <div><dt>Is listing free?</dt><dd>Yes, always. If your price or photos look unusual, our team checks the listing before buyers see it.</dd></div>
+          <div><dt>Who pays?</dt><dd>Only sellers who pick a package or an extra service. Buyers never pay FlatFair, and HDB’s own fees are separate.</dd></div>
+          <div><dt>What does Sponsored mean?</dt><dd>The seller paid to show the flat nearer the top. It says nothing about whether the price is fair.</dd></div>
+          <div><dt>Can I upgrade later?</dt><dd>Yes. Go to My listings and press Upgrade on your flat. The new package starts straight away, and we don’t refund the old one.</dd></div>
+          <div><dt>Is payment real?</dt><dd>No. This is a demo, so no money is taken.</dd></div>
+        </dl>
+      </div>
+    </details>
+  </section>
+  </div>
+{% endblock %}

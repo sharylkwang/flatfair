@@ -1,0 +1,255 @@
+{% extends 'storefront/base.html' %}
+{% block title %}FlatFair · Sell your HDB flat yourself{% endblock %}
+{% load humanize static estate_tags %}
+{% block extra_head %}
+  {% if buyerLanding %}<script src="{% static 'storefront/role_details.js' %}" defer></script>{% endif %}
+{% endblock %}
+{% block content %}
+  {% if buyerLanding %}
+    <div class="wrap home-shop">
+    {% load humanize %}
+<div class="role-page calm-buyer-home">
+  {% include "storefront/page_hero.html" with tier="task" title=buyerGreeting lead="Pick up where you left off." hide_default_action=True %}
+  <section class="buyer-tasks" aria-label="Next steps">
+    <article class="buyer-task">
+      <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="offer" %}</span>
+      <div class="buyer-task-copy">
+        <h2>{% if buyerReplyCount %}Reply to the seller’s new price{% elif buyerViewingCount %}Get ready for your viewing{% else %}Offers and viewings{% endif %}</h2>
+        <p>{% if buyerReplyCount %}{{ buyerReplyCount }} counter-offer{{ buyerReplyCount|pluralize }} waiting for you.{% elif buyerViewingCount %}{{ buyerViewingCount }} viewing{{ buyerViewingCount|pluralize }} coming up.{% else %}Nothing needs your reply right now.{% endif %}</p>
+      </div>
+      <a class="btn {% if buyerReplyCount %}btn-brand{% else %}btn-ghost{% endif %} btn-sm" href="{% url 'my_offers' %}">View offers and viewings</a>
+    </article>
+    <article class="buyer-task">
+      <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="heart" %}</span>
+      <div class="buyer-task-copy">
+        <h2>Take another look at your saved flats</h2>
+        <p>{% if buyerSavedCount %}{{ buyerSavedCount }} flat{{ buyerSavedCount|pluralize }} saved.{% else %}Tap a heart to save a flat.{% endif %}</p>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="{% url 'saved' %}">View saved flats</a>
+    </article>
+    <article class="buyer-task">
+      <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="search" %}</span>
+      <div class="buyer-task-copy">
+        <h2>Find more flats</h2>
+        <p>Search by town, flat type or budget.</p>
+      </div>
+      <a class="btn btn-ghost btn-sm" href="{% url 'listings' %}">Browse flats</a>
+    </article>
+  </section>
+  <div class="home-buyer-shelves">
+    <section class="home-buyer-shelf" aria-labelledby="home-saved-title"><h2 id="home-saved-title">Saved flats</h2>
+      {% for flat in buyerSaved %}{% include "storefront/saved_card.html" with saveScope="home-saved" %}{% empty %}<p class="muted">No saved flats yet.</p>{% endfor %}
+    </section>
+    <section class="home-buyer-shelf" aria-labelledby="home-suggested-title"><h2 id="home-suggested-title">Recommended for you</h2>{% if recommendationLead %}<p>{{ recommendationLead }}</p>{% endif %}
+      {% for flat in buyerSuggestions %}{% include "storefront/saved_card.html" with saveScope="home-suggested" %}{% empty %}<p class="muted">More flats will appear here as they are listed.</p>{% endfor %}
+      <details class="fold"><summary>Why these?</summary><div class="fold-body">{% include "storefront/recommendation_explanation.html" %}</div></details>
+    </section>
+  </div>
+</div>
+
+    <details class="fold"><summary>Browse flats and prices</summary><div class="fold-body">
+  {% endif %}
+  {% if not buyerLanding %}<div class="wrap home-shop">{% endif %}
+  <div class="home-top">
+    {% if not buyerLanding %}
+      <section class="home-hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <h1 id="hero-title">Sell your HDB flat yourself, <span class="hero-accent">can!</span></h1>
+          <p class="hero-subhead">Buy straight from owners or sell your own flat. $0 agent fee.</p>
+          <div class="hero-actions">
+            {% if canList %}<a class="btn btn-sell" href="{{ listUrl }}">List my flat free</a>{% endif %}
+            <a class="btn hero-ghost" href="{% url 'listings' %}">Browse flats</a>
+            <a class="hero-how" href="#how-it-works">How it works</a>
+          </div>
+        </div>
+        {% if promoFlat %}
+          {% with cover=promoFlat.coverPhoto %}
+            <a class="hero-flat" href="{% url 'listing_detail' promoFlat.publicId %}">
+              <img src="{{ cover.publicUrl }}" alt="{{ cover.get_room_display }} in Blk {{ promoFlat.block }}, {{ promoFlat.town|title }}" width="1536" height="1024" decoding="async" fetchpriority="high">
+              <span class="promo-chip"><strong>${{ promoFlat.askingPrice|intcomma }}</strong> {% if promoFlat.block %}Blk {{ promoFlat.block }} {% endif %}{{ promoFlat.town|title }}</span>
+            </a>
+          {% endwith %}
+        {% endif %}
+      </section>
+    {% endif %}
+    <div class="hero-panel">
+  <div class="hero-tabs" role="group" aria-label="Quick tools">
+    <label><input class="visually-hidden" type="radio" name="hero-tab" value="find">{% include 'storefront/ui_icon.html' with name='search' %}Find a flat</label>
+    <label><input class="visually-hidden" type="radio" name="hero-tab" value="price">{% include 'storefront/ui_icon.html' with name='chart' %}Price check</label>
+  </div>
+  <div class="hero-panels">
+    <div id="find-panel">
+      <form class="hero-search" action="{% url 'listings' %}" method="get">
+        <label>Search<input type="search" name="q" maxlength="60" data-search-suggestions="{% url 'search_suggestions' %}" placeholder="Tampines, 474 Ang Mo Kio Ave 10 or 560474"></label>
+        <div class="search-pair home-flat-type"><label>Flat type<select name="flatType"><option value="">Any type</option><option value="2 ROOM">2-room</option><option value="3 ROOM">3-room</option><option value="4 ROOM">4-room</option><option value="5 ROOM">5-room</option><option value="EXECUTIVE">Executive</option></select></label></div>
+        {% include "storefront/budget_range.html" %}
+        <button class="btn btn-brand" type="submit">Show flats</button>
+      </form>
+    </div>
+    <div id="sell-panel">
+      <form class="quick-estimate" action="{% url 'valuation' %}" method="get" aria-label="Quick flat estimate">
+  <div class="quick-fields">
+    <label>Town<select name="town">{% for town in quickTowns %}<option value="{{ town }}"{% if town == 'SENGKANG' %} selected{% endif %}>{{ town|title }}</option>{% endfor %}</select></label>
+    <label>Flat type<select name="flatType"><option value="2 ROOM">2-room</option><option value="3 ROOM">3-room</option><option value="4 ROOM" selected>4-room</option><option value="5 ROOM">5-room</option><option value="EXECUTIVE">Executive</option></select></label>
+    <label>Floor<select name="storey"><option value="3">Low (1 to 4)</option><option value="7" selected>Middle (5 to 9)</option><option value="12">High (10 and up)</option></select></label>
+  </div>
+  <div class="quick-actions"><button class="btn btn-brand" type="submit">Check a price</button></div>
+</form>
+    </div>
+  </div>
+</div>
+    {% if typeShelf %}
+      <nav class="shelf-tiles" aria-label="Flat types">
+        {% for kind in typeShelf %}
+          <a class="shelf-tile" href="{% url 'listings' %}?flatType={{ kind.flatType|urlencode }}">
+            {% if kind.flat %}<span class="listing-card-image">{% include "storefront/ui/flat_thumb.html" with flat=kind.flat size="large" %}</span>{% endif %}
+            <strong>{{ kind.flatType|flat_label }}</strong>
+            <span class="shelf-tile-line">{{ kind.count|intcomma }} flat{{ kind.count|pluralize }}, from ${{ kind.lowest|intcomma }}</span>
+          </a>
+        {% endfor %}
+      </nav>
+    {% endif %}
+  </div>
+  <div class="promo-row">
+    <a class="promo-tile promo-fee" href="{% if canList %}{{ listUrl }}{% else %}{% url 'listings' %}{% endif %}">
+      <h2 id="savings-title">Keep the agent fee</h2>
+      <p class="promo-line"><span>With an agent</span><i class="promo-bar is-full" aria-hidden="true"></i><strong>${{ illustration.agentFee|floatformat:0|intcomma }}</strong></p>
+      <p class="promo-line promo-ours"><span>On FlatFair</span><i class="promo-bar" aria-hidden="true"></i><strong>$0</strong></p>
+      <p class="promo-foot">on a ${{ illustration.examplePrice|intcomma }} flat</p>
+      <span class="promo-go">{% if canList %}List my flat free{% else %}Browse flats{% endif %}<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+    <a class="promo-tile promo-price" href="{% url 'valuation' %}">
+      <h2 id="price-title">Check a fair price</h2>
+      {% if typical.est %}
+        <p class="promo-figure"><span>4-room in Sengkang</span> <strong>{{ typical.est|typical_price }}</strong></p>
+        {% include 'storefront/band.html' with lo=typical.lo est=typical.est hi=typical.hi %}
+      {% else %}
+        <p>See what a flat should cost.</p>
+      {% endif %}
+      <span class="promo-go">Check my flat's price<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+    <a class="promo-tile promo-photo" href="{% url 'lens' %}">
+      <h2>Search by photo</h2>
+      <p>Upload a room photo to find similar flats.</p>
+      {% if roomPhotos %}<span class="promo-photos">{% for photo in roomPhotos %}<img src="{{ photo.publicUrl }}" alt="{{ photo.get_room_display }} in a flat in {{ photo.listing.town|title }}" width="160" height="120" loading="lazy" decoding="async">{% endfor %}</span>{% endif %}
+      <span class="promo-go">Try photo search<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+  </div>
+  {% if recommendedFlats and not buyerLanding %}{% include "storefront/recommended_flats.html" %}{% endif %}
+  {% load static humanize shop_tags %}
+<div class="home-top">
+<section class="shelf-flats" id="live-across-singapore" aria-labelledby="market-title">
+  <div><h2 id="market-title">Flats for sale now</h2><p>{{ total|intcomma }} flat{{ total|pluralize }} in {{ townCount }} town{{ townCount|pluralize }}</p></div>
+  <div class="card-grid" id="home-gallery">{% for flat in liveListings %}{% include 'storefront/card.html' with saveScope="home-grid" %}{% empty %}<p>New homes are on their way. Check back soon.</p>{% endfor %}</div>
+  <a class="btn btn-white shelf-all" href="{% url 'listings' %}">Browse all flats</a>
+</section>
+</div>
+{% if budgetShelf %}
+  <section class="shelf-budget" aria-labelledby="shelf-budget-title">
+    <h2 id="shelf-budget-title">Find flats by budget</h2>
+    <p>Pick a price range.</p>
+    <nav class="shelf-chips" aria-label="Flats by budget">
+    {% for band in budgetShelf %}<a class="fchip" href="{% url 'listings' %}?{{ band.query }}" aria-label="{{ band.label }}, {{ band.count|intcomma }} flat{{ band.count|pluralize }}">{{ band.label }}<span>{{ band.count|intcomma }}</span></a>{% endfor %}
+  </nav>
+  </section>
+{% endif %}
+{% if liveTowns %}
+  <section class="shelf-area" aria-labelledby="shelf-area-title">
+    <h2 id="shelf-area-title">Find flats by area</h2>
+    <p>Pick your town on the map.</p>
+    <div class="shelf-map">{% town_map mode="link" prompt="" list=False %}</div>
+  </section>
+{% endif %}
+
+  <div class="home-close">
+    <details class="fold" id="how-it-works">
+      <summary>How it works</summary>
+      <div class="fold-body"><div class="how-strip">
+        <div class="how-tabs" role="group" aria-label="How it works">
+          <label><input class="visually-hidden" type="radio" name="how-tab" value="sell" checked>For sellers</label>
+          <label><input class="visually-hidden" type="radio" name="how-tab" value="buy">For buyers</label>
+        </div>
+        <div class="how-panel how-panel-sell">
+          <ol class="how-row" role="list">
+            <li><span class="tick" aria-hidden="true">1</span><span><strong>List your flat free</strong> Once you've registered your Intent to Sell with HDB.</span></li>
+            <li><span class="tick" aria-hidden="true">2</span><span><strong>Meet buyers</strong> Reply to offers and viewing requests here.</span></li>
+            <li><span class="tick" aria-hidden="true">3</span><span><strong>Agree a price</strong> Then complete the sale with HDB.</span></li>
+          </ol>
+          {% if canList %}
+            <div class="how-actions"><a class="btn btn-brand" href="{{ listUrl }}">List my flat free</a><a class="how-link" href="{% url 'packages' %}">See optional packages</a></div>
+          {% elif canBuy and not canSell %}
+            <p class="how-note">Selling too? <a href="{% url 'start_selling' %}">Start selling</a> with this account.</p>
+          {% endif %}
+        </div>
+        <div class="how-panel how-panel-buy">
+          <ol class="how-row" role="list">
+            <li><span class="tick" aria-hidden="true">1</span><span><strong>Find a flat</strong></span></li>
+            <li><span class="tick" aria-hidden="true">2</span><span><strong>Visit and offer</strong></span></li>
+            <li><span class="tick" aria-hidden="true">3</span><span><strong>Get the Option to Purchase</strong> The seller gives it to you, then you complete the sale with HDB.</span></li>
+          </ol>
+          <div class="how-actions"><a class="btn btn-brand" href="{% url 'listings' %}">Browse flats</a></div>
+        </div>
+      </div></div>
+    </details>
+    {% load static humanize estate_tags %}
+<details class="fold">
+  <summary>Two checks, done for you</summary>
+  <div class="fold-body"><div class="tool-cards">
+    <article class="tool-card tool-card-price" aria-labelledby="tool-price-title">
+      <div class="tool-media"><img src="{% static 'storefront/photos/home-price.jpg' %}?r=2" srcset="{% static 'storefront/photos/home-price-960.jpg' %}?r=2 960w, {% static 'storefront/photos/home-price.jpg' %}?r=2 1600w" sizes="(min-width: 761px) 44vw, 100vw" alt="A colour-blocked HDB block in Tampines" width="1600" height="1067" loading="lazy" decoding="async"></div>
+      <div class="tool-body">
+        <h3 id="tool-price-title">Know your price</h3>
+        <div class="why-price">
+          <strong>Estimated price {{ typical.est|typical_price }}</strong>
+          <p>4-room, Sengkang · {{ typical.saleCount }} sales in 12 months</p>
+          {% include 'storefront/band.html' with lo=typical.lo est=typical.est hi=typical.hi %}
+        </div>
+        <a class="btn btn-brand" href="{% url 'valuation' %}">Price check</a>
+      </div>
+    </article>
+    <article class="tool-card tool-card-photo" aria-labelledby="tool-photo-title">
+      <div class="tool-media scan-photo"><span class="scan-chip scan-chip-1" aria-hidden="true">{% include 'storefront/ui_icon.html' with name='check' %}Living room</span><span class="scan-chip scan-chip-2" aria-hidden="true">{% include 'storefront/ui_icon.html' with name='check' %}Not made by AI</span><img src="{% static 'storefront/photos/home-check.jpg' %}?r=2" srcset="{% static 'storefront/photos/home-check-960.jpg' %}?r=2 960w, {% static 'storefront/photos/home-check.jpg' %}?r=2 1600w" sizes="(min-width: 761px) 44vw, 100vw" alt="A real HDB living room with a sofa set and patterned floor tiles" width="1600" height="1067" loading="lazy" decoding="async"></div>
+      <div class="tool-body">
+        <h3 id="tool-photo-title">You take the photos. We check them.</h3>
+        <p>We check every photo before buyers see it. {{ verifiedPhotoCount|intcomma }} checked so far.</p>
+        {% if canList %}
+          <a class="btn btn-brand" href="{{ listUrl }}">List my flat free</a>
+        {% else %}
+          <a class="btn btn-brand" href="{% url 'listings' %}">Browse flats</a>
+        {% endif %}
+      </div>
+    </article>
+  </div></div>
+</details>
+    <details class="fold">
+      <summary>Common questions</summary>
+      <div class="fold-body"><div class="finish-layout">
+        <img class="finish-photo" src="{% static 'storefront/photos/home-closing.jpg' %}?r=2" srcset="{% static 'storefront/photos/home-closing-960.jpg' %}?r=2 960w, {% static 'storefront/photos/home-closing.jpg' %}?r=2 1120w" sizes="(min-width: 761px) 360px, 100vw" width="1120" height="1400" alt="A quiet HDB common corridor" loading="lazy" decoding="async">
+        <div class="finish-faq">
+          <details class="fold">
+            <summary>Is it really free?</summary>
+            <div class="fold-body"><p>Yes. Listing, browsing, offers and viewings cost $0. Sellers pay only if they choose a package{% if startingPackage %} (from ${{ startingPackage.price|intcomma }} + GST){% endif %} or an extra service{% if startingAddon %} (from ${{ startingAddon.price|intcomma }} + GST){% endif %}.</p></div>
+          </details>
+          <details class="fold">
+            <summary>Do I still need HDB?</summary>
+            <div class="fold-body"><p>Yes. Register your Intent to Sell on the HDB Flat Portal before you list, at least 7 days before you give an Option to Purchase. FlatFair helps you find the buyer, and you complete the sale through HDB's form and portal.</p></div>
+          </details>
+          <details class="fold">
+            <summary>What does Fair price mean?</summary>
+            <div class="fold-body"><p>The asking price is close to what similar flats nearby sold for, based on HDB resale records. Nobody can pay for this tag.</p></div>
+          </details>
+          <details class="fold">
+            <summary>What does Sponsored mean?</summary>
+            <div class="fold-body"><p>The seller paid to show the flat nearer the top. It says nothing about whether the price is fair.</p></div>
+          </details>
+          <a class="faq-help" href="{% url 'support' %}">
+            <span class="faq-help-icon">{% include 'storefront/ui_icon.html' with name='support' %}</span>
+            <span><strong>Still not sure?</strong> Ask our team.</span>
+          </a>
+        </div>
+      </div></div>
+    </details>
+  </div>
+  {% if buyerLanding %}</div></details>{% endif %}
+  </div>
+{% endblock %}

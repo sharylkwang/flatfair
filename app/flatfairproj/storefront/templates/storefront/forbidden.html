@@ -1,0 +1,14 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Wrong account · FlatFair{% endblock %}
+{% block page_header %}
+  {% if role == "buyer" and canSell %}
+    {% url "start_buying" as back_url %}
+    {% include "storefront/page_hero.html" with tier="task" title="Start buying with this account" lead="Keep your listings and orders while you find your next flat." action_url=back_url action_label="Start buying" %}
+  {% else %}
+    {% url 'home' as back_url %}
+    {% with lead='Sign in with a '|add:role|add:' account to see this page.' %}
+      {% include 'storefront/page_hero.html' with title_suffix="accounts only" tier="task" title=role|title lead=lead photo="storefront/photos/forbidden.jpg" photo_width=1600 photo_height=1067 photo_small="storefront/photos/forbidden-960.jpg" action_url=back_url action_label='Back to home' %}
+    {% endwith %}
+  {% endif %}
+{% endblock %}
+{% block content %}{% endblock %}

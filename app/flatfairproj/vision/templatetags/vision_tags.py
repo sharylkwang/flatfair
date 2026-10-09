@@ -1,0 +1,3 @@
+register = template.Library()
+
+

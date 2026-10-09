@@ -1,0 +1,25 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Create account · FlatFair{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form" method="post" data-auth-form>{% csrf_token %}
+      <h1>Create account</h1>
+      <p class="auth-lead">Browsing and listing your flat are free.</p>
+      {% if form.non_field_errors %}<p class="err" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+      <fieldset class="account-choices"{% if form.role.errors %} aria-describedby="id_role_error"{% endif %}><legend>I want to</legend>{% for radio in form.role %}<label>{{ radio.tag }}<span><strong>{% if radio.data.value == 'seller' %}Sell my flat{% else %}Buy a flat{% endif %}</strong>{% if radio.data.value == 'seller' %}<small>You can also buy with this account.</small>{% endif %}</span></label>{% endfor %}</fieldset>{% if form.role.errors %}<p class="err" id="id_role_error" role="alert">{{ form.role.errors.0 }}</p>{% endif %}
+      <div class="auth-email" data-auth-email>
+        <label class="mini-field">Full name {{ form.fullName }}{% if form.fullName.errors %}<span class="err" id="id_fullName_error" role="alert">{{ form.fullName.errors.0 }}</span>{% endif %}</label>
+        <label class="mini-field">Email {{ form.email }}{% if form.email.errors %}<span class="err" id="id_email_error" role="alert">{{ form.email.errors.0 }}</span>{% endif %}</label>
+        <label class="mini-field">Password {{ form.password }}{% if form.password.errors %}<span class="err" id="id_password_error" role="alert">{{ form.password.errors.0 }}</span>{% endif %}</label>
+        {% include 'accounts/password_rules.html' with input=form.password.id_for_label %}
+        <label class="mini-field">Confirm password {{ form.confirmPassword }}{% if form.confirmPassword.errors %}<span class="err" id="id_confirmPassword_error" role="alert">{{ form.confirmPassword.errors.0 }}</span>{% endif %}</label>
+        {% include 'accounts/turnstile_field.html' with onSubmit=True %}
+        <button class="btn btn-brand btn-block">Create account</button>
+        {% if googleOn %}<button class="auth-back" type="button" data-auth-back hidden>Other ways to sign up</button>{% endif %}
+      </div>
+      {% if googleOn %}<div class="auth-ways" data-auth-ways hidden>{% include 'accounts/google_button.html' %}</div>{% endif %}
+      <p class="auth-switch">Have an account? <a href="{% url 'signin' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}">Sign in</a></p>
+      <p class="auth-terms">By continuing, you agree to the <a href="{% url 'terms' %}">terms and privacy rules</a>.</p>
+    </form>
+  </div>
+{% endblock %}

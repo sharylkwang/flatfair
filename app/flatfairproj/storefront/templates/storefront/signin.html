@@ -1,0 +1,39 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Sign in · FlatFair{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form" method="post" data-auth-form>
+      {% csrf_token %}
+      <h1>Sign in</h1>
+      {% if nextNote %}
+        <p class="auth-next-note" role="status">{{ nextNote }}</p>
+      {% endif %}
+      {% if signinError %}<p class="err" id="signin-error" role="alert">{{ signinError }}</p>{% endif %}
+      <div class="auth-email" data-auth-email>
+      <label class="mini-field">Email<input name="email" type="email"
+    autocomplete="username"
+    autocapitalize="off"
+    spellcheck="false"
+    enterkeyhint="next"
+    placeholder="e.g. weiling@gmail.com"
+    required
+    value="{{ request.POST.email }}"{% if signinError %}
+    aria-invalid="true"
+    aria-describedby="signin-error"{% endif %}></label>
+      <label class="mini-field">Password<input name="password" type="password"
+    autocomplete="current-password"
+    enterkeyhint="done"
+    required{% if signinError %}
+    aria-invalid="true"
+    aria-describedby="signin-error"{% endif %}></label>
+      <a class="auth-forgot" href="{% url 'forgot_password' %}">Forgot password?</a>
+      {% include 'accounts/turnstile_field.html' with onSubmit=True %}
+      <button class="btn btn-brand btn-block">Sign in</button>
+      {% if googleOn %}<button class="auth-back" type="button" data-auth-back hidden>Other ways to sign in</button>{% endif %}
+      </div>
+      {% if googleOn %}<div class="auth-ways" data-auth-ways hidden>{% include 'accounts/google_button.html' %}<a class="auth-forgot" href="{% url 'forgot_password' %}">Forgot password?</a></div>{% endif %}
+      <p class="auth-switch">New here? <a href="{% url 'register' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% if '/listing/' in request.GET.next %}&amp;role=buyer{% endif %}{% endif %}">Create account</a></p>
+      <p class="auth-terms">By continuing, you agree to the <a href="{% url 'terms' %}">terms and privacy rules</a>.</p>
+    </form>
+  </div>
+{% endblock %}

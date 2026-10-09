@@ -1,0 +1,6 @@
+{% load humanize estate_tags %}
+{% fair_scale lo est hi as scale %}
+<div class="band fair-band{% if not est %} is-placeholder{% endif %}"{% if est %} style="--lo:{{ scale.lo }}%;--hi:{{ scale.hi }}%;--est:{{ scale.est }}%"{% endif %}  role="img" aria-label="Fair price range{% if est %} {{ lo|range_money }} to {{ hi|range_money }}, estimated price {{ est|typical_price }}{% endif %}">
+  <div class="fair-track"><span class="fair-segment"></span><i class="fair-marker"></i></div>
+  <div class="fair-ticks"><span>{% if lo %}{{ lo|range_money }}{% else %}Low{% endif %}</span><span>{% if hi %}{{ hi|range_money }}{% else %}High{% endif %}</span></div>
+</div>

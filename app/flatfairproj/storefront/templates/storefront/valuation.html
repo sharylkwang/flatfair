@@ -1,0 +1,118 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Price check · FlatFair{% endblock %}
+{% load estate_tags shop_tags static %}
+{% load humanize %}
+{% block extra_head %}<script src="{% static 'storefront/price-check.js' %}?v=3" defer></script>{% endblock %}
+{% block content %}
+<div class="val-grid{% if done %} val-grid--result{% endif %}">
+  <header class="val-head">
+    {% if done %}
+    <h1>{{ form.cleaned_data.flatType|flat_label }} flat in {{ form.cleaned_data.town|title }}</h1>
+    <p class="val-answers">{{ form.cleaned_data.area|floatformat:"-1" }} sqm · {{ form.cleaned_data.storey|ordinal }} floor · Lease from {{ form.cleaned_data.lease }}{% if form.flatModel.value %} · {{ form.flatModel.value }}{% endif %}{% if form.cleaned_data.ask %} · Your price ${{ form.cleaned_data.ask|intcomma }}{% endif %} <a class="val-change" href="{{ editUrl }}">Edit details</a></p>
+    {% else %}
+    <h1>Check the price of any HDB flat</h1>
+    <p>Selling? See what yours is worth. Buying? See if a price is fair.</p>
+    {% endif %}
+  </header>
+  {% if done %}
+  <section class="val-side" id="valuation-result" aria-label="Price range">
+    <div id="valuation-feedback" tabindex="-1"></div>
+    <div class="val-price">
+      {% if lo %}
+        {% include 'storefront/fair_evidence.html' with asking=asking current_model=True yours=True tag_note=True town=form.cleaned_data.town flatType=form.cleaned_data.flatType %}
+      {% elif typical %}
+        <h2>Estimated price {{ typical.est|typical_price }}</h2>
+        <p>Based on recent sales only: 8 in 10 {{ form.cleaned_data.flatType|flat_label }} flats in {{ form.cleaned_data.town|title }} sold between {{ typical.lo|range_money }} and {{ typical.hi|range_money }}.</p>
+        <p class="hint">Sorry, we can’t run the price check for your exact flat right now.</p>
+      {% else %}
+        <h2>We can’t price this flat yet</h2>
+        <p>There are too few recent sales of {{ form.cleaned_data.flatType|flat_label }} flats in {{ form.cleaned_data.town|title }} to show a price.</p>
+        <p class="hint">Sorry, we can’t run the price check for your exact flat right now.</p>
+      {% endif %}
+      {% if mopEnds %}<p class="hint">This flat can’t be resold until its 5-year minimum occupation period ends in {{ mopEnds }}.</p>{% endif %}
+    </div>
+  </section>
+  {% else %}
+  <form class="val-ask" method="get" novalidate action="{% url 'valuation' %}#valuation-feedback" data-steps data-start="{{ startStep }}" data-check="{% url 'valuation_check' %}">
+    {% if form.errors %}
+      <div class="error-summary" id="valuation-feedback" role="alert" tabindex="-1" aria-labelledby="valuation-errors-title">
+        <h2 id="valuation-errors-title">Check these details</h2>
+        <ul>
+          {% for error in form.non_field_errors %}<li><a href="#valuation-fields">{{ error }}</a></li>{% endfor %}
+          {% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label|default:'id_flatType_0' }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <div class="val-progress" data-val="progress" hidden>
+      <p><strong data-val="step-now"></strong> <span data-val="step-left"></span></p>
+      <div class="val-segments" data-val="segments" role="progressbar" aria-label="Price check progress" aria-valuemin="0" aria-valuemax="{{ steps|length }}" aria-valuenow="0">{% for step in steps %}<span></span>{% endfor %}</div>
+      <p class="val-summary" data-val="summary"></p>
+    </div>
+    <div class="val-steps" id="valuation-fields" tabindex="-1">
+      {% for step in steps %}
+      <fieldset class="val-step" id="val-step-{{ step.number }}">
+        <legend tabindex="-1">{{ step.legend }}</legend>
+        {% if step.number == 1 %}<div class="val-map">{% town_map mode="pick" field="id_town" selected=form.town.value %}</div>{% endif %}
+        {% for field in step.fields %}
+          {% if field.name == "flatType" %}
+            <div class="val-choices">{% for radio in field %}<label class="val-choice" for="{{ radio.id_for_label }}">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}</div>
+          {% else %}
+            {% if field.name == "postal" %}<details class="val-postal"{% if field.value or field.errors %} open{% endif %}><summary>I know the postal code</summary>{% endif %}
+            <label class="mini-field val-field--{{ field.name }}" for="{{ field.id_for_label }}"><span>{{ field.label }}</span>{% if field.unit %}<span class="val-unit">{{ field }}<span>{{ field.unit }}</span></span>{% else %}{{ field }}{% endif %}</label>
+            {% if field.name == "postal" %}</details>{% endif %}
+          {% endif %}
+          <p class="val-note{% if field.errors %} is-error{% endif %}" data-note="{{ field.name }}" id="{{ field.auto_id }}_error" role="status">{% if field.errors %}{{ field.errors|striptags }}{% elif field.field.warning %}{{ field.field.warning }}{% endif %}</p>
+          {% if field.name == "town" %}<button class="val-fix" type="button" data-val="fix" hidden></button>{% endif %}
+          {% if field.help_text %}<p class="val-hint" id="{{ field.auto_id }}_hint">{{ field.help_text }}</p>{% endif %}
+          {% if field.name == "area" %}{% for kind, hint in sizeHints.items %}<p class="val-hint" data-size-for="{{ kind }}" hidden>{% if kind == "4 ROOM" %}{{ field.help_text }}{% else %}{{ hint.label }} flats are usually {{ hint.lo }} to {{ hint.hi }} sqm.{% endif %}</p>{% endfor %}{% endif %}
+        {% endfor %}
+      </fieldset>
+      {% endfor %}
+    </div>
+    <div class="val-actions">
+      <button class="btn btn-brand" data-val="next" hidden>Next</button>
+      <button class="btn btn-brand val-submit">Price check</button>
+      <button class="btn btn-ghost" data-val="skip" hidden>Skip</button>
+      <button class="btn btn-ghost" type="button" data-val="back" hidden>Back</button>
+      <button class="val-switch" type="button" data-val="switch" hidden>I know the postal code</button>
+    </div>
+    <div class="val-wait" role="status"><div data-val="wait" hidden><h2>Working out the price</h2><p data-val="wait-line"></p><div class="val-wait-bar"><span></span></div></div></div>
+  </form>
+  {% endif %}
+  <aside class="val-card" aria-label="{% if done %}Typical layout{% else %}Your price check{% endif %}">
+    {% if not done %}
+    <div class="val-track" data-val="track" hidden>
+      <div class="val-track-head">
+        <svg class="val-ring" viewBox="0 0 56 56" width="56" height="56" aria-hidden="true"><circle cx="28" cy="28" r="24"/><circle data-val="ring" cx="28" cy="28" r="24"/><text x="28" y="33" data-val="ring-text"></text></svg>
+        <h2>Your price check</h2>
+      </div>
+      <ol class="val-list">
+        {% for step in steps %}<li><button type="button" data-goto="{{ step.number }}" disabled><span class="val-mark"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span class="val-name">{{ step.short }}</span><b></b><span class="val-flag" hidden></span></button></li>{% endfor %}
+      </ol>
+      <p class="val-ready"><span>Your price range</span><b data-val="ready"></b></p>
+      <p class="val-plan-empty">A typical layout for your flat will show here after question 3</p>
+    </div>
+    {% endif %}
+    <figure class="val-layout" data-layout="{% url 'floor_plan_preview' %}"{% if not layout %} hidden{% endif %}>
+      <a href="{{ layout|default:'#' }}" target="_blank" rel="noopener"><img src="{{ layout|default:'data:,' }}" alt="{% if layout %}Typical layout: {{ form.flatType.value|flat_label }} flat, {{ form.area.value }} sqm{% endif %}" width="1536" height="1024" decoding="async" onerror="this.closest('figure').hidden=true"></a>
+      <figcaption>A typical layout for a flat like this. Yours may look different.</figcaption>
+    </figure>
+  </aside>
+  {% if done %}
+    <section class="val-sales" aria-label="Recent sales">
+      {% include 'storefront/recent_sales.html' with collapsible=True town=form.cleaned_data.town flat_type=form.cleaned_data.flatType area=form.cleaned_data.area block=form.address.block lease=form.cleaned_data.lease storey=form.cleaned_data.storey %}
+    </section>
+  {% endif %}
+  {% if done %}
+    <section class="val-savings">
+      {% if est and currentMode != "buyer" %}
+        <div><h2>Sell it yourself and keep about ${{ illustration.agentFee|floatformat:0|intcomma }}</h2><p>That’s what an agent’s 2% fee plus GST would cost on a flat like this. Listing on FlatFair is free.</p></div>
+        <div class="val-next"><a class="val-change" href="{{ similarUrl }}">See similar flats</a><a class="btn btn-sell" href="{% if canSell %}{{ listUrl|default:'/seller/sell' }}{% else %}{% url 'register' %}?role=seller&amp;next={{ listUrl|default:'/seller/sell'|urlencode }}{% endif %}">List my flat free</a></div>
+      {% else %}
+        <div><h2>See what’s for sale nearby</h2></div>
+        <div class="val-next"><a class="btn btn-brand" href="{{ similarUrl }}">Browse {{ form.cleaned_data.flatType|flat_label }} flats in {{ form.cleaned_data.town|title }}</a></div>
+      {% endif %}
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

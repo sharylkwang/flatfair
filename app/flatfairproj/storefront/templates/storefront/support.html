@@ -1,0 +1,55 @@
+{% extends 'storefront/base.html' %}
+{% load estate_tags %}
+{% block title %}Support · FlatFair{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with tier="task" title="Get help" lead="Ask our team. We’ll reply in the app, and you can also email us." photo="storefront/photos/support.jpg" photo_width=1600 photo_height=1067 photo_small="storefront/photos/support-960.jpg" hide_default_action=True %}
+{% endblock %}
+{% block content %}
+  <div class="support-grid">
+    <section class="support-primary" id="contact-support">
+      <div class="support-head">
+        <h2>{% if ticketForm %}Send us a message{% else %}Email a real person{% endif %}</h2>
+        {% if ticketForm and user.is_authenticated %}
+          {% support_unread user as supportUnread %}
+          <a class="support-inbox-link" href="{% url 'my_messages' %}">My messages{% if supportUnread %} <span class="unread-badge">{{ supportUnread }} new</span>{% endif %}</a>
+        {% endif %}
+      </div>
+      {% if ticketForm and user.is_authenticated %}
+        <p class="hint">A real person replies in My messages.</p>
+      {% elif ticketForm %}
+        <p class="hint"><a href="{% url 'signin' %}?next={% url 'support' %}">Sign in</a> to get our reply in the app, or we’ll reply by email.</p>
+      {% else %}
+        <p class="hint">A real person replies by email.</p>
+      {% endif %}
+      {% if ticketForm %}
+        <form method="post" class="support-form" novalidate>{% csrf_token %}
+    {% with linked=ticketForm.linkedOrder %}{% if linked %}<p class="support-order"><span class="pill">About order #{{ linked.pk }}</span></p>{% endif %}{% endwith %}
+    {% for field in ticketForm.hidden_fields %}{{ field }}{% endfor %}
+    {% for field in ticketForm.visible_fields %}<label class="mini-field">{{ field.label }}{{ field }}{% if field.errors %}<span class="err" id="{{ field.auto_id }}_error" role="alert">{{ field.errors|join:' ' }}</span>{% endif %}</label>{% endfor %}
+    <p class="hint">Never send your password or card details.</p>
+    <button class="btn btn-brand" type="submit">Send message</button>
+  </form>
+        <p class="hint">Or email <a class="contact-email" href="mailto:support@flatfair.sg?subject=FlatFair%20support">support@flatfair.sg</a></p>
+      {% else %}
+        <p class="hint">Never send your password or card details.</p>
+        <p><a class="btn btn-brand contact-email" href="mailto:support@flatfair.sg?subject=FlatFair%20support">support@flatfair.sg</a></p>
+      {% endif %}
+    </section>
+    <aside class="support-checklist" aria-label="Tips">
+      <details class="fold">
+        <summary>What to include</summary>
+        <ol class="fold-body support-steps">
+          <li>The flat’s block and town</li>
+          <li>What you expected, and what you saw</li>
+          <li>Your account email</li>
+        </ol>
+      </details>
+      <details class="fold">
+        <summary>Buying and selling</summary>
+        <div class="fold-body">
+          <p>One account does both. Use the Buying and Selling switch in the header. Buyers can choose Start selling to list a flat.</p>
+        </div>
+      </details>
+    </aside>
+  </div>
+{% endblock %}

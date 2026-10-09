@@ -1,0 +1,145 @@
+{% load static %}
+<!doctype html>
+<html lang="en" class="{% if user.is_staff or currentMode == 'seller' %}work-header{% else %}shop-page{% endif %}{% if request.resolver_match.url_name == 'home' %} home-calm{% endif %}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>{% block title %}FlatFair · Sell your HDB flat yourself{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..112,400..800&family=Lexend:wght@300..700&display=swap">
+    <link rel="icon" type="image/svg+xml" href="{% static 'storefront/favicon.svg' %}?v=5">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'storefront/icons/apple-touch-icon.png' %}?v=4">
+    <link rel="manifest" href="{% static 'storefront/manifest.webmanifest' %}?v=3">
+    <meta name="theme-color" content="#FFFFFF">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="FlatFair">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="stylesheet" href="{% static 'storefront/site.css' %}?v=120">
+    <script src="{% static 'storefront/theme.js' %}?v=43" defer></script>
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body data-signed="{% if user.is_authenticated %}{{ user.pk }}-{{ currentMode|default:'' }}{% endif %}" class="estate-theme{% if request.resolver_match.url_name == 'signin' or request.resolver_match.url_name == 'register' %} auth-page{% endif %}{% block body_class %}{% endblock %}{% if request.resolver_match.url_name == 'home' %} home-page{% endif %}{% if request.resolver_match.url_name == 'listings' %} browse-page{% endif %}{% if request.path|slice:':8' == '/seller/' or request.path|slice:':7' == '/staff/' %} panel-page{% endif %}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <noscript>
+      <style>
+  @media(min-width:761px) and (max-width:1100px){
+  body.estate-theme{padding-top:0!important}.estate-theme .site-header{position:static!important;height:auto!important;min-height:var(--header-h);transform:none!important}
+  .nav-toggle,.nav-backdrop,.sheet-head{display:none!important}.site-header .header-inner{height:auto!important;min-height:var(--header-h);flex-wrap:wrap;padding-block:12px}
+  .site-header .header-sheet{display:flex!important;position:static!important;inset:auto!important;height:auto!important;width:100%;max-height:none!important;overflow:visible!important;visibility:visible!important;opacity:1!important;transform:none!important;pointer-events:auto!important;flex-direction:row!important;flex-wrap:wrap;gap:12px;padding:12px 0 0;border:0;border-radius:0;background:none;box-shadow:none}
+  .site-header .primary-nav,.site-header .header-actions{display:flex!important;flex-direction:row!important;flex-wrap:wrap;height:auto!important;gap:8px 16px;margin:0;white-space:normal}
+  .site-header .primary-nav>a{width:auto!important;height:auto!important;min-height:44px}.header-account>summary{display:list-item!important}
+  .header-account .account-content{position:static!important;width:auto!important}
+  }
+  </style>
+    </noscript>
+    {% block header %}
+      {% if user.is_staff %}
+        {% include 'storefront/header.html' with header_role='staff' %}
+      {% elif currentMode == 'seller' %}
+        {% include 'storefront/header.html' with header_role='seller' %}
+      {% else %}
+        {% include 'storefront/header.html' %}
+      {% endif %}
+    {% endblock %}
+    {% block page_header %}{% endblock %}
+    <main id="main-content" tabindex="-1" data-header="light" class="page-content{% if request.resolver_match.url_name == 'support' %} support-content{% endif %}">
+      <div class="{% if request.resolver_match.url_name == 'home' %}home-content{% else %}wrap{% endif %}">
+        {% for m in messages %}{% if 'error' in m.tags or 'warning' in m.tags %}
+          <div class="page-notice flash {{ m.tags }}" role="alert">
+            <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>
+            <span>{{ m }}</span>
+            <button type="button" class="notice-close" data-dismiss-toast aria-label="Dismiss this message"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+          </div>
+        {% endif %}{% endfor %}
+        {% block content %}{% endblock %}</div>
+      {% with page=request.resolver_match.url_name %}
+  {% if page == 'listings' or page == 'listing_detail' %}
+    <section class="anchor-band" aria-label="Owner-direct selling">
+      <div class="wrap anchor-inner">
+        <h2>Sold by owners. $0 agent fee.</h2>
+        <a class="btn" href="{% url 'valuation' %}">Price check</a>
+      </div>
+    </section>
+  {% elif page == 'packages' and user.is_authenticated and not user.is_staff and not canSell %}
+    <section class="anchor-band" aria-label="Free for buyers">
+      <div class="wrap anchor-inner">
+        <h2>Looking for a flat?</h2>
+        <a class="btn" href="{% url 'listings' %}">Browse flats</a>
+      </div>
+    </section>
+  {% elif page == 'packages' and not user.is_authenticated %}
+    <section class="anchor-band" aria-label="Start free">
+      <div class="wrap anchor-inner">
+        <h2>Start free. Upgrade any time.</h2>
+        <a class="btn" href="{% url 'register' %}?role=seller">List my flat free</a>
+      </div>
+    </section>
+  {% elif page == 'support' %}
+    <section class="anchor-band" aria-label="Price check">
+      <div class="wrap anchor-inner">
+        <h2>Not sure about a price?</h2>
+        <a class="btn" href="{% url 'valuation' %}">Price check</a>
+      </div>
+    </section>
+  {% elif page == 'valuation' and not done %}
+    <section class="anchor-band" aria-label="Resale evidence">
+      <div class="wrap anchor-inner">
+        <h2>See what similar flats are asking</h2>
+        <a class="btn" href="{% url 'listings' %}">Browse flats</a>
+      </div>
+    </section>
+  {% endif %}
+{% endwith %}
+
+    </main>
+    {% block after_main %}{% endblock %}
+    {% block footer %}
+      {% load staff_tags %}
+<footer class="site-footer{% if user.is_staff or user.is_authenticated and request.path|slice:':8' == '/seller/' or user.is_authenticated and request.path|slice:':7' == '/staff/' %} site-footer-compact{% endif %}" data-header="light">
+  <div class="wrap phone-footer">
+    <a class="site-logo" href="{% url 'home' %}" aria-label="FlatFair home">{% include 'storefront/logo.html' %}</a>
+    <nav aria-label="Footer"><a href="{% url 'support' %}">Support</a><a href="{% url 'terms' %}">Terms and privacy</a><a href="{% url 'community' %}">Community</a><a href="{% url 'credits' %}">Photo credits</a></nav>
+    <p class="footer-bottom">© 2026 FlatFair · IS2108 Team 22</p>
+  </div>
+  {% if not user.is_authenticated and request.resolver_match.url_name == 'support' %}
+    <div class="footer-cta-band footer-desktop">
+      <div class="wrap">
+        <div class="footer-cta">
+          <h2>Sell your flat yourself.<br>Keep the agent's fee.</h2>
+          <a class="btn btn-ink btn-lg" href="{% url 'valuation' %}">Price check</a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+  <div class="wrap footer-desktop">
+    {% if user.is_staff %}
+    <div class="footer-compact-links"><a class="site-logo" href="{% url 'home' %}" aria-label="FlatFair home">{% include 'storefront/logo.html' %}</a><a href="{% url 'terms' %}">Terms and privacy</a><a href="{% url 'credits' %}">Photo credits</a><form method="post" action="{% url 'signout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div><div class="footer-bottom">© 2026 FlatFair · IS2108 Team 22</div>
+    {% elif user.is_authenticated and request.path|slice:':8' == '/seller/' or user.is_authenticated and request.path|slice:':7' == '/staff/' %}
+    <div class="footer-compact-links"><a class="site-logo" href="{% url 'home' %}" aria-label="FlatFair home">{% include 'storefront/logo.html' %}</a><a href="{% url 'community' %}">Community</a><a href="{% url 'support' %}">Support</a><a href="{% url 'terms' %}">Terms and privacy</a><a href="{% url 'credits' %}">Photo credits</a><form method="post" action="{% url 'signout' %}">{% csrf_token %}<button type="submit">Sign out</button></form></div><div class="footer-bottom">© 2026 FlatFair · IS2108 Team 22</div>
+    {% else %}<div class="footer-columns">
+      <div class="footer-brand"><a class="site-logo" href="{% url 'home' %}">{% include 'storefront/logo.html' %}</a><p>Sell your HDB flat yourself. Buy straight from the owner.</p><div class="footer-bottom">© 2026 FlatFair · IS2108 Team 22</div></div>
+      <div><h2>Buyers</h2><a href="{% url 'listings' %}">Browse flats</a><a href="{% url 'valuation' %}">Price check</a>{% if user.is_authenticated and canBuy %}<a href="{% url 'saved' %}">Saved</a>{% endif %}</div>
+      {% if not user.is_authenticated or canSell %}<div><h2>Sellers</h2><a href="{% if user.is_authenticated %}{% url 'sell' %}{% else %}{% url 'register' %}?role=seller{% endif %}">List your flat</a><a href="{% url 'packages' %}">Packages</a><a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'register' %}?role=seller{% endif %}">Seller centre</a></div>{% endif %}
+      <div><h2>Help</h2><a href="{% url 'community' %}">Community</a><a href="{% url 'support' %}">Support</a><a href="{% url 'terms' %}">Terms and privacy</a><a href="{% url 'credits' %}">Photo credits</a>{% if user.is_authenticated %}<a href="{% url 'notifications' %}">Notifications</a>{% else %}<a href="{% url 'signin' %}">Sign in</a><a href="{% url 'register' %}">Create account</a>{% endif %}</div>
+    </div>
+    {% endif %}
+  </div>
+</footer>
+    {% endblock %}
+    {% if messages %}
+      <div class="toast-stack">
+        {% for m in messages %}{% if 'error' not in m.tags and 'warning' not in m.tags %}
+          <div class="toast flash {{ m.tags }}" role="status">
+            <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{% if 'info' in m.tags %}<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5h.01"/>{% else %}<path d="m5 12.5 4.5 4.5L19 7.5"/>{% endif %}</svg>
+            <span>{{ m }}</span>
+            <button type="button" class="toast-close" data-dismiss-toast aria-label="Dismiss this message"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+          </div>
+        {% endif %}{% endfor %}
+      </div>
+    {% endif %}
+  </body>
+</html>

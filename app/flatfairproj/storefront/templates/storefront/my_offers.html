@@ -1,0 +1,42 @@
+{% extends 'storefront/base.html' %}
+{% load humanize l10n static estate_tags %}
+{% block title %}Offers & viewings · FlatFair{% endblock %}
+{% block extra_head %}<script src="{% static 'storefront/role_details.js' %}" defer></script>{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with tier="task" title='Offers & viewings' lead='Keep track of your offers and viewings.' hide_default_action=True photo="storefront/photos/offers.jpg" photo_width=1600 photo_height=1067 photo_small="storefront/photos/offers-960.jpg" %}
+{% endblock %}
+{% block content %}
+  <div class="role-page buyer-dashboard">
+  <section class="buyer-flats" id="your-offers" aria-labelledby="buyer-flats-title">
+    <div class="buyer-flats-head">
+      <h2 id="buyer-flats-title">Your flats <span class="heading-count">{{ buyerFlats|length }}</span></h2>
+      {% if buyerFlats %}<p>Flats waiting for your reply come first.</p>{% endif %}
+    </div>
+    {% for group in buyerFlats %}
+      {% include 'storefront/buyer_flat.html' %}
+    {% empty %}
+      <div class="buyer-empty">
+        <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="offer" %}</span>
+        <h3>No offers or viewings yet</h3>
+        <a class="btn btn-brand btn-sm" href="{% url 'listings' %}">Browse flats</a>
+      </div>
+    {% endfor %}
+    {% include 'storefront/activity_pagination.html' with page=offerPage param='offers_page' fragment='your-offers' label='Offers' %}
+    {% include 'storefront/activity_pagination.html' with page=upcomingBookings param='upcoming_page' fragment='your-offers' label='Viewings' %}
+  </section>
+  {% if pastFlats %}
+  <details class="fold role-more" id="buyer-more">
+    <summary>Past offers and viewings <span class="fold-hint">{{ pastOffers.paginator.count|add:pastBookings.paginator.count|add:cancelledBookings.paginator.count }}</span></summary>
+    <div class="fold-body" id="past-offers">
+      {% for group in pastFlats %}
+        {% include 'storefront/buyer_flat.html' with scope='past' %}
+      {% endfor %}
+      {% include 'storefront/activity_pagination.html' with page=pastOffers param='past_offers_page' fragment='past-offers' label='Past offers' %}
+      {% include 'storefront/activity_pagination.html' with page=pastBookings param='past_page' fragment='past-offers' label='Past viewings' %}
+      {% include 'storefront/activity_pagination.html' with page=cancelledBookings param='cancelled_page' fragment='past-offers' label='Cancelled viewings' %}
+    </div>
+  </details>
+  {% endif %}
+  {% include 'storefront/whats_new.html' %}
+  </div>
+{% endblock %}
