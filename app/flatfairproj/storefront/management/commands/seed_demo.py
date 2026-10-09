@@ -1,3 +1,11 @@
+DESCRIPTIONS = {
+    "560201": "Corner unit with morning sun. Kitchen redone in 2021. Five minutes to the bus interchange.",
+    "460157": "Breezy, with no afternoon sun. New toilets in 2023. Hawker centre and market downstairs.",
+    "570442": "High floor with a clear view of Bishan Park. Built-in wardrobes in all bedrooms stay.",
+    "680150": "Well kept, original layout. Near Choa Chu Kang MRT and Lot One.",
+    "541326": "Near-new flat with a view of the park connector. Aircon in every room. Walk to Sengkang MRT.",
+}
+
 FLATS = [
     ("ANG MO KIO", "201", "560201", "3 ROOM", "New Generation", 67, 4, 1977, 2, 1, 62, 1.0),
     ("BEDOK", "157", "460157", "4 ROOM", "Model A", 104, 10, 1985, 3, 2, 55, 1.02),
