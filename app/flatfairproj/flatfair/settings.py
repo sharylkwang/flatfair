@@ -14,6 +14,10 @@ if (BASE_DIR / ".env").is_file():
             DOTENV[_name.strip().removeprefix("export ").strip()] = _value.strip().strip("\"'")
 
 
+def env_flag(name, default):
+    return env(name, default).lower() in ("1", "true", "yes")
+
+
 DEBUG = env_flag("DEBUG", "false")
 SECRET_KEY = env("SECRET_KEY")
 DATA_ENCRYPTION_KEY = env("DATA_ENCRYPTION_KEY")
