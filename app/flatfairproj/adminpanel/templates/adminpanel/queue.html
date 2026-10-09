@@ -1,0 +1,88 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Review queue · FlatFair{% endblock %}
+{% load humanize estate_tags staff_tags %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Review queue</h1>
+      <p class="staff-head-meta">{% if sort == 'wait' %}Longest wait first · <a href="?{% if reason %}reason={{ reason }}&amp;{% endif %}{% if perPage == 100 %}per=100{% endif %}">Sort by risk</a>{% else %}Highest risk first · <a href="?sort=wait{% if reason %}&amp;reason={{ reason }}{% endif %}{% if perPage == 100 %}&amp;per=100{% endif %}">Sort by longest wait</a>{% endif %} · {{ approvedCount }} approved · {{ rejectedCount }} rejected</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{% url 'admin_export_listings' %}">Export all listings (CSV)</a>
+  </div>
+  <nav class="activity-tabs" aria-label="Why listings are waiting"><a href="?{% if perPage == 100 %}per=100{% endif %}" {% if not reason %}aria-current="page"{% endif %}>All <span>{{ reasonCounts.all }}</span></a><a class="hold-tab hold-tab--price" href="?reason=price{% if perPage == 100 %}&amp;per=100{% endif %}" {% if reason == "price" %}aria-current="page"{% endif %}>Price only <span>{{ reasonCounts.price }}</span></a><a class="hold-tab hold-tab--photos" href="?reason=photos{% if perPage == 100 %}&amp;per=100{% endif %}" {% if reason == "photos" %}aria-current="page"{% endif %}>Photos <span>{{ reasonCounts.photos }}</span></a><a class="hold-tab hold-tab--other" href="?reason=other{% if perPage == 100 %}&amp;per=100{% endif %}" {% if reason == "other" %}aria-current="page"{% endif %}>Other <span>{{ reasonCounts.other }}</span></a><a class="hold-tab hold-tab--documents" href="?reason=documents{% if perPage == 100 %}&amp;per=100{% endif %}" {% if reason == "documents" %}aria-current="page"{% endif %}>Documents ready <span>{{ reasonCounts.documents }}</span></a></nav>
+  <form id="bulk-approve" class="staff-bulk" method="post" action="{% url "admin_bulk_approve" %}">
+    {% csrf_token %}
+    <input type="hidden" name="back" value="?{{ pageQuery }}">
+    <button class="btn btn-brand btn-sm" data-ask="Approve the listings you ticked? They go live for buyers straight away." data-yes="Approve selected" data-no="Go back">Approve selected</button>
+    {% if rows %}<button class="btn btn-ghost btn-sm" name="scope" value="page" data-ask="Approve all {{ rows|length }} listings on this page? They go live for buyers straight away." data-yes="Approve all {{ rows|length }}" data-no="Go back">Approve all {{ rows|length }} on this page</button>{% endif %}
+    {% if perPage == 25 and rows.paginator.count > 25 %}<a class="btn btn-link btn-sm" href="?{% if reason %}reason={{ reason }}&amp;{% endif %}per=100">Show 100 per page</a>{% elif perPage == 100 %}<a class="btn btn-link btn-sm" href="?{% if reason %}reason={{ reason }}{% endif %}">Show 25 per page</a>{% endif %}
+    <p class="hint">Skips listings that need documents or a manual photo check.</p>
+  </form>
+  <h2 class="visually-hidden">Waiting for review</h2>
+  <div class="staff-rows">
+  {% for r in rows %}
+    <article class="flat-line flat-line--pick" id="queue-{{ r.flat.pk }}">
+      <div class="flat-line-main">
+        <h3>{% if r.flat.block %}Blk {{ r.flat.block }} {% endif %}{{ r.flat.town|title }}</h3>
+        <p>{% load humanize estate_tags staff_tags %}<span class="mono">${{ r.flat.askingPrice|intcomma }}</span> · {{ r.flat.flatType|flat_label }} · {% if not r.est %}no price check{% elif r.outsideAmount %}<b class="gap-{{ r.outsideSide }}">{{ r.outsideAmount|short_money }} {{ r.outsideSide }} the range</b>{% else %}in the price range{% endif %}{% if r.doubtful %} · <b>{{ r.doubtful|length }} photo{{ r.doubtful|length|pluralize }} to check</b>{% endif %} · since {{ r.flat.reviewSince|default:r.flat.createdAt|date:"j M" }}{% if r.flat.risk is not None %} · <span class="risk risk--{{ r.flat.risk|risk_level }}">{{ r.flat.risk|risk_level|capfirst }} risk {{ r.flat.risk }}</span>{% endif %}</p>
+      </div>
+      <div class="flat-line-thumb">{% include "storefront/ui/thumbnail.html" with flat=r.flat %}</div>
+      <label class="check-field"><input form="bulk-approve" type="checkbox" name="selected" value="{{ r.flat.pk }}"> <span class="visually-hidden">Select listing {{ r.flat.pk }} for approval</span></label>
+<input form="bulk-approve" type="hidden" name="revision-{{ r.flat.pk }}" value="{{ r.flat.revision }}">
+<input form="bulk-approve" type="hidden" name="status-{{ r.flat.pk }}" value="{{ r.flat.status }}">
+      {% if r.documentRequest %}{% staff_state "documents" r.documentRequest.status r.documentRequest.get_status_display %}{% elif not reason %}<span class="hold-tags">{% staff_state "hold" r.hold %}{% if r.hold == "photos" and r.outsideAmount %}{% staff_state "hold" "price" %}{% endif %}</span>{% endif %}
+      <div class="flat-line-acts">
+        {% if r.hold == "price" and not r.doubtful and not r.manualPhotos and not r.documentRequest and r.flat.seller.is_active %}
+          <form method="post" action="{% url 'admin_decide' r.flat.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="revision" value="{{ r.flat.revision }}">
+            <input type="hidden" name="status" value="{{ r.flat.status }}">
+            <input type="hidden" name="back" value="?{{ pageQuery }}&amp;page={{ rows.number }}">
+            <button class="btn btn-brand btn-sm" name="decision" value="approved">Approve <span class="visually-hidden">listing {{ r.flat.pk }}</span></button>
+          </form>
+        {% endif %}
+        <a class="btn btn-ghost btn-sm" href="{% url 'admin_queue_item' r.flat.pk %}?{{ pageQuery }}&amp;page={{ rows.number }}">Review listing <span class="visually-hidden">{{ r.flat.pk }}</span></a>
+      </div>
+    </article>
+  {% empty %}
+    {% if reason %}
+      {% url "admin_queue" as allUrl %}{% include "adminpanel/empty.html" with text="Nothing waiting for this reason." action_url=allUrl action_label="See the whole queue" %}
+    {% else %}
+      {% url "listings" as browseUrl %}{% include "adminpanel/empty.html" with text="Nothing to check." action_url=browseUrl action_label="Browse live flats" %}
+    {% endif %}
+  {% endfor %}
+  </div>
+  <details class="fold staff-log"><summary>Decision log <span class="fold-hint">last {{ log|length }}</span></summary><div class="fold-body" id="decision-log">
+    <div class="table-scroll">
+      <table class="tbl">
+        <caption class="visually-hidden">Decision log</caption>
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Listing</th>
+            <th class="num">Asking</th>
+            <th class="num">Estimated price</th>
+            <th>Decision</th>
+            <th>Reason</th>
+            <th>Staff</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for d in log %}
+          <tr>
+            <td data-label="When">{{ d.createdAt|date:"j M, g:i" }}{{ d.createdAt|date:"A"|lower }}</td>
+            <td data-label="Listing">{% if d.listing.block %}Blk {{ d.listing.block }} {% endif %}{{ d.listing.town|title }} · {{ d.listing.flatType|flat_label }}</td>
+            <td class="num" data-label="Asking">${{ d.askingPrice|intcomma }}</td>
+            <td class="num" data-label="Estimated price">{% if d.estimatedPrice %}{{ d.estimatedPrice|typical_price }}{% else %}—{% endif %}</td>
+            <td data-label="Decision">{% staff_state "decision" d.decision d.get_decision_display %}</td>
+            <td data-label="Reason">{{ d.reason|default:"—" }}</td>
+            <td data-label="Staff">{{ d.staff.first_name|default:"System" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="muted" data-label="When">No decisions yet. <a href="{% url 'admin_listings' %}">See listings</a></td></tr>
+        {% endfor %}
+      </tbody>
+      </table>
+    </div>
+  </div></details>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'storefront/base.html' %}
+{% load static staff_tags %}
+{% block extra_head %}<script src="{% static 'storefront/role_details.js' %}" defer></script>{% endblock %}
+{% block title %}Admin · FlatFair{% endblock %}
+{% block content %}
+  <div class="admin-layout">
+    <aside class="staff-menu" aria-label="Admin navigation">
+      <nav class="side" aria-label="Admin pages">
+    {% for group in menuGroups %}
+      <div class="staff-nav-group" role="group" aria-label="{{ group.label }}">
+      <p class="side-label" aria-hidden="true">{{ group.label }}</p>
+    {% for item in group.items %}
+      <a href="{% url item.page %}" {% if section == item.page %}class="on" aria-current="page"{% endif %}>
+        <span class="side-icon" aria-hidden="true">{% include 'storefront/ui_icon.html' with name=item.icon %}</span><span>{{ item.label }}</span>
+        {% if item.count is not None %}<span class="side-count side-count--{{ item|menu_tone }}"><span class="visually-hidden">Waiting:</span> {{ item.count }}</span>{% endif %}
+      </a>
+    {% endfor %}
+      </div>
+    {% endfor %}
+      {% if moreMenu %}
+      <details class="staff-nav-more">
+        <summary>More</summary>
+        {% for item in moreMenu %}
+          <a href="{% url item.page %}"{% if section == item.page %} class="on" aria-current="page"{% endif %}><span class="side-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name=item.icon %}</span><span>{{ item.label }}</span></a>
+        {% endfor %}
+      </details>
+      {% endif %}
+      </nav>
+    </aside>
+    <section class="admin-main{% if section == 'admin_orders' or section == 'admin_customers' or section == 'admin_listings' or section == 'admin_tickets' %} dense-list{% endif %}">
+    {% block admin %}{% endblock %}
+    {% if pageObj and pageObj.paginator.num_pages > 1 %}<nav class="staff-pagination" aria-label="Pagination">
+      {% if pageObj.has_previous %}<a href="?{{ pageQuery }}&amp;page={{ pageObj.previous_page_number }}">Previous</a>{% endif %}
+      <span>Page {{ pageObj.number }} of {{ pageObj.paginator.num_pages }}</span>
+      {% if pageObj.has_next %}<a href="?{{ pageQuery }}&amp;page={{ pageObj.next_page_number }}">Next</a>{% endif %}
+    </nav>{% endif %}
+  </section>
+  </div>
+{% endblock %}

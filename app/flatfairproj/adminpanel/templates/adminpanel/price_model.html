@@ -1,0 +1,126 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load humanize estate_tags staff_tags %}
+{% block title %}Price check accuracy · FlatFair{% endblock %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Price check accuracy</h1>
+      {% if modelInfo.month %}<p class="staff-head-meta evidence-source">Based on HDB resale prices up to {{ modelInfo.month|date:"M Y" }}.</p>{% endif %}
+    </div>
+    <span class="chip {% if modelInfo.available %}brand{% else %}bad{% endif %}"><span class="dot"></span>{% if modelInfo.available %}Price check available{% else %}Price check unavailable{% endif %}</span>
+  </div>
+  {% if modelInfo.coverage < modelInfo.target %}<p class="coverage-action">More later sales fell outside the range than we aimed for. <a href="{% url 'admin_queue' %}?reason=price">Review price-held listings in the review queue</a> and ask for a price accuracy review.</p>{% endif %}
+  <dl class="staff-figures" id="mk">
+    <div><dt>Listings checked</dt><dd><a href="{% url 'listings' %}">{{ checkedCount|intcomma }}</a> <small>{{ liveCount|intcomma }} live now</small></dd></div>
+    <div><dt>Waiting for staff</dt><dd><a href="{% url 'admin_queue' %}">{{ reviewCount|intcomma }}</a> <small>in the review queue</small></dd></div>
+    <div><dt>Staff decisions on flats held for price</dt><dd><a href="{% url 'admin_queue' %}#decision-log">{{ decisionCount }}</a> <small>{{ approvedCount }} approved · {{ rejectedCount }} rejected</small></dd></div>
+    <div><dt>Approved automatically (within 5%)</dt><dd>{{ automaticCount|intcomma }}</dd></div>
+    <div><dt>Of flats held for price, share staff approved</dt><dd>{% if overrideRate is None %}—{% else %}{{ overrideRate }}%{% endif %} <small>if this is high, the check needs an update</small></dd></div>
+    <div><dt>Photos waiting for staff</dt><dd><a href="{% url 'admin_queue' %}?reason=photos">{{ photosDoubtful }}</a> <small>{{ photosChecked|intcomma }} photos checked</small></dd></div>
+  </dl>
+  <div class="staff-folds">
+  {% if liveFlats %}
+    <details class="fold" id="live-photos">
+      <summary><h2>Live flats with doubtful photos</h2> <span class="fold-hint">{{ liveFlats|length }}</span></summary>
+      <div class="fold-body">
+        <p class="muted">Most doubtful photos first. Ask the seller for new ones if they look wrong.</p>
+        <ul class="staff-lines live-photo-rows">
+          {% for flat in liveFlats %}
+            <li>
+              <span><b>{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</b><small>{{ flat.doubtful }} doubtful photo{{ flat.doubtful|pluralize }}</small></span>
+              {% staff_state "listing" flat.status flat.get_status_display %}
+              <a class="btn btn-ghost btn-sm" href="{% url 'admin_listing' flat.pk %}">View listing <span class="visually-hidden">{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</span></a>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </details>
+  {% endif %}
+  {% if bandEval %}
+    <details class="fold" id="served-band-evaluation">
+      <summary><h2>How often sales fell inside our range (Nov 2025–Oct 2026)</h2> <span class="fold-hint">{{ bandEval.servedCoverage|floatformat:1 }}%</span></summary>
+      <div class="fold-body">
+      <p>For this check, we used only HDB sales through Oct 2025 to work out prices. We then checked {{ bandEval.count|intcomma }} later sales from Nov 2025 to Oct 2026. These later sales had already helped us choose which location details to use, so this is not a completely separate test.</p>
+      <dl class="facts plain">
+        <dt>Sales inside the adjusted range</dt>
+        <dd><b>{{ bandEval.servedCoverage|floatformat:1 }}%</b> of actual sales fell inside the estimated ranges, after leaving at least 5% or $10,000 on each side of the estimated price. Display labels are rounded to $1,000.</dd>
+        <dt>Sales inside the original range</dt>
+        <dd><b>{{ bandEval.rawCoverage|floatformat:1 }}%</b> fell inside the range before adding the minimum space on each side.</dd>
+        <dt>Average gap between low and high</dt>
+        <dd><b>${{ bandEval.meanWidthDollars|floatformat:0|intcomma }}</b>, or {{ bandEval.meanWidthPercent|floatformat:1 }}% of the estimated price.</dd>
+        <dt>How far prices were from actual sales</dt>
+        <dd>Average difference <b>{{ bandEval.mapePercent|floatformat:2 }}%</b>; middle difference {{ bandEval.medianAbsolutePercentError|floatformat:2 }}%.</dd>
+        <dt>Historical price flags</dt>
+        <dd><b>{{ bandEval.flaggedShare|floatformat:1 }}%</b> in all: {{ bandEval.aboveShare|floatformat:1 }}% above the high end and {{ bandEval.typoShare|floatformat:2 }}% below 70% of the low end. We used actual sale prices as asking prices here; these are possible holds, rather than staff mistakes we observed. This used the earlier band-only rule, without the current 5% price-only exception.</dd>
+      </dl>
+      <p class="staff-sub">Five towns with the lowest share of sales inside the range</p>
+      <ul>
+        {% for town in bandEval.worstTowns %}
+          <li>{{ town.town|title }}: <b>{{ town.coverage|floatformat:1 }}%</b> of {{ town.count }} sales</li>
+        {% endfor %}
+      </ul>
+      </div>
+    </details>
+  {% endif %}
+  {% if weakestSubgroups %}
+    <details class="fold" id="weakest-backtest-areas">
+      <summary><h2>Where the range missed the largest share of sales</h2></summary>
+      <div class="fold-body">
+      <ul>
+        {% for group in weakestSubgroups %}
+          <li>{% if group.dimension == "town" %}Town · {{ group.group|title }}{% else %}Flat type · {{ group.group|flat_label }}{% endif %}: <b>{{ group.coverage|floatformat:1 }}%</b> of {{ group.count|intcomma }} sales</li>
+        {% endfor %}
+      </ul>
+      </div>
+    </details>
+  {% endif %}
+  <details class="fold">
+    <summary><h2>Earlier price check results</h2> {% if modelInfo.coverage is None or modelInfo.target is None %}<span class="chip">Result unavailable</span>{% elif modelInfo.coverage < modelInfo.target %}<span class="chip amber">Below target</span>{% else %}<span class="chip good">Meets target</span>{% endif %}</summary>
+    <div class="fold-body">
+    <p>You can compare the earlier results below, before we added the minimum space on each side of the range. These sales also helped us choose which location details to use.</p>
+    <dl class="facts plain">
+      <dt>Average error</dt>
+      <dd>{% if modelInfo.mape is not None %}<b>{{ modelInfo.mape|floatformat:1 }}%</b> away from actual sale prices, checked on later sales before we used all sales to update the price check{% else %}Evaluation unavailable{% endif %}</dd>
+      <dt>Fair price range</dt>
+      <dd{% if modelInfo.coverage < modelInfo.target %} class="coverage-review"{% endif %}>{% if modelInfo.coverage is not None and modelInfo.target is not None %}<b>{{ modelInfo.coverage|floatformat:1 }}%</b> of later sales fell inside it (target <b>{{ modelInfo.target }}%</b>){% else %}Evaluation unavailable{% endif %}</dd>
+      <dt>Details used for your price</dt>
+      <dd>Your town, flat type and layout, size, floor, lease left, distance to the nearest MRT and city centre, and recent prices</dd>
+      <dt>Sales used for your price</dt>
+      <dd>About 240,000 HDB resales since 2017, checked against the last 12 months</dd>
+      <dt>Version</dt>
+      <dd>{{ modelInfo.version }}</dd>
+    </dl>
+    </div>
+  </details>
+  <details class="fold">
+    <summary><h2>What happens to each listing</h2></summary>
+    <div class="fold-body">
+      <dl class="facts plain">
+        <dt>Price inside the fair range</dt>
+        <dd>Can go live when all listing checks pass</dd>
+        <dt>Price above the range</dt>
+        <dd>Up to 5% above can go live when price is the only hold. Larger gaps wait in the <a href="{% url 'admin_queue' %}">review queue</a>.</dd>
+        <dt>Price far below the range</dt>
+        <dd>Waits in the <a href="{% url 'admin_queue' %}">review queue</a>, as it may be a typo</dd>
+      </dl>
+    </div>
+  </details>
+  <details class="fold">
+    <summary><h2>Photo check</h2></summary>
+    <div class="fold-body">
+      <dl class="facts plain">
+        <dt>Photos checked</dt>
+        <dd>{{ photosChecked }}</dd>
+        <dt>Photos waiting for staff</dt>
+        <dd><a href="{% url 'admin_queue' %}?reason=photos">{{ photosDoubtful }} in the review queue</a></dd>
+        <dt>Clearly not the flat</dt>
+        <dd>Refused when the seller uploads it</dd>
+        <dt>Not sure</dt>
+        <dd>Sent to the review queue</dd>
+        <dt>Doubtful photos on live flats</dt>
+        <dd>{% if liveDoubtful %}<a href="#live-photos">{{ liveDoubtful }} went live before staff saw them</a>{% else %}None{% endif %}</dd>
+      </dl>
+    </div>
+  </details>
+  </div>
+{% endblock %}

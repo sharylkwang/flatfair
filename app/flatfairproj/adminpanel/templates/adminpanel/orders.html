@@ -1,0 +1,71 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Orders · FlatFair{% endblock %}
+{% load humanize staff_tags %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Orders</h1>
+      <p class="staff-head-meta">{{ orders.paginator.count|intcomma }} order{{ orders.paginator.count|pluralize }}, newest first{% if request.GET.refunds %} · refunds waiting only · <a href="{% url "admin_orders" %}">Show all work</a>{% endif %}</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{% url 'admin_export_orders' %}?{{ query }}">Export orders (CSV)</a>
+  </div>
+  {% if attentionPayments %}
+    <section class="staff-alert staff-alert--urgent" aria-labelledby="attention-payments">
+      <h2 id="attention-payments">Payments needing attention <span class="heading-count">{{ attentionPayments|length }}</span></h2>
+      <p>A customer paid without getting an order, or started paying and didn’t finish. Each payment shows what to do.</p>
+      <a class="btn btn-brand btn-sm" href="{% url 'admin_payments' %}">Check payments</a>
+      <details class="fold"><summary>Payment details</summary><div class="fold-body">{% for payment in attentionPayments %}<p>Payment #{{ payment.pk }} · {{ payment.seller.email }} · {{ payment.get_method_display }} · {{ payment.get_status_display }} · ${{ payment.amount|floatformat:2 }} {{ payment.currency|upper }} · {{ payment.providerSessionId }} · {{ payment.paymentIntentId }}</p><pre>{{ payment.snapshot }}</pre>{% endfor %}</div></details>
+    </section>
+  {% endif %}
+  <form class="panel filter-bar staff-filters staff-filters--orders" method="get">
+    {% if request.GET.refunds %}<input type="hidden" name="refunds" value="1">{% endif %}
+    <label class="mini-field staff-search">Search<input enterkeyhint="search" name="q" value="{{ q }}" placeholder="Search orders" aria-describedby="orders-search-help"><small id="orders-search-help">Order number, customer email or name</small></label>
+    <label class="mini-field">Status
+      <select name="status">
+        <option value="needs"{% if status == "needs" %} selected{% endif %}>Needs action</option>
+        <option value=""{% if not status %} selected{% endif %}>All statuses</option>
+        {% for value, label in statuses %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="mini-field">Type
+      <select name="type">
+        <option value="">All types</option>
+        {% for value, label in types %}<option value="{{ value }}" {% if value == type %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="mini-field">From<input type="date" name="from" value="{{ start }}"{% if dateProblem %} aria-invalid="true" aria-describedby="order-date-error"{% endif %}></label>
+    <label class="mini-field">To<input type="date" name="to" value="{{ end }}"{% if dateProblem %} aria-invalid="true" aria-describedby="order-date-error"{% endif %}></label>
+    <div class="btn-pair">
+      <button class="btn btn-brand btn-sm">Filter</button>
+      {% if query %}<a class="btn btn-link" href="{% url 'admin_orders' %}">Clear</a>{% endif %}
+    </div>
+    {% if dateProblem %}
+      <p class="err filter-err" id="order-date-error" role="alert">{{ dateProblem }}</p>
+    {% endif %}
+  </form>
+  {% if orders %}
+  <div class="table-scroll">
+    <table class="tbl staff-orders">
+      <caption class="visually-hidden">Orders</caption>
+      <thead><tr><th>Order</th><th>Customer</th><th>Bought</th><th>Paid on</th><th class="num">Total</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for o in orders %}
+        <tr id="order-{{ o.pk }}">
+          <td data-label="Order"><b>Order #{{ o.pk }}</b></td>
+          <td data-label="Customer">{{ o.seller.first_name|default:o.seller.email }}</td>
+          <td data-label="Bought">{% for item in o.items.all %}{{ item.name|default:item.product.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          <td data-label="Paid on">{{ o.createdAt|date:"j M Y" }}</td>
+          <td class="num" data-label="Total">${{ o.total|floatformat:2|intcomma }}</td>
+          <td data-label="Status">{% staff_state "order" o.status o|order_label %}</td>
+          <td class="staff-go" data-label="Actions"><a class="btn btn-ghost btn-sm" href="{% url 'admin_order' o.pk %}">View order <span class="visually-hidden">{{ o.pk }}</span></a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif status == "needs" %}
+    {% url "admin_orders" as ordersUrl %}{% include "adminpanel/empty.html" with text="No orders match." action_url=ordersUrl|add:"?status=" action_label="See all orders" %}
+  {% else %}
+    {% url "admin_orders" as ordersUrl %}{% include "adminpanel/empty.html" with text="No orders match." action_url=ordersUrl action_label="See all orders" %}
+  {% endif %}
+{% endblock %}

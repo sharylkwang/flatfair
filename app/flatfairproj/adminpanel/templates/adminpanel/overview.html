@@ -1,0 +1,136 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Admin overview · FlatFair{% endblock %}
+{% load estate_tags static %}
+{% load humanize staff_tags %}
+{% block admin %}
+  <div class="role-page staff-dashboard">
+  <div class="staff-page-head">
+    <div>
+      <h1>{{ greeting }}</h1>
+      <p class="staff-head-meta">Here is what needs action now.</p>
+    </div>
+  </div>
+  {% if canSeeRevenue %}
+  <dl class="dash-kpis" aria-label="This month at a glance">
+    <div><dt>Sales, last 30 days</dt><dd>${{ month.sales|floatformat:0|intcomma }}</dd><small>${{ month.salesBefore|floatformat:0|intcomma }} in the 30 days before</small></div>
+    <div><dt>Orders, last 30 days</dt><dd>{{ month.orders|intcomma }}</dd><small>{{ month.ordersBefore|intcomma }} in the 30 days before</small></div>
+    {% with latest=weeks|last before=weeks|slice:"-2:"|first %}<div><dt>New listings this week</dt><dd>{{ latest.count|intcomma }}</dd><small>{{ before.count|intcomma }} last week</small></div>{% endwith %}
+    <div><dt>Flats for sale now</dt><dd>{{ liveCount|intcomma }}</dd><small>of {{ listingTotal|intcomma }} listings</small></div>
+  </dl>
+  {% endif %}
+  <div class="dash-grid">
+  {% url "admin_queue" as queueUrl %}
+  <section class="staff-todo dash-wide" aria-labelledby="staff-start-title">
+    <h2 id="staff-start-title">Needs action</h2>
+    {% if todoActions %}
+    <div class="staff-rows">
+      {% for action in todoActions %}
+      {% with urgency=action|todo_urgency %}
+      <article class="staff-row todo-line todo-line--{{ urgency }}">
+        <b class="todo-count">{{ action.count|intcomma }}</b>
+        <div class="staff-row-main">
+          <h3>{{ action.title }}{% if urgency == 'urgent' %} <span class="todo-flag">Urgent</span>{% endif %}</h3>
+          <p>{% if action.priority == 0 %}{% if reasonCounts.price %}<a href="{{ queueUrl }}?reason=price">{{ reasonCounts.price|intcomma }} held for price</a>{% endif %}{% if reasonCounts.photos %}{% if reasonCounts.price %} · {% endif %}<a href="{{ queueUrl }}?reason=photos">{{ reasonCounts.photos|intcomma }} held for photos</a>{% endif %}{% if reasonCounts.other %}{% if reasonCounts.price or reasonCounts.photos %} · {% endif %}<a href="{{ queueUrl }}?reason=other">{{ reasonCounts.other|intcomma }} held for another reason</a>{% endif %}{% if submittedCount %} · {{ submittedCount }} document submission{{ submittedCount|pluralize }} ready to check{% endif %}{% else %}{{ action.text }}{% endif %}</p>
+        </div>
+        <a class="btn {% if urgency == 'urgent' %}btn-danger-soft{% else %}btn-ghost{% endif %} btn-sm" href="{{ action.url }}">{{ action.label }}</a>
+      </article>
+      {% endwith %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="staff-idle">{{ idleMessage }}{% for action in idleActions %} <a href="{{ action.url }}">{{ action.label }}</a>{% endfor %}</p>
+    {% endif %}
+  </section>
+    <div class="dash-stack dash-side">
+    <figure class="chart">
+      <figcaption><h2>New listings each week</h2></figcaption>
+      {% if weeks|all_zero:"count" %}
+      <p class="muted">No new listings in the last few weeks. <a href="{% url 'admin_listings' %}">See listings</a></p>
+      {% else %}
+      <div class="chart-plot">
+        <span class="chart-tick" style="--at:100">{{ weeksTop|intcomma }}</span><span class="chart-tick" style="--at:50">{{ weeksHalf|intcomma }}</span>
+        <ol class="chart-cols">
+          {% for w in weeks %}<li{% if forloop.last %} class="is-now"{% endif %} style="--v:{{ w.height }}" tabindex="0" data-tip="{{ w.count|intcomma }} new listing{{ w.count|pluralize }}, week of {{ w.label }}"><span class="visually-hidden">Week of {{ w.label }}: {{ w.count|intcomma }} new listing{{ w.count|pluralize }}</span>{% if w.shown %}<b aria-hidden="true">{{ w.count|intcomma }}</b>{% endif %}<i></i><small aria-hidden="true">{{ w.label }}</small></li>{% endfor %}
+        </ol>
+      </div>
+      {% endif %}
+    </figure>
+    <figure class="chart">
+      <figcaption><h2>Listings by status</h2><p>{{ listingTotal|intcomma }} in all</p></figcaption>
+      {% if listingTotal %}
+      <div class="chart-stack" role="img" aria-label="{% for part in statusShares %}{{ part.label }} {{ part.share }}%{% if not forloop.last %}, {% endif %}{% endfor %}">{% for part in statusShares %}<i class="is-{{ part.key }}" style="--v:{{ part.share }}"></i>{% endfor %}</div>
+      <ul class="chart-legend">
+        {% for part in statusShares %}<li><i class="is-{{ part.key }}" aria-hidden="true"></i>{% if part.key == 'other' %}<span>{{ part.label }}</span>{% else %}<a href="{% url 'admin_listings' %}?status={{ part.key }}">{{ part.label }}</a>{% endif %}<b>{{ part.count|intcomma }}</b><small>{{ part.share }}%</small></li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">No listings yet. They show here once sellers list their flats.</p>
+      {% endif %}
+    </figure>
+    </div>
+    {% if canSeeRevenue %}
+    <figure class="chart">
+      <figcaption><h2>Sales each week</h2><p>Before GST</p></figcaption>
+      {% if salesWeeks|all_zero:"total" %}
+      <p class="muted">No sales in the last few weeks. <a href="{% url 'admin_orders' %}?status=">See orders</a></p>
+      {% else %}
+      <div class="chart-plot">
+        <span class="chart-tick" style="--at:100">{{ salesTop }}</span><span class="chart-tick" style="--at:50">{{ salesHalf }}</span>
+        <ol class="chart-cols">
+          {% for w in salesWeeks %}<li{% if forloop.last %} class="is-now"{% endif %} style="--v:{{ w.height }}" tabindex="0" data-tip="${{ w.total|floatformat:0|intcomma }} in sales, week of {{ w.label }}"><span class="visually-hidden">Week of {{ w.label }}: ${{ w.total|floatformat:0|intcomma }} in sales</span>{% if w.shown %}<b aria-hidden="true">{{ w.money }}</b>{% endif %}<i></i><small aria-hidden="true">{{ w.label }}</small></li>{% endfor %}
+        </ol>
+      </div>
+      {% endif %}
+    </figure>
+    <figure class="chart">
+      <figcaption><h2>What sells best</h2><p>Sales before GST, all time</p></figcaption>
+      {% if byProduct %}
+      <ol class="chart-rows">
+        {% for p in byProduct %}<li tabindex="0" data-tip="{{ p.sold }} sold · {% if p.kind == 'package' %}package{% else %}extra service{% endif %}"><span class="chart-row-name">{{ p.name }}</span><span class="chart-row-bar"><i style="--v:{{ p.width }}"></i></span><b>${{ p.total|floatformat:0|intcomma }}</b></li>{% endfor %}
+      </ol>
+      {% else %}
+      <p class="muted">No sales yet. <a href="{% url 'admin_orders' %}?status=">See orders</a></p>
+      {% endif %}
+    </figure>
+    {% endif %}
+  </div>
+  <section class="staff-recent" aria-labelledby="recent-orders-title">
+    <div class="shop-head"><h2 id="recent-orders-title">Recent orders</h2><a href="{% url 'admin_orders' %}?status=">All orders</a></div>
+    {% if recentOrders %}
+    <div class="staff-rows">
+      {% for o in recentOrders %}
+      <article class="staff-row">
+        <div class="staff-row-main">
+          <h3>Order #{{ o.pk }} · {% for item in o.items.all %}{{ item.name|default:item.product.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</h3>
+          <p>{{ o.seller.first_name|default:o.seller.email }} · {{ o.createdAt|date:"j M" }} · ${{ o.total|floatformat:2|intcomma }}</p>
+        </div>
+        {% staff_state "order" o.status o|order_label %}
+        <a class="btn btn-ghost btn-sm" href="{% url 'admin_order' o.pk %}">View order <span class="visually-hidden">{{ o.pk }}</span></a>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+      {% url "admin_catalogue" as emptyUrl %}{% include "adminpanel/empty.html" with text="No orders yet." action_url=emptyUrl action_label="Open catalogue" %}
+    {% endif %}
+  </section>
+  <div class="staff-folds">
+  <details class="fold role-more staff-overview-more" id="staff-more">
+    <summary>More numbers</summary>
+    <div class="fold-body">
+      <div class="hero-task-details dashboard-hero--staff">
+  <p class="dashboard-status" data-dashboard-status>{{ dashboardStatus }}</p>
+</div>
+      <dl class="staff-figures">
+        <div><dt>Sales so far (before GST)</dt><dd>${{ revenue|floatformat:2|intcomma }}</dd></div>
+        <div><dt>Orders with an extra service</dt><dd>{{ attachRate }}%</dd></div>
+        <div><dt>Customers</dt><dd>{{ userCount|intcomma }}</dd></div>
+        <div><dt>Tickets resolved this week</dt><dd>{{ resolvedThisWeek }}</dd></div>
+      </dl>
+      {% if packageRecommendationStats %}
+        <p><b>Package recommendations</b> · last 30 days · {{ packageRecommendationStats.shown }} listings shown a suggestion · {{ packageRecommendationStats.sellers }} sellers reached · {{ packageRecommendationStats.converted }} purchase{{ packageRecommendationStats.converted|pluralize }} after a suggestion · {{ packageRecommendationStats.conversionRate|floatformat:1 }}% bought</p>
+        <details class="evidence-method"><summary>How these numbers are counted</summary><ul><li>You see one count per listing, package and suggestion version each day, with each listing and seller counted once in the 30-day totals.</li><li>The percentage shows listings with a purchase linked to their latest matching suggestion in the previous 30 days.</li><li>The suggestions come from made-up listing examples and package rules, rather than actual sales results.</li></ul></details>
+      {% endif %}
+    </div>
+  </details>
+  </div>
+  </div>
+{% endblock %}

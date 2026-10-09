@@ -1,0 +1,30 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load staff_tags %}
+{% block title %}Tickets · FlatFair{% endblock %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Support tickets</h1>
+      <p class="staff-head-meta">Customers waiting for a reply come first.</p>
+    </div>
+  </div>
+  <div class="ticket-board" role="region" aria-label="Support tickets by status">
+  {% for col in columns %}
+  {% if col.key == "resolved" %}
+  <details class="fold" aria-labelledby="tickets-{{ col.key }}">
+    <summary><h2 id="tickets-{{ col.key }}">{{ col.title }}</h2> <span class="fold-hint">{{ col.tickets|length }}</span></summary>
+    <div class="fold-body staff-rows">
+      {% for t in col.tickets %}{% include "adminpanel/ticket_row_details.html" %}{% empty %}<p class="staff-none">No tickets here. <a href="{% url 'admin_overview' %}">See next steps</a></p>{% endfor %}
+    </div>
+  </details>
+  {% else %}
+  <section class="ticket-group" aria-labelledby="tickets-{{ col.key }}">
+    <h2 id="tickets-{{ col.key }}">{{ col.title }} <span class="heading-count">{{ col.tickets|length }}</span></h2>
+    <div class="staff-rows">
+      {% for t in col.tickets %}{% include "adminpanel/ticket_row_details.html" %}{% empty %}<p class="staff-none">No tickets here. <a href="{% url 'admin_overview' %}">See next steps</a></p>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}
