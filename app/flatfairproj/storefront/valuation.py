@@ -161,6 +161,12 @@ def bandSpots(low, est, high, ask):
     return {"lo": pct(low), "hi": pct(high), "est": pct(est), "pos": pct(point), "point": point}
 
 
+def flagReason(ask, low, est, high):
+    price_verdict = verdict(ask, low, est, high)
+
+    return price_verdict["key"] if price_verdict["out"] else None
+
+
 def verdict(ask, low, est, high):
     if not ask:
         return {"key": "none", "tone": "brand", "text": "Add your price to check it", "out": False}
