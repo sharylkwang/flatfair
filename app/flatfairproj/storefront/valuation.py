@@ -37,6 +37,30 @@ TOWNS = [
     "WOODLANDS",
     "YISHUN",
 ]
+FLAT_MODELS = [
+    "2-room",
+    "3Gen",
+    "Adjoined flat",
+    "Apartment",
+    "DBSS",
+    "Improved",
+    "Improved-Maisonette",
+    "Maisonette",
+    "Model A",
+    "Model A-Maisonette",
+    "Model A2",
+    "New Generation",
+    "Premium Apartment",
+    "Premium Apartment Loft",
+    "Premium Maisonette",
+    "Simplified",
+    "Standard",
+    "Terrace",
+    "Type S1",
+    "Type S2",
+]
+
+
 def makeRow(town, flatType, flatModel, floorAreaSqm, storey, leaseYear, postal=None, block=None):
     bundle = _load()
 
