@@ -447,6 +447,34 @@ class OrderItem(models.Model):
         return timezone.now() - self.order.createdAt >= timedelta(days=RATE_PACKAGE_AFTER_DAYS)
 
 
+class Collection(models.Model):
+    seedKey = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="collections")
+    name = models.CharField(max_length=40)
+    createdAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "name"], name="collection_name_once")
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class SavedListing(models.Model):
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="items")
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="savedBy")
+    createdAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["collection", "listing"], name="save_once_per_collection"
+            )
+        ]
+
+
 class OfferMessage(models.Model):
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE, related_name="messages")
     by = models.CharField(max_length=6)

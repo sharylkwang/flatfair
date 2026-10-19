@@ -1,3 +1,29 @@
+def my_folders(user):
+    if not hasRole(user, "buyer"):
+        return None
+
+    saves = SavedListing.objects.filter(publicQ("listing__")).only("collection_id", "listing_id")
+
+    saved = Prefetch("items", queryset=saves, to_attr="savedItems")
+    folders = list(user.collections.order_by("createdAt").prefetch_related(saved))
+
+    for folder in folders:
+        folder.listingIds = {item.listing_id for item in folder.savedItems}
+
+    return folders
+
+
+def save_data(user):
+    folders = my_folders(user)
+
+    if folders is None:
+        return {"collections": None, "savedIds": None}
+
+    savedIds = {listingId for collection in folders for listingId in collection.listingIds}
+
+    return {"collections": folders, "savedIds": savedIds}
+
+
 def mainFolder(user):
     default_list = "My shortlist"
 
@@ -7,6 +33,19 @@ def mainFolder(user):
         folder = Collection.objects.create(user=user, name=default_list)
 
     return folder
+
+
+def cleanName(raw):
+    return " ".join(raw.split())[:40]
+
+
+def backTo(request, fallback):
+    nextUrl = request.POST.get("next", "")
+
+    if url_has_allowed_host_and_scheme(nextUrl, allowed_hosts={request.get_host()}):
+        return redirect(nextUrl)
+
+    return redirect(fallback)
 
 
 def packages(request):
@@ -206,3 +245,136 @@ def saveAnswer(request, flat, text, failed=False):
     return backTo(request, "saved")
 
 
+@login_required
+@transaction.atomic
+def toggle_save(request, publicId):
+    flat = get_object_or_404(Listing, publicId=publicId)
+    User.objects.select_for_update().get(pk=request.user.pk)
+
+    if not hasRole(request.user, "buyer"):
+        return notAllowed(request, "buyer")
+
+    if request.method != "POST":
+        if request.headers.get("Accept") == "application/json":
+            return JsonResponse({"menu": saveMenu(request, flat)})
+
+        return redirect("listing_detail", publicId=publicId)
+
+    if flat.seller_id == request.user.pk:
+        return saveAnswer(request, flat, "You can’t save your own flat.", True)
+
+    if request.POST.get("remove") == "1":
+        SavedListing.objects.filter(collection__user=request.user, listing=flat).delete()
+
+        return saveAnswer(request, flat, "Removed from your saved flats.")
+
+    newName = cleanName(request.POST.get("newName", ""))
+
+    if "collection" not in request.POST and "newName" not in request.POST:
+        saved = SavedListing.objects.filter(collection__user=request.user, listing=flat)
+
+        if saved.exists():
+            saved.delete()
+
+            return saveAnswer(request, flat, "Removed from your saved flats.")
+
+        collection = mainFolder(request.user)
+    elif newName:
+        collection = request.user.collections.filter(name__iexact=newName).first()
+
+        if collection is None:
+            collection = Collection.objects.create(user=request.user, name=newName)
+    else:
+        folderId = request.POST.get("collection", "")
+        collection = None
+
+        if folderId.isdecimal() and len(folderId) < 19:
+            collection = request.user.collections.filter(pk=int(folderId)).first()
+
+    if collection is None:
+        return saveAnswer(request, flat, "Pick a list or type a name for a new one.", True)
+
+    item = SavedListing.objects.filter(collection=collection, listing__publicId=publicId)
+
+    if item.exists() and not newName:
+        item.delete()
+
+        return saveAnswer(request, flat, f"Removed from {collection.name}.")
+
+    if item.exists():
+        return saveAnswer(request, flat, f"Already in {collection.name}.")
+
+    live = Listing.objects.public().filter(publicId=publicId, status="live").first()
+
+    if live is None:
+        return saveAnswer(
+            request, flat, "This flat is no longer for sale, so it can’t be saved.", True
+        )
+
+    SavedListing.objects.get_or_create(collection=collection, listing=live)
+
+    return saveAnswer(request, flat, f"Saved to {collection.name}.")
+
+
+@login_required
+@transaction.atomic
+def collection_create(request):
+    User.objects.select_for_update().get(pk=request.user.pk)
+
+    if not hasRole(request.user, "buyer"):
+        return notAllowed(request, "buyer")
+
+    name = cleanName(request.POST.get("name", "")) if request.method == "POST" else ""
+
+    if not name:
+        messages.error(request, "Please give your list a name.")
+
+        return redirect("saved")
+
+    folder = request.user.collections.filter(name__iexact=name).first()
+
+    if folder is None:
+        folder = Collection.objects.create(user=request.user, name=name)
+        messages.success(request, f"{name} created.")
+
+    return redirect(f"{reverse('saved')}?c={folder.pk}")
+
+
+@login_required
+@transaction.atomic
+def collection_rename(request, pk):
+    User.objects.select_for_update().get(pk=request.user.pk)
+
+    if not hasRole(request.user, "buyer"):
+        return notAllowed(request, "buyer")
+
+    folder = request.user.collections.filter(pk=pk).first()
+    name = cleanName(request.POST.get("name", "")) if request.method == "POST" else ""
+
+    if folder and name:
+        if request.user.collections.filter(name__iexact=name).exclude(pk=pk).exists():
+            messages.error(request, f"You already have a list called {name}. Pick another name.")
+        else:
+            folder.name = name
+            folder.save()
+            messages.success(request, f"Renamed to {name}.")
+
+    return redirect(f"{reverse('saved')}?c={pk}")
+
+
+@login_required
+@transaction.atomic
+def collection_delete(request, pk):
+    User.objects.select_for_update().get(pk=request.user.pk)
+
+    if not hasRole(request.user, "buyer"):
+        return notAllowed(request, "buyer")
+
+    if request.method == "POST":
+        folder = request.user.collections.filter(pk=pk).first()
+
+        if folder:
+            folder.delete()
+            messages.success(request, f"{folder.name} deleted. The flats are still for sale.")
+
+    return redirect("saved")

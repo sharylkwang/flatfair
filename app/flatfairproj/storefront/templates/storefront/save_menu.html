@@ -1,0 +1,44 @@
+<div class="save-set{% if big %} big{% endif %}" data-save-set data-flat="{{ flat.publicId }}"{% if big %} data-big="1"{% endif %}{% if saveScope %} data-scope="{{ saveScope }}"{% endif %}>
+<details class="save-menu{% if big %} big{% endif %}"{% if open or saveOpenFor == flat.pk %} open{% endif %}>
+  <summary id="save-{{ flat.publicId }}{% if saveScope %}-{{ saveScope }}{% endif %}" class="{% if big %}btn btn-ghost btn-sm save-btn{% else %}heart{% endif %}" data-saved="{% if flat.pk in savedIds %}true{% else %}false{% endif %}"{% if not big %} aria-label="{% if flat.pk in savedIds %}Saved. Change lists{% else %}Save this flat{% endif %}"{% endif %}>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 5c-2.2 4.6-9.2 9-9.2 9z"/></svg>
+    {% if big %}{% if flat.pk in savedIds %}Saved{% else %}Save{% endif %}{% endif %}
+  </summary>
+  <div class="save-pop">
+    <b>{% if flat.pk in savedIds %}Saved in{% else %}Save to which list?{% endif %}</b>
+    {% for c in collections %}
+      <form class="save-form" method="post" action="{% url 'toggle_save' flat.publicId %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ saveNext|default:request.get_full_path }}#save-{{ flat.publicId }}{% if saveScope %}-{{ saveScope }}{% endif %}">
+        <input type="hidden" name="collection" value="{{ c.pk }}">
+        <button type="submit" class="save-opt {% if flat.pk in c.listingIds %}in{% endif %}" aria-pressed="{% if flat.pk in c.listingIds %}true{% else %}false{% endif %}">
+          <span class="box" aria-hidden="true">{% if flat.pk in c.listingIds %}<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="m5 12 5 5 9-10"/></svg>{% endif %}</span>
+          <span class="nm">{{ c.name }}</span>
+          {% with n=c.listingIds|length %}<small><span class="visually-hidden">, </span>{{ n }}<span class="visually-hidden"> flat{{ n|pluralize }}</span></small>{% endwith %}
+        </button>
+      </form>
+    {% empty %}
+      <form class="save-form" method="post" action="{% url 'toggle_save' flat.publicId %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ saveNext|default:request.get_full_path }}#save-{{ flat.publicId }}{% if saveScope %}-{{ saveScope }}{% endif %}">
+        <input type="hidden" name="newName" value="My shortlist">
+        <button type="submit" class="save-opt" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="nm">My shortlist</span><small><span class="visually-hidden">, </span>0<span class="visually-hidden"> flats</span></small></button>
+      </form>
+    {% endfor %}
+    <form class="save-form save-new" method="post" action="{% url 'toggle_save' flat.publicId %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ saveNext|default:request.get_full_path }}#save-{{ flat.publicId }}{% if saveScope %}-{{ saveScope }}{% endif %}">
+      <input name="newName" maxlength="40" required placeholder="New list name" aria-label="New list name">
+      <button class="btn btn-brand btn-sm">Add</button>
+    </form>
+    {% if flat.pk in savedIds %}
+      <form class="save-form" method="post" action="{% url 'toggle_save' flat.publicId %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ saveNext|default:request.get_full_path }}#save-{{ flat.publicId }}{% if saveScope %}-{{ saveScope }}{% endif %}">
+        <input type="hidden" name="remove" value="1">
+        <button type="submit" class="save-remove">Remove from saved</button>
+      </form>
+    {% endif %}
+  </div>
+</details>
+</div>
