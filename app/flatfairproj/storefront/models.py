@@ -15,6 +15,76 @@ from uuid import UUID
 from django.contrib import messages
 from django.shortcuts import redirect, render
 
+FLAT_RULES = {
+    "2 ROOM": {
+        "sqm": (32, 68),
+        "models": [
+            "Model A",
+            "Standard",
+            "Improved",
+            "2-room",
+            "Premium Apartment",
+            "DBSS",
+        ],
+    },
+    "3 ROOM": {
+        "sqm": (48, 109),
+        "models": [
+            "New Generation",
+            "Model A",
+            "Improved",
+            "Standard",
+            "Simplified",
+            "Premium Apartment",
+            "DBSS",
+            "Terrace",
+        ],
+    },
+    "4 ROOM": {
+        "sqm": (66, 125),
+        "models": [
+            "Model A",
+            "Premium Apartment",
+            "New Generation",
+            "Simplified",
+            "Model A2",
+            "Improved",
+            "DBSS",
+            "Type S1",
+            "Premium Apartment Loft",
+            "Standard",
+            "Adjoined flat",
+            "Terrace",
+        ],
+    },
+    "5 ROOM": {
+        "sqm": (94, 158),
+        "models": [
+            "Improved",
+            "Premium Apartment",
+            "Model A",
+            "Standard",
+            "DBSS",
+            "Model A-Maisonette",
+            "Adjoined flat",
+            "Type S2",
+            "3Gen",
+            "Improved-Maisonette",
+            "Premium Apartment Loft",
+        ],
+    },
+    "EXECUTIVE": {
+        "sqm": (117, 202),
+        "models": [
+            "Apartment",
+            "Maisonette",
+            "Premium Apartment",
+            "Adjoined flat",
+            "Premium Maisonette",
+        ],
+    },
+}
+
 REQUIRED_ROOMS = [
     ("living_room", "Living room", None),
     ("kitchen", "Kitchen", None),
@@ -39,6 +109,28 @@ OPTIONAL_ROOMS = [
 ROOM_CHOICES = [(key, label) for key, label, _ in REQUIRED_ROOMS + OPTIONAL_ROOMS]
 ROOM_ORDER = {key: i for i, (key, _) in enumerate(ROOM_CHOICES)}
 ROOM_LABELS = dict(ROOM_CHOICES)
+
+
+def flatIssues(flatType, flatModel, area):
+    from storefront.templatetags.estate_tags import flat_label
+
+    rule = FLAT_RULES.get(flatType)
+
+    if rule is None:
+        return {"flatType": "Pick a flat type from the list."}
+
+    issues = {}
+    kind = flat_label(flatType)
+
+    if flatModel not in rule["models"]:
+        issues["flatModel"] = (
+            f"{kind} flats don’t come in {flatModel}. Pick a flat model from the list."
+        )
+
+    if area is not None and not 25 <= area <= 300:
+        issues["area"] = "Enter a size from 25 to 300 sqm."
+
+    return issues
 
 
 def counts(bedrooms, bathrooms, hasBalcony):
