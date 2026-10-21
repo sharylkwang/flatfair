@@ -394,6 +394,79 @@ class Listing(models.Model):
         return None
 
 
+def photoPath(photo, filename):
+    ending = os.path.splitext(filename)[1].lower()
+
+    return f"listings/{photo.listing.publicId}/{photo.room}{ending}"
+
+
+class ListingPhoto(models.Model):
+    objects = ListingPhotoQuerySet.as_manager()
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="photos")
+    room = models.CharField(max_length=20, choices=ROOM_CHOICES)
+    image = models.ImageField(upload_to=photoPath)
+    createdAt = models.DateTimeField(default=timezone.now)
+    updatedAt = models.DateTimeField(default=timezone.now)
+    aiLabel = models.CharField(max_length=20, blank=True)
+    aiIrrelevant = models.FloatField(null=True, blank=True)
+    aiGenerated = models.FloatField(null=True, blank=True)
+    photoReview = models.JSONField(default=list, blank=True)
+    staffChecked = models.BooleanField(default=False)
+    staffReviewedBy = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="manuallyReviewedPhotos",
+    )
+    staffReviewedAt = models.DateTimeField(null=True, blank=True)
+    staffReviewedRevision = models.PositiveIntegerField(null=True, blank=True)
+    tags = models.JSONField(default=list, blank=True)
+    embedding = models.JSONField(null=True, blank=True)
+    modelVersion = models.CharField(max_length=64, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        fields = kwargs.get("update_fields")
+
+        if not self._state.adding and (
+            fields is None or {"image", "room", "listing", "listing_id"}.intersection(fields)
+        ):
+            old = (
+                type(self)
+                .objects.filter(pk=self.pk)
+                .values_list("image", "room", "listing_id")
+                .first()
+            )
+
+            if old != (self.image.name, self.room, self.listing_id):
+                self.staffReviewedBy = None
+                self.staffReviewedAt = None
+                self.staffReviewedRevision = None
+
+                if fields is not None:
+                    kwargs["update_fields"] = set(fields) | {
+                        "staffReviewedBy",
+                        "staffReviewedAt",
+                        "staffReviewedRevision",
+                    }
+
+        self.updatedAt = timezone.now()
+
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | {"updatedAt"}
+
+        return super().save(*args, **kwargs)
+
+    @property
+    def publicUrl(self):
+        return reverse("listing_photo", args=[self.listing.publicId, self.room])
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["listing", "room"], name="one_photo_per_room")
+        ]
+
+
 class Profile(models.Model):
     ROLE_CHOICES = [("buyer", "Buyer"), ("seller", "Seller")]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
