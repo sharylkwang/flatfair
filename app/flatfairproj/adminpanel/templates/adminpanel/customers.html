@@ -1,0 +1,57 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Customers · FlatFair{% endblock %}
+{% load humanize staff_tags %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Customers</h1>
+      <p class="staff-head-meta">{{ people.paginator.count|intcomma }} customer{{ people.paginator.count|pluralize }}, by name</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{% url 'admin_export_customers' %}?{{ query }}">Export these (CSV)</a>
+  </div>
+  <form class="filter-bar staff-filters staff-filters--customers" method="get">
+    <label class="mini-field staff-search">Search<input enterkeyhint="search" name="q" value="{{ q }}" placeholder="Name or email"></label>
+    <label class="mini-field">Role
+    <select name="role">
+      <option value="">All roles</option>
+      <option value="buyer" {% if role == 'buyer' %}selected{% endif %}>Buyers</option>
+      <option value="seller" {% if role == 'seller' %}selected{% endif %}>Sellers</option>
+    </select>
+  </label>
+    <label class="mini-field">Status
+    <select name="state">
+      <option value="">Any status</option>
+      <option value="active" {% if state == 'active' %}selected{% endif %}>Active</option>
+      <option value="suspended" {% if state == 'suspended' %}selected{% endif %}>Suspended</option>
+    </select>
+  </label>
+    <div class="btn-pair">
+    <button class="btn btn-brand btn-sm">Search</button>
+    {% if query %}<a class="btn btn-link" href="{% url 'admin_customers' %}">Clear</a>{% endif %}
+  </div>
+  </form>
+  {% if people %}
+  <div class="table-scroll">
+    <table class="tbl staff-people">
+      <caption class="visually-hidden">Customers</caption>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th class="num">Listings</th><th class="num">Orders</th><th>Joined</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      {% for u in people %}
+        <tr>
+          <td data-label="Name"><b>{{ u.first_name|default:u.email }}</b></td>
+          <td data-label="Email">{{ u.email }}</td>
+          <td data-label="Role">{% if u.isBuyer %}Buyer{% if u.isSeller %}, {% endif %}{% endif %}{% if u.isSeller %}Seller{% elif not u.isBuyer %}—{% endif %}</td>
+          <td class="num" data-label="Listings">{{ u.listingCount }}</td>
+          <td class="num" data-label="Orders">{{ u.orderCount }}</td>
+          <td data-label="Joined">{{ u.date_joined|date:"j M Y" }}</td>
+          <td data-label="Status">{% if not u.is_active %}{% staff_state "account" u.is_active %}{% endif %}</td>
+          <td class="staff-go" data-label="Actions"><a class="btn btn-ghost btn-sm" href="{% url 'admin_customer' u.pk %}">View customer <span class="visually-hidden">{{ u.first_name|default:u.email }}</span></a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {% url "admin_customers" as customersUrl %}{% include "adminpanel/empty.html" with text="No customers match." action_url=customersUrl action_label="See all customers" %}
+  {% endif %}
+{% endblock %}

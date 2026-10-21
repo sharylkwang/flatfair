@@ -32,3 +32,17 @@ class Decision(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
 
 
+class AuditLog(models.Model):
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.RESTRICT,
+        related_name="auditEntries",
+        null=True,
+        blank=True,
+    )
+    action = models.CharField(max_length=30)
+    target = models.CharField(max_length=80)
+    detail = models.CharField(max_length=200, blank=True)
+    createdAt = models.DateTimeField(default=timezone.now)
+
+

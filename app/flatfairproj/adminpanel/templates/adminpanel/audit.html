@@ -1,0 +1,64 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Audit log · FlatFair{% endblock %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Audit log</h1>
+      <p class="staff-head-meta">{{ entries.paginator.count }} entr{{ entries.paginator.count|pluralize:"y,ies" }}, newest first</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{% url 'admin_export_audit' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Export these (CSV)</a>
+  </div>
+  <form class="filter-bar staff-filters staff-filters--audit" method="get">
+    <label class="mini-field">Action
+      <select name="action">
+        <option value="">All actions</option>
+        {% for value, label in actions %}<option value="{{ value }}" {% if value == action %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="mini-field">Staff
+      <select name="actor">
+        <option value="">Everyone</option>
+        <option value="system"{% if actor == "system" %} selected{% endif %}>System</option>
+        {% for s in actors %}<option value="{{ s.pk }}" {% if s.pk|stringformat:"d" == actor %}selected{% endif %}>{{ s.first_name|default:s.email }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="mini-field">From<input type="date" name="from" value="{{ start }}"{% if dateProblem %} aria-invalid="true" aria-describedby="audit-date-error"{% endif %}></label>
+    <label class="mini-field">To<input type="date" name="to" value="{{ end }}"{% if dateProblem %} aria-invalid="true" aria-describedby="audit-date-error"{% endif %}></label>
+    <div class="btn-pair">
+      <button class="btn btn-brand btn-sm">Filter</button>
+      {% if filtered %}<a class="btn btn-link" href="{% url 'admin_audit' %}">Clear</a>{% endif %}
+    </div>
+    {% if dateProblem %}
+      <p class="err filter-err" id="audit-date-error" role="alert">{{ dateProblem }}</p>
+    {% endif %}
+  </form>
+    <div class="table-scroll">
+      <table class="tbl audit-table">
+        <caption class="visually-hidden">Audit log</caption>
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Staff</th>
+            <th>Action</th>
+            <th>Record</th>
+            <th>Details</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+            <tr>
+              <td data-label="When">{{ e.createdAt|date:"j M, g:i" }}{{ e.createdAt|date:"A"|lower }}</td>
+              <td data-label="Staff">{% if e.actor %}{{ e.actor.first_name|default:e.actor.email }}{% else %}System{% endif %}</td>
+              <td data-label="Action">{{ e.actionLabel }}</td>
+              <td data-label="Record">{% if e.recordKind %}<small class="record-kind">{{ e.recordKind }}</small> {% endif %}{{ e.recordLabel }}</td>
+              <td data-label="Details">{{ e.detail|default:"—" }}</td>
+              <td class="staff-go" data-label="Actions">{% if e.recordUrl %}<a class="btn btn-ghost btn-sm" href="{{ e.recordUrl }}">View record <span class="visually-hidden">{{ e.recordLabel }}</span></a>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="muted" data-label="When">{% if filtered %}Nothing matches. <a href="{% url 'admin_audit' %}">Clear filters</a>{% else %}Nothing logged yet. <a href="{% url 'admin_overview' %}">See next steps</a>{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+{% endblock %}

@@ -205,6 +205,29 @@ def queue(request):
 
 
 @staffPage("admin_queue")
+def decide(request, pk):
+    if request.method != "POST":
+        return redirect("admin_queue")
+
+    flat = Listing.objects.filter(pk=pk).first()
+
+    if not flatFresh(request, flat):
+        messages.error(
+            request,
+            "This listing changed since you reviewed it. Reload the queue and review the latest details. Nothing changed.",
+        )
+
+        return redirect("admin_queue")
+
+    if request.POST.get("decision") == "approved":
+        ready = planRedo(flat)
+    else:
+        ready = None
+
+    return saveChoice(request, pk, ready)
+
+
+@staffPage("admin_queue")
 @require_POST
 @transaction.atomic
 def pic_choice(request, pk, photoId):

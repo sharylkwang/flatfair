@@ -40,12 +40,86 @@ from .access import MENU_GROUPS, staffPage, staffRole, canOpen, menu
 from .forms import ProductForm, ContactForm, StaffForm, ReplyForm
 from .models import Decision, AuditLog, DocumentRequest, Ticket, TicketMessage
 
+WEEKS_SHOWN = 8
 REASONS = {
     "room": "it shows a different room",
     "ai": "it looks computer-made",
     "flat": "it does not show the flat",
     "quality": "it is too dark or blurry",
 }
+def page(request, template, context=None, section=None):
+    from adminpanel.orders import todoQ
+
+    context = context or {}
+
+    for key in ("rows", "orders", "people", "products", "team", "entries"):
+        if key in context:
+            if not hasattr(context[key], "paginator"):
+                context[key] = Paginator(context[key], 25).get_page(request.GET.get("page"))
+
+            context["pageObj"] = context[key]
+
+    query = request.GET.copy()
+    query.pop("page", None)
+    context["pageQuery"] = query.urlencode()
+
+    if "query" in context:
+        context["query"] = query.urlencode()
+
+    context["menu"] = menu(request.user)
+    context["staffRole"] = staffRole(request.user)
+    context["section"] = section or request.resolver_match.url_name
+    context["queueCount"] = Listing.objects.filter(status="review").count()
+    ticketNum = Ticket.objects.exclude(status="resolved").count()
+
+    reviewNum = Review.objects.filter(createdAt__gte=timezone.now() - timedelta(days=30)).count()
+
+    postNum = Post.objects.filter(hidden=False, reports__resolved=False).distinct().count()
+
+    orderNum = 0
+
+    from sellerpanel.reconciliation import payAlertQ
+
+    payNum = Payment.objects.filter(payAlertQ()).count()
+
+    if canOpen(request.user, "admin_orders"):
+        orderNum = Order.objects.filter(todoQ()).distinct().count()
+
+    from storefront.deals import stuckDeals
+
+    counts = {
+        "admin_deals": stuckDeals().count(),
+        "admin_queue": context["queueCount"],
+        "admin_orders": orderNum + payNum,
+        "admin_tickets": ticketNum,
+        "admin_reviews": reviewNum,
+        "admin_community": postNum,
+    }
+
+    groups = MENU_GROUPS
+
+    items = {item["page"]: {**item, "count": counts.get(item["page"])} for item in context["menu"]}
+
+    context["menuGroups"] = [
+        {
+            "label": label,
+            "items": [items[name] for name in names if name in items and not items[name]["more"]],
+        }
+        for label, names in groups
+        if any(name in items and not items[name]["more"] for name in names)
+    ]
+
+    context["moreMenu"] = [item for item in items.values() if item["more"]]
+
+    return render(request, template, context)
+
+
+def audit(request, action, target, detail=""):
+    AuditLog.objects.create(
+        actor=request.user, action=action, target=target[:80], detail=detail[:200]
+    )
+
+
 def nice_top(value):
     value = float(value)
 
@@ -403,6 +477,270 @@ STALE_PHOTO = "This photo check is out of date and must be rerun before publicat
 # Save a listing decision
 
 
+def findUsers(request):
+    people = peopleCan(User.objects.filter(is_staff=False)).order_by("first_name", "pk")
+
+    term = request.GET.get("q", "").strip()
+
+    if term:
+        people = people.filter(
+            Q(first_name__icontains=term) | Q(last_name__icontains=term) | Q(email__icontains=term)
+        )
+
+    role = request.GET.get("role", "")
+
+    if role in ("buyer", "seller"):
+        people = people.filter(**{"isSeller" if role == "seller" else "isBuyer": True})
+
+    if request.GET.get("state") == "suspended":
+        people = people.filter(is_active=False)
+    elif request.GET.get("state") == "active":
+        people = people.filter(is_active=True)
+
+    return people
+
+
+@staffPage("admin_customers")
+def user_list(request):
+    context = {
+        "people": findUsers(request).annotate(
+            listingCount=Count("listings", distinct=True),
+            orderCount=Count("orders", distinct=True),
+        ),
+        "q": request.GET.get("q", ""),
+        "role": request.GET.get("role", ""),
+        "state": request.GET.get("state", ""),
+        "query": request.GET.urlencode(),
+    }
+
+    return page(request, "adminpanel/customers.html", context)
+
+
+@staffPage("admin_customers")
+@transaction.atomic
+def see_user(request, pk):
+    person = lock_user(pk)
+
+    if person and person.is_staff:
+        person = None
+
+    if not person:
+        return redirect("admin_customers")
+
+    canDo = peopleCan(User.objects.filter(pk=person.pk)).get()
+    sells = canDo.isSeller
+    form = ContactForm(instance=person)
+
+    if request.method == "POST":
+        form = ContactForm(request.POST, instance=person)
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    form.save()
+            except IntegrityError:
+                if not User.objects.exclude(pk=person.pk).filter(username=person.email).exists():
+                    raise
+
+                form.add_error("email", "Another account already uses this email.")
+            else:
+                audit(
+                    request,
+                    "customer edited",
+                    user_tag(person),
+                    "Contact details updated",
+                )
+
+                messages.success(request, "Contact details saved.")
+
+                return redirect("admin_customer", pk=pk)
+
+    history = (
+        AuditLog.objects.filter(target__startswith=f"Customer #{person.pk} ")
+        .select_related("actor")
+        .order_by("-createdAt")[:10]
+    )
+
+    context = {
+        "person": person,
+        "form": form,
+        "listings": person.listings.annotate(
+            isPublic=Exists(Listing.objects.public().filter(pk=OuterRef("pk")))
+        ).order_by("-createdAt"),
+        "orders": person.orders.prefetch_related("items__product", "items__listing").order_by(
+            "-createdAt"
+        ),
+        "history": history,
+        "tickets": person.tickets.order_by("-createdAt")[:10],
+        "offers": person.offers.select_related("listing").order_by("-createdAt")[:10],
+        "bookings": person.viewingBookings.select_related("slot__listing").order_by(
+            "-slot__startsAt"
+        )[:10],
+        "canTickets": canOpen(request.user, "admin_tickets"),
+        "canSuspend": True,
+        "isSeller": sells,
+        "customerRoles": customerRoles(canDo),
+        "liveCount": person.listings.filter(status__in=["live", "review"]).count(),
+        "customerMailto": mailto(person.email, "Your FlatFair account"),
+    }
+
+    return page(request, "adminpanel/customer.html", context, section="admin_customers")
+
+
+@staffPage("admin_customers")
+@transaction.atomic
+def user_block(request, pk):
+    if request.method != "POST":
+        return redirect("admin_customers")
+
+    person = lock_user(pk)
+
+    if not person or person.is_staff:
+        return redirect("admin_customers")
+
+    reason = request.POST.get("reason", "").strip()
+    wanted = request.POST.get("action")
+
+    if wanted not in ("suspend", "reactivate"):
+        return HttpResponseBadRequest("Choose suspend or reactivate.")
+
+    if not reason or len(reason) > 200:
+        messages.error(request, "Add a reason of 200 characters or fewer for this account change.")
+
+        return redirect("admin_customer", pk=pk)
+
+    sells = peopleCan(User.objects.filter(pk=person.pk)).get().isSeller
+
+    if (wanted == "suspend" and not person.is_active) or (
+        wanted == "reactivate" and person.is_active
+    ):
+        return redirect("admin_customer", pk=pk)
+
+    if wanted == "suspend":
+        person.is_active = False
+        person.save(update_fields=["is_active"])
+
+        hidden = person.listings.filter(status__in=["live", "review"]).update(status="hidden")
+
+        if sells:
+            audit(
+                request,
+                "account suspended",
+                user_tag(person),
+                f"{reason} ({hidden} listings hidden)",
+            )
+
+            if hidden == 1:
+                flatWord = "listing"
+            else:
+                flatWord = "listings"
+
+            messages.success(
+                request,
+                f"{person.first_name} is suspended. {hidden} {flatWord} hidden.",
+            )
+        else:
+            audit(request, "account suspended", user_tag(person), reason)
+
+            messages.success(
+                request, f"{person.first_name} is suspended and can no longer sign in."
+            )
+    else:
+        person.is_active = True
+        person.save(update_fields=["is_active"])
+        Profile.objects.filter(user=person).update(reactivatedAt=timezone.now())
+
+        hidden = (
+            person.listings.select_for_update()
+            .filter(status="hidden")
+            .order_by("-createdAt", "-pk")
+        )
+
+        gotBack = 0
+
+        if not openFlats(person).exists():
+            flat = hidden.first()
+
+            if flat:
+                flat.status = "review"
+                flat.save(update_fields=["status"])
+                gotBack = 1
+
+        if hidden.exists():
+            messages.info(
+                request,
+                "Other listings remain hidden. " + STAFF_ONE_FLAT_MESSAGE,
+            )
+
+        if sells:
+            audit(
+                request,
+                "account reactivated",
+                user_tag(person),
+                f"{reason} ({gotBack} listings sent to review)",
+            )
+
+            if gotBack == 1:
+                flatWord = "listing"
+            else:
+                flatWord = "listings"
+
+            messages.success(
+                request,
+                f"{person.first_name} is active again. {gotBack} {flatWord} back in review.",
+            )
+        else:
+            audit(request, "account reactivated", user_tag(person), reason)
+
+            messages.success(request, f"{person.first_name} is active again and can sign in.")
+
+    return redirect("admin_customer", pk=pk)
+
+
+@staffPage("admin_catalogue")
+def catalogue(request):
+    goods = Product.objects.annotate(
+        sold=Count("orderItems", filter=~Q(orderItems__order__status="refunded"))
+    ).order_by("kind", "price")
+
+    return page(request, "adminpanel/catalogue.html", {"products": goods})
+
+
+@staffPage("admin_catalogue")
+@transaction.atomic
+def item_edit(request, pk=None):
+    if pk:
+        product = Product.objects.select_for_update().filter(pk=pk).first()
+    else:
+        product = None
+
+    if pk and not product:
+        return redirect("admin_catalogue")
+
+    form = ProductForm(request.POST or None, instance=product)
+
+    if request.method == "POST" and form.is_valid():
+        saved = form.save()
+
+        audit(
+            request,
+            "product edited" if product else "product added",
+            saved.name,
+            f'${saved.price} · {"in the shop" if saved.isActive else "hidden"}',
+        )
+
+        messages.success(request, f"{saved.name} saved.")
+
+        return redirect("admin_catalogue")
+
+    return page(
+        request,
+        "adminpanel/product_form.html",
+        {"form": form, "product": product},
+        section="admin_catalogue",
+    )
+
+
 @staffPage("admin_catalogue")
 @require_POST
 @transaction.atomic
@@ -448,6 +786,112 @@ def item_pic(request, pk):
     messages.success(request, f"Photo saved for {product.name}.")
 
     return redirect("admin_product_edit", product.pk)
+
+
+@staffPage("admin_catalogue")
+@transaction.atomic
+def item_flip(request, pk):
+    product = Product.objects.select_for_update().filter(pk=pk).first()
+
+    if request.method == "POST" and product:
+        wanted = request.POST.get("show")
+
+        if wanted not in ("0", "1") or (wanted == "1") == product.isActive:
+            return redirect("admin_catalogue")
+
+        product.isActive = wanted == "1"
+        product.save()
+
+        audit(
+            request,
+            "product shown" if product.isActive else "product hidden",
+            product.name,
+        )
+
+        messages.success(
+            request,
+            f'{product.name} is {"back in" if product.isActive else "taken out of"} the shop.',
+        )
+
+    return redirect("admin_catalogue")
+
+
+@staffPage("admin_staff")
+@transaction.atomic
+def staff(request):
+    if request.method == "POST" and not lockStaff(request.user):
+        return HttpResponseForbidden("Your staff access has changed.")
+
+    form = StaffForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+
+        try:
+            with transaction.atomic():
+                member = User.objects.create_user(
+                    username=data["email"],
+                    email=data["email"],
+                    password=data["password"],
+                    first_name=data["fullName"],
+                    is_staff=True,
+                )
+
+                member.groups.add(Group.objects.get_or_create(name="Admin")[0])
+        except IntegrityError:
+            if not User.objects.filter(username=data["email"]).exists():
+                raise
+
+            form.add_error("email", "An account with this email already exists.")
+        else:
+            audit(request, "staff added", member.email, "Admin")
+
+            messages.success(request, f"{member.first_name} can now sign in as an Admin.")
+
+            return redirect("admin_staff")
+
+    staffUsers = User.objects.filter(is_staff=True).order_by("first_name", "pk")
+    team = Paginator(staffUsers, 25).get_page(request.GET.get("page"))
+    context = {"form": form, "team": team, "rules": PASSWORD_RULES}
+
+    return page(request, "adminpanel/staff.html", context)
+
+
+@staffPage("admin_staff")
+@transaction.atomic
+def staff_drop(request, pk):
+    if request.method != "POST":
+        return redirect("admin_staff")
+
+    if not lockStaff(request.user):
+        return HttpResponseForbidden("Your staff access has changed.")
+
+    member = (
+        User.objects.select_for_update()
+        .filter(pk=pk, is_staff=True)
+        .exclude(pk=request.user.pk)
+        .first()
+    )
+
+    if (
+        member
+        and member.is_active
+        and User.objects.filter(is_staff=True, is_active=True).count() <= 1
+    ):
+        messages.error(request, "You cannot remove the last active admin.")
+
+        return redirect("admin_staff")
+
+    if member:
+        member.is_staff = False
+        member.is_superuser = False
+        member.is_active = False
+        member.save()
+        member.groups.remove(*Group.objects.filter(name="Admin"))
+        audit(request, "staff removed", member.email)
+        messages.success(request, f"{member.first_name} no longer has staff access.")
+
+    return redirect("admin_staff")
 
 
 @staffPage("admin_price_model")

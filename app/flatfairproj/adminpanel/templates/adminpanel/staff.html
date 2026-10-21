@@ -1,0 +1,57 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Admins · FlatFair{% endblock %}
+{% load staff_tags %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Admins</h1>
+      <p class="staff-head-meta">Every active admin can open all staff pages. Listed by name.</p>
+    </div>
+    <a class="btn btn-brand btn-sm" href="#add-admin">Add an admin</a>
+  </div>
+    <div class="table-scroll">
+      <table class="tbl staff-team">
+        <caption class="visually-hidden">Admins</caption>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for t in team %}
+          <tr>
+            <td data-label="Name"><b>{{ t.first_name|default:t.email }}</b>{% if t == user %} <small>(you)</small>{% endif %}</td>
+            <td data-label="Email">{{ t.email }}</td>
+            <td data-label="Status">{% if not t.is_active %}{% staff_state "access" t.is_active %}{% endif %}</td>
+            {% if t != user %}<td class="staff-team-actions" data-label="Actions">
+                <form method="post" action="{% url 'admin_staff_remove' t.pk %}" data-ask="Remove admin access for {{ t.first_name|default:t.email }}? They can no longer sign in." data-yes="Remove access" data-no="Keep access">
+                  {% csrf_token %}
+                  <button class="btn btn-danger btn-sm">Remove access <span class="visually-hidden">for {{ t.first_name|default:t.email }}</span></button>
+                </form>
+            </td>{% else %}<td class="no-actions"></td>{% endif %}
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">{% include "adminpanel/empty.html" with text="No admins yet." action_url="#add-admin" action_label="Add an admin" %}</td></tr>
+        {% endfor %}
+      </tbody>
+      </table>
+    </div>
+    <details class="fold" id="add-admin"{% if form.errors %} open{% endif %}>
+      <summary><h2>Add an admin</h2></summary>
+      <div class="fold-body">
+      <form method="post" class="row3 staff-form">
+        {% csrf_token %}
+        {% for field in form %}
+        <label class="mini-field {% if field.name == 'fullName' or field.name == 'email' %}span2{% endif %}">{{ field.label }}{{ field }}
+          {% for e in field.errors %}<span class="field-hint staff-field-error">{{ e }}</span>{% endfor %}
+        </label>
+        {% if field.name == 'password' %}<div class="span2">{% include 'accounts/password_rules.html' with input=field.id_for_label %}</div>{% endif %}
+      {% endfor %}
+        <div class="span2"><button class="btn btn-brand btn-sm">Create admin account</button></div>
+      </form>
+      </div>
+    </details>
+{% endblock %}

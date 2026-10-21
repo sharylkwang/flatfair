@@ -1,0 +1,203 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}{{ person.first_name|default:person.email }} · Customer · FlatFair{% endblock %}
+{% load estate_tags staff_tags %}
+{% load humanize %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_customers' %}">{% include "storefront/ui_icon.html" with name="back" %}All customers</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>{{ person.first_name|default:person.email }} {% staff_state "account" person.is_active %}</h1>
+      <p class="staff-head-meta">{{ customerRoles|default:"No role" }} · joined {{ person.date_joined|date:"j M Y" }} · {{ person.email }}</p>
+    </div>
+    <div class="btn-pair">
+      <a class="btn btn-ghost btn-sm" href="#customer-contact">{% include "adminpanel/icon.html" with name="pencil" %}Edit</a>
+      <a class="btn btn-link btn-sm" href="{{ customerMailto }}">Email {{ person.first_name|default:"them" }}</a>
+    </div>
+  </div>
+  <div class="staff-folds">
+  {% if isSeller %}
+  <details class="fold" id="customer-listings"{% if listings %} open{% endif %}>
+    <summary><h2>Listings</h2> <span class="fold-hint">{{ listings|length }}</span></summary>
+    <div class="fold-body">
+    {% if listings %}
+    <div class="table-scroll">
+      <table class="tbl">
+        <caption class="visually-hidden">Listings</caption>
+        <thead>
+          <tr>
+            <th>Listing</th>
+            <th class="num">Asking</th>
+            <th class="num">Estimated price</th>
+            <th>Listed</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in listings|slice:":10" %}
+            <tr>
+              <td data-label="Listing"><b>{% if l.block %}Blk {{ l.block }} {% endif %}{{ l.town|title }}</b> <small>{{ l.flatType|flat_label|nobreak }}</small></td>
+              <td class="num" data-label="Asking">${{ l.askingPrice|intcomma }}</td>
+              <td class="num" data-label="Estimated price">{% if l.estimatedPrice %}{{ l.estimatedPrice|typical_price }}{% else %}—{% endif %}</td>
+              <td data-label="Listed">{{ l.createdAt|date:"j M Y" }}</td>
+              <td data-label="Status">{% staff_state "listing" l.status l.get_status_display %}</td>
+              <td class="staff-go" data-label="Actions">{% if user|can_open:'admin_listings' %}<a class="btn btn-ghost btn-sm" href="{% url 'admin_listing' l.pk %}">View listing <span class="visually-hidden">{% if l.block %}Blk {{ l.block }} {% endif %}{{ l.town|title }}</span></a>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if listings|length > 10 and user|can_open:'admin_listings' %}<a class="btn btn-ghost btn-sm" href="{% url 'admin_listings' %}?seller={{ person.pk }}">See all {{ listings|length }} listings</a>{% endif %}
+    {% else %}
+      <p class="staff-none">No listings yet. <a href="{{ customerMailto }}">Email this customer</a>.</p>
+    {% endif %}
+    </div>
+  </details>
+  <details class="fold" id="customer-orders"{% if orders %} open{% endif %}>
+    <summary><h2>Orders</h2> <span class="fold-hint">{{ orders|length }}</span></summary>
+    <div class="fold-body">
+    {% if orders %}
+    <div class="table-scroll">
+      <table class="tbl">
+        <caption class="visually-hidden">Orders</caption>
+        <thead><tr><th>Order</th><th>Bought</th><th>Paid on</th><th class="num">Total</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for o in orders|slice:":10" %}
+          <tr>
+            <td data-label="Order"><b>Order #{{ o.pk }}</b></td>
+            <td data-label="Bought">{% for item in o.items.all %}{{ item.name|default:item.product.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+            <td data-label="Paid on">{{ o.createdAt|date:"j M Y" }}</td>
+            <td class="num" data-label="Total">${{ o.total|floatformat:2|intcomma }}</td>
+            <td data-label="Status">{% staff_state "order" o.status o|order_label %}</td>
+            <td class="staff-go" data-label="Actions">{% if user|can_open:'admin_orders' %}<a class="btn btn-ghost btn-sm" href="{% url 'admin_order' o.pk %}">View order <span class="visually-hidden">{{ o.pk }}</span></a>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if orders|length > 10 and user|can_open:'admin_orders' %}<a class="btn btn-ghost btn-sm" href="{% url 'admin_orders' %}?status=&amp;q={{ person.email|urlencode }}">See all {{ orders|length }} orders</a>{% endif %}
+    {% else %}
+      <p class="staff-none">No orders yet. <a href="{{ customerMailto }}">Email this customer</a>.</p>
+    {% endif %}
+    </div>
+  </details>
+  {% endif %}
+  <details class="fold" id="customer-tickets"{% if tickets %} open{% endif %}>
+    <summary><h2>Support messages</h2> <span class="fold-hint">{{ tickets|length }}</span></summary>
+    <div class="fold-body">
+    {% if tickets %}
+    <div class="table-scroll">
+      <table class="tbl">
+        <caption class="visually-hidden">Support messages</caption>
+        <thead><tr><th>Message</th><th>Topic</th><th>Sent</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for t in tickets %}
+          <tr>
+            <td data-label="Message"><b>{{ t.message|truncatechars:70 }}</b></td>
+            <td data-label="Topic">{{ t.get_topic_display }}</td>
+            <td data-label="Sent">{{ t.createdAt|date:"j M Y" }}</td>
+            <td data-label="Status">{% staff_state "ticket" t.status t.get_status_display %}</td>
+            <td class="staff-go" data-label="Actions">{% if canTickets %}<a class="btn btn-ghost btn-sm" href="{% url 'admin_ticket' t.pk %}">Open ticket <span class="visually-hidden">{{ t.pk }}</span></a>{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="staff-none">No support messages yet. <a href="{{ customerMailto }}">Email this customer</a>.</p>
+    {% endif %}
+    </div>
+  </details>
+  {% if offers or bookings %}
+    <details class="fold" id="customer-offers">
+      <summary><h2>Offers made</h2> <span class="fold-hint">{{ offers|length }}</span></summary>
+      <div class="fold-body">
+        <ul class="staff-lines">
+          {% for o in offers %}
+            <li>
+              <span><b>{% if o.listing.block %}Blk {{ o.listing.block }} {% endif %}{{ o.listing.town|title }}</b><small>{{ o.createdAt|date:"j M Y" }} · ${{ o.amount|floatformat:0|intcomma }}</small></span>
+              {% staff_state "offer" o.status o.get_status_display %}
+            </li>
+          {% empty %}
+            <li class="staff-none">No offers yet. <a href="{{ customerMailto }}">Email this customer</a>.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </details>
+    <details class="fold" id="customer-viewings">
+      <summary><h2>Viewings booked</h2> <span class="fold-hint">{{ bookings|length }}</span></summary>
+      <div class="fold-body">
+        <ul class="staff-lines">
+          {% for b in bookings %}
+            <li>
+              <span><b>{% if b.slot.listing.block %}Blk {{ b.slot.listing.block }} {% endif %}{{ b.slot.listing.town|title }}</b><small>{{ b.slot.startsAt|date:"j M Y, g:i" }}{{ b.slot.startsAt|date:"A"|lower }}</small></span>
+              {% staff_state "viewing" b.status b.get_status_display %}
+            </li>
+          {% empty %}
+            <li class="staff-none">No viewings yet. <a href="{{ customerMailto }}">Email this customer</a>.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </details>
+  {% endif %}
+  <details class="fold" id="customer-contact"{% if form.errors %} open{% endif %}>
+    <summary><h2>Edit contact details</h2></summary>
+    <div class="fold-body">
+      <form method="post" class="row3">
+        {% csrf_token %}
+        {% for field in form %}
+          <label class="mini-field">{{ field.label }}{{ field }}
+            {% for e in field.errors %}<span class="field-hint staff-field-error">{{ e }}</span>{% endfor %}
+          </label>
+        {% endfor %}
+        <div class="span2 btn-pair">
+          <button class="btn btn-brand btn-sm">Save contact details</button>
+        </div>
+      </form>
+    </div>
+  </details>
+  <details class="fold" id="customer-history">
+    <summary><h2>Staff actions on this account</h2> <span class="fold-hint">{{ history|length }}</span></summary>
+    <div class="fold-body">
+      <ul class="staff-lines">
+        {% for a in history %}
+          <li><span><b>{{ a.action|capfirst }}</b><small>{{ a.createdAt|date:"j M, g:i" }}{{ a.createdAt|date:"A"|lower }} · {{ a.actor.first_name }}{% if a.detail %} · {{ a.detail }}{% endif %}</small></span></li>
+        {% empty %}
+          <li class="staff-none">No staff changes yet. <a href="{% url 'admin_customers' %}">See all customers</a>.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </details>
+  {% if canSuspend %}
+  <details class="fold danger-zone" id="customer-suspend">
+    <summary><h2>{% if person.is_active %}Suspend account{% else %}Reactivate account{% endif %}</h2></summary>
+    <div class="fold-body">
+      {% if person.is_active %}
+        <form method="post" action="{% url 'admin_customer_suspend' person.pk %}" class="row3" data-ask="Suspend {{ person.first_name|default:person.email }}? They can’t sign in{% if isSeller %}, and {{ liveCount }} listing{{ liveCount|pluralize }} will be hidden from buyers{% endif %}." data-yes="Suspend account" data-no="Keep it active">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="suspend">
+          <p class="muted span2">{% if isSeller %}They can no longer sign in, and their live and in-review listings are hidden from buyers.{% else %}They can no longer sign in.{% endif %}</p>
+          <label class="mini-field span2">Reason (saved in the audit log)
+            <textarea
+              name="reason"
+              rows="2"
+              maxlength="180"
+              required
+              placeholder="e.g. Repeated fake listings reported by buyers"></textarea>
+          </label>
+          <div class="span2"><button class="btn btn-danger btn-sm">Suspend {{ person.first_name|default:person.email }}</button></div>
+        </form>
+      {% else %}
+        <form method="post" action="{% url 'admin_customer_suspend' person.pk %}" class="row3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reactivate">
+          <p class="muted span2">{% if isSeller %}They can sign in again. Their hidden listings go back to the review queue first.{% else %}They can sign in again.{% endif %}</p>
+          <label class="mini-field span2">Reason<input name="reason" maxlength="200" required></label>
+          <div class="span2"><button class="btn btn-brand btn-sm">Reactivate {{ person.first_name|default:person.email }}</button></div>
+        </form>
+      {% endif %}
+    </div>
+  </details>
+  {% endif %}
+  </div>
+{% endblock %}

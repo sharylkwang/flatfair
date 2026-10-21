@@ -32,6 +32,57 @@ from adminpanel.views import (
 )
 
 
+def findOrders(request):
+    orders = Order.objects.select_related("seller", "payment").prefetch_related(
+        "items__product", "items__listing"
+    )
+
+    orders = orders.order_by("-createdAt", "-pk")
+    term = request.GET.get("q", "").strip()
+
+    if term:
+        search = (
+            Q(seller__email__icontains=term)
+            | Q(seller__first_name__icontains=term)
+            | Q(seller__last_name__icontains=term)
+        )
+
+        number = term.removeprefix("#")
+
+        if number.isascii() and number.isdigit() and len(number) <= 18:
+            search |= Q(pk=int(number))
+
+        orders = orders.filter(search)
+
+    status = request.GET.get("status", "needs")
+
+    if status == "needs":
+        orders = orders.filter(todoQ()).distinct()
+
+    if request.GET.get("refunds") == "1":
+        orders = orders.filter(refundQ()).distinct()
+
+    if status in dict(Order.STATUS_CHOICES):
+        orders = orders.filter(status=status)
+
+    kind = request.GET.get("type", "")
+
+    if kind == "service":
+        orders = orders.filter(items__kind="addon").distinct()
+    elif kind == "package":
+        orders = orders.exclude(items__kind="addon")
+
+    start, end, problem = dateRange(request)
+
+    if start:
+        orders = orders.filter(createdAt__date__gte=start)
+
+    if end:
+        orders = orders.filter(createdAt__date__lte=end)
+
+    return orders, problem
+
+
 @staffPage("admin_orders")
 def orders(request):
     from sellerpanel.reconciliation import payAlertQ
@@ -109,6 +160,16 @@ def deals(request):
     context = {"rows": rows, "tab": tab, "tabs": tabs, "stuckDays": STUCK_DAYS}
 
     return page(request, "adminpanel/deals.html", context)
+
+
+@staffPage("admin_orders")
+def order_set(request, pk):
+    if request.method == "POST" and request.POST.get("status") == "refunded":
+        doRefund(request, pk)
+    else:
+        return moveOrder(request, pk)
+
+    return orderBack(request)
 
 
 def endUnpaid(request, payment):

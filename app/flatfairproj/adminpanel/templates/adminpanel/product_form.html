@@ -1,0 +1,81 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load humanize staff_tags %}
+{% block title %}{% if product %}{{ product.name }}{% else %}Add a product{% endif %} · FlatFair{% endblock %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_catalogue' %}">{% include "storefront/ui_icon.html" with name="back" %}Catalogue</a>
+  <div class="staff-page-head">
+    {% if product %}
+      <div>
+        <h1>{{ product.name }} {% staff_state "shop" product.isActive %}</h1>
+        <p class="staff-head-meta">{% if product.kind == 'package' %}Package{% else %}Extra service{% endif %} · ${{ product.price|floatformat:2|intcomma }}{% if product.kind == 'package' %} · {% if product.durationDays %}{{ product.durationDays }} days{% else %}until the flat is sold{% endif %}{% endif %}</p>
+      </div>
+      <div class="btn-pair">
+        <a class="btn btn-ghost btn-sm" href="#edit-product">{% include "adminpanel/icon.html" with name="pencil" %}Edit</a>
+        <form method="post" action="{% url 'admin_product_toggle' product.pk %}">
+          {% csrf_token %}<input type="hidden" name="show" value="{% if product.isActive %}0{% else %}1{% endif %}">
+          <button class="btn btn-ghost btn-sm">{% if product.isActive %}Hide from the shop{% else %}Show in the shop{% endif %}</button>
+        </form>
+      </div>
+    {% else %}
+      <h1>Add a product</h1>
+    {% endif %}
+  </div>
+  {% if product %}
+    <p class="staff-item-text">{{ product.description|default:"No description yet." }}</p>
+    <section class="staff-photo" aria-labelledby="product-photo-title">
+      <h2 id="product-photo-title">Photo</h2>
+      <div class="staff-photo-row">
+        {% if product.image %}<img class="staff-photo-now" src="{{ product.image.url }}" alt="Photo of {{ product.name }}" width="240" height="160">{% else %}<span class="staff-photo-now staff-photo-none">No photo yet</span>{% endif %}
+        <div class="staff-photo-acts">
+          <form method="post" enctype="multipart/form-data" action="{% url 'admin_product_photo' product.pk %}">
+            {% csrf_token %}
+            <label class="mini-field">{% if product.image %}Replace it with{% else %}Choose a photo{% endif %}<input type="file" name="image" accept="image/jpeg,image/png,image/webp" required aria-describedby="product-photo-hint"></label>
+            <span class="field-hint" id="product-photo-hint">JPG, PNG or WebP, up to 10 MB. Sellers see it on the Packages page and in their cart.</span>
+            <button class="btn btn-brand btn-sm">{% if product.image %}Replace photo{% else %}Upload photo{% endif %}</button>
+          </form>
+          {% if product.image %}
+          <form method="post" action="{% url 'admin_product_photo' product.pk %}">
+            {% csrf_token %}<input type="hidden" name="remove" value="1">
+            <button class="btn btn-ghost btn-sm btn-danger" data-ask="Remove the photo from {{ product.name }}?" data-yes="Remove photo" data-no="Keep photo">Remove photo</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+    <details class="fold" id="edit-product"{% if form.errors %} open{% endif %}>
+      <summary><h2>Edit product</h2></summary>
+      <div class="fold-body">
+  {% else %}
+    <section class="panel staff-form">
+  {% endif %}
+    <form method="post" class="row3">
+      {% csrf_token %}
+      {% if product and product.kind == 'package' %}
+        <dl class="facts plain span2 product-facts">
+          <dt>Package type</dt>
+          <dd>{% if form.packageType %}<b>{{ form.packageType }}</b> · {% endif %}{{ form.packageEffect }}</dd>
+          <dt>How long it lasts</dt>
+          <dd>{% if product.durationDays %}{{ product.durationDays }} days{% else %}Until the flat is sold{% endif %}. This can’t be changed.</dd>
+        </dl>
+      {% endif %}
+      {% for field in form %}
+        {% if field.name == 'isActive' %}
+          <label class="toggle span2">{{ field }}<span class="sw-ui"></span>{{ field.label }}</label>
+        {% else %}
+          <label class="mini-field {% if field.name == 'description' %}span2{% endif %}">{{ field.label }}{{ field }}
+            {% for e in field.errors %}<span class="field-hint staff-field-error">{{ e }}</span>{% endfor %}{% if field.help_text %}<span class="field-hint{% if field.errors %} visually-hidden{% endif %}" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% endif %}
+          </label>
+        {% endif %}
+      {% endfor %}
+      <div class="span2 btn-pair">
+      <button class="btn btn-brand">Save</button>
+      <a class="btn btn-ghost" href="{% url 'admin_catalogue' %}">Cancel</a>
+    </div>
+    </form>
+  {% if product %}
+      </div>
+    </details>
+  {% else %}
+    </section>
+  {% endif %}
+{% endblock %}
