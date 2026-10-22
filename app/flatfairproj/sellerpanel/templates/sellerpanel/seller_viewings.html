@@ -1,0 +1,100 @@
+{% extends 'sellerpanel/seller_base.html' %}
+{% load humanize estate_tags static %}
+{% block extra_head %}<script src="{% static 'storefront/role_details.js' %}" defer></script>{% endblock %}
+{% block title %}Offers and viewings · FlatFair{% endblock %}
+{% block seller %}
+  <header class="seller-head">
+    <div>
+      <h1>Offers and viewings</h1>
+      <p>Reply to buyers and plan your viewing times.</p>
+    </div>
+  </header>
+  <div class="seller-diary">
+    <nav class="diary-tabs" aria-label="Offers and viewings"><a href="#offers-tab">Offers{% if replyOffers %} <span class="tab-count tab-count--alert">{{ replyOffers|length }} <span class="visually-hidden">need{{ replyOffers|length|pluralize:"s," }} your reply</span></span>{% endif %}</a><a href="#viewings-tab">Viewings <span class="tab-count">{{ upcomingCount }} <span class="visually-hidden">booked</span></span></a></nav>
+    <section id="offers-tab" class="diary-panel" tabindex="-1">
+      <h2 class="visually-hidden">Offers</h2>
+      {% for section in openSections %}
+        {% include "sellerpanel/offer_section.html" %}
+      {% empty %}
+        {% url "sell" as sellUrl %}{% include "sellerpanel/empty.html" with icon="home" text="You don’t have a flat for sale yet" action_url=sellUrl action_label="List my flat free" %}
+      {% endfor %}
+      {% if soldSections %}
+        <details class="fold" id="sold-flats">
+          <summary>Sold flats ({{ soldSections|length }})</summary>
+          <div class="fold-body">{% for section in soldSections %}{% include "sellerpanel/offer_section.html" %}{% endfor %}</div>
+        </details>
+      {% endif %}
+      {% include 'storefront/activity_pagination.html' with page=offerPage param='offers_page' %}
+    </section>
+    <section id="viewings-tab" class="diary-panel" tabindex="-1">
+      <h2 class="visually-hidden">Viewings</h2>
+      <div id="viewing-calendar" tabindex="-1">
+        {% for section in openSections %}{% with flat=section.flat %}
+          <section class="s-flat" aria-label="Viewings for Blk {{ flat.block }} {{ flat.town|title }}">
+            {% include "sellerpanel/flat_head.html" %}
+            {% if section.slots %}
+              <div class="s-list">{% for slot in section.slots %}{% load estate_tags %}
+{% with when=slot.startsAt|date:"D j M, g:i" ampm=slot.startsAt|date:"A"|lower %}
+<details class="s-item" id="slot-{{ slot.pk }}"{% if slot.waitingCount %} open{% endif %}>
+  <summary class="s-row s-cols s-cols--slot">
+    <span class="s-name">{{ when }} {{ ampm }}</span>
+    <span class="s-amount s-meta">{% include "sellerpanel/capacity_dots.html" %} {{ slot.confirmedCount }} of {{ slot.capacity }} place{{ slot.capacity|pluralize }} confirmed</span>
+    <span class="s-tag">{% include "sellerpanel/slot_status.html" %}</span>
+    <span class="s-toggle">View bookings <span class="visually-hidden">for {{ when }} {{ ampm }}</span></span>
+  </summary>
+  <div class="s-panel" id="slot-review-{{ slot.pk }}">
+    {% if slot.confirmedCount %}<p class="slot-calendar"><a class="btn btn-link btn-sm" href="{% url 'slot_calendar' slot.pk %}">Add to my calendar <span class="visually-hidden">for {{ when }} {{ ampm }}</span></a></p>{% endif %}
+    <div class="slot-bookings">
+      {% for booking in slot.sellerBookings %}{% with name=booking.buyer|buyer_name %}
+        <div class="booking-row">
+          <span class="booking-row-name">{{ name }}{% if booking.movedFromStatus and booking.status == 'requested' %} <span class="s-meta">· moved from another time</span>{% endif %}</span>
+          {% if booking.status == 'requested' %}
+            <div class="booking-row-actions">
+              {% if slot.listing.status == 'live' or slot.listing.status == 'paused' %}{% include 'sellerpanel/reply_form.html' with id=booking.pk action='confirm' label='Agree' tone='btn-brand' about="to "|add:name|add:"’s viewing request" %}{% endif %}
+              {% include 'sellerpanel/reply_form.html' with id=booking.pk action='seller_cancel' label='Disagree' about="with "|add:name|add:"’s viewing request" %}
+            </div>
+          {% else %}
+            {% include "sellerpanel/status_badge.html" with tone="good" icon="check" label="Confirmed" %}
+            <div class="booking-row-actions"><a class="btn btn-ghost btn-sm" href="{% url 'cancel_viewing' %}?booking={{ booking.pk }}">Remove <span class="visually-hidden">{{ name }} from this viewing</span></a></div>
+          {% endif %}
+        </div>
+      {% endwith %}{% empty %}
+        <p class="slot-empty s-meta">No one has booked yet.</p>
+      {% endfor %}
+    </div>
+    {% if slot.usedCount %}<a class="btn btn-link btn-sm slot-cancel" href="{% url 'cancel_viewing' %}?slot={{ slot.pk }}">Cancel this viewing <span class="visually-hidden">on {{ when }} {{ ampm }}</span></a>{% else %}<form method="post" action="{% url 'activity_action' %}" class="slot-cancel">{% csrf_token %}<input type="hidden" name="id" value="{{ slot.pk }}"><input type="hidden" name="confirm" value="yes"><button class="btn btn-link btn-sm" name="action" value="remove_slot">Remove this time <span class="visually-hidden">on {{ when }} {{ ampm }}</span></button></form>{% endif %}
+  </div>
+</details>
+{% endwith %}
+{% endfor %}</div>
+            {% else %}
+              <p class="seller-none">{% if flat.status == 'live' %}No viewings planned. Add a time below.{% else %}No viewings planned. Buyers can book once this flat is live.{% endif %}</p>
+            {% endif %}
+            {% if flat.status == 'live' %}
+              <form method="post" action="{% url 'activity_action' %}" class="slot-form"{% if forloop.first %} id="slot-form"{% endif %} tabindex="-1">
+                {% csrf_token %}
+                <input name="id" type="hidden" value="{{ flat.publicId }}">
+                <h3>Add a viewing time</h3>
+                {% if request.GET.first and forloop.first %}<p class="slot-first">Buyers can only visit at the times you add here. Two or three times this week is a good start.</p>{% endif %}
+                <label class="mini-field">Date and time<input type="datetime-local" name="startsAt" min="{{ slotMin }}" max="{{ slotMax }}" required{% if request.GET.first and forloop.first %} autofocus{% endif %}></label>
+                <label class="mini-field">Buyers per viewing<input inputmode="numeric" enterkeyhint="done" name="capacity" type="number" min="1" max="50" value="2" required></label>
+                <button class="btn btn-ghost" name="action" value="slot">Add viewing time</button>
+              </form>
+            {% endif %}
+            {% if section.pastSlots %}
+              <details class="offer-closed">
+                <summary>Past viewings ({{ section.pastSlots|length }})</summary>
+                <div class="s-list">{% for slot in section.pastSlots %}
+                  <div class="s-item"><div class="s-row s-cols s-cols--slot"><span class="s-name">{{ slot.startsAt|date:"D j M, g:i" }} {{ slot.startsAt|date:"A"|lower }}</span><span class="s-amount s-meta">{{ slot.capacity }} place{{ slot.capacity|pluralize }}</span><span class="s-tag">{% include "sellerpanel/slot_status.html" with past=True %}</span><span class="s-toggle"></span></div></div>
+                {% endfor %}</div>
+              </details>
+            {% endif %}
+          </section>
+        {% endwith %}{% empty %}
+          {% url "sell" as sellUrl %}{% include "sellerpanel/empty.html" with icon="calendar" text="You don’t have a flat for sale yet" action_url=sellUrl action_label="List my flat free" %}
+        {% endfor %}
+      </div>
+      {% include 'storefront/activity_pagination.html' with page=slotPage param='slots_page' fragment='viewings-tab' %}
+    </section>
+  </div>
+{% endblock %}

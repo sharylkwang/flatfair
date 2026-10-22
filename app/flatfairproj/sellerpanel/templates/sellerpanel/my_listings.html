@@ -1,0 +1,33 @@
+{% extends 'sellerpanel/seller_base.html' %}
+{% block title %}My listings · FlatFair{% endblock %}
+{% load humanize estate_tags static %}
+{% block seller %}
+  <header class="seller-head">
+    <div>
+      <h1>My listings</h1>
+      <p>Open a flat to see it, change it or mark it sold.</p>
+    </div>
+    {% if canListAnother and not savedDraft %}<a class="btn btn-sell" href="{% url 'sell' %}">{% if totalListingCount %}List another flat{% else %}List my flat free{% endif %}</a>{% endif %}
+  </header>
+  {% if totalListingCount %}
+  <nav class="activity-tabs dense-list" aria-label="Listing filters"><a href="?" {% if selectedStatus == '' %}aria-current="page"{% endif %}>All <span>{{ totalCount }}</span></a><a href="?status=live" {% if selectedStatus == 'live' %}aria-current="page"{% endif %}>Live <span>{{ counts.live }}</span></a><a href="?status=review" {% if selectedStatus == 'review' %}aria-current="page"{% endif %}>Being checked <span>{{ counts.review }}</span></a>{% if counts.paused %}<a href="?status=paused" {% if selectedStatus == 'paused' %}aria-current="page"{% endif %}>Paused <span>{{ counts.paused }}</span></a>{% endif %}<a href="?status=sold" {% if selectedStatus == 'sold' %}aria-current="page"{% endif %}>Sold <span>{{ counts.sold }}</span></a>{% if counts.hidden %}<a href="?status=hidden" {% if selectedStatus == 'hidden' %}aria-current="page"{% endif %}>Taken down <span>{{ counts.hidden }}</span></a>{% endif %}{% if counts.rejected %}<a href="?status=rejected" {% if selectedStatus == 'rejected' %}aria-current="page"{% endif %}>Not approved <span>{{ counts.rejected }}</span></a>{% endif %}</nav>
+  {% endif %}
+  <h2 class="visually-hidden">Your listings</h2>
+  <div class="s-list">
+    {% if savedDraft and not selectedStatus %}
+      <article class="s-row s-row--photo" id="listing-draft">
+        <div class="s-row-main">
+          <h3>{% if savedDraft.formData.block or savedDraft.formData.town %}{% if savedDraft.formData.block %}Blk {{ savedDraft.formData.block }} {% endif %}{{ savedDraft.formData.town|title }}{% else %}New listing{% endif %}</h3>
+          {% include "sellerpanel/status_badge.html" with tone="draft" icon="pencil" label="Draft" %}
+          <p class="s-meta">Saved {{ savedDraft.updatedAt|date:"j M, g:i a" }}. Buyers can’t see it yet.</p>
+        </div>
+        <div class="s-thumb s-thumb--icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="home" %}</div>
+        <div class="s-row-end"><a class="btn btn-ghost btn-sm" href="{% url 'sell' %}">Continue draft</a></div>
+      </article>
+    {% endif %}
+    {% for r in rows %}{% with flat=r.flat %}{% include "sellerpanel/listing_row.html" %}{% endwith %}{% empty %}
+      {% if selectedStatus %}{% url "my_listings" as emptyUrl %}{% include "sellerpanel/empty.html" with icon="search" text="No listings match this filter" action_url=emptyUrl action_label="Show all listings" %}{% elif not savedDraft %}{% url "sell" as emptyUrl %}{% include "sellerpanel/empty.html" with icon="home" text="You haven’t listed a flat yet. Listing is free." action_url=emptyUrl action_label="List my flat free" %}{% endif %}
+    {% endfor %}
+  </div>
+  {% include 'storefront/activity_pagination.html' with page=listingPage param='listings_page' %}
+{% endblock %}

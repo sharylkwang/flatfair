@@ -1,0 +1,80 @@
+{% extends 'sellerpanel/seller_base.html' %}
+{% block title %}Cart · FlatFair{% endblock %}
+{% load humanize estate_tags offer_tags %}
+{% block seller %}
+  <header class="seller-head"><div><h1>Cart</h1><p>{% if items %}{{ items|length }} item{{ items|length|pluralize }}. Check what you’re getting, then pay.{% else %}Check your packages and services, then pay.{% endif %}</p></div></header>
+  {% include 'sellerpanel/package_recommendation.html' %}
+  {% if items %}
+  <div class="cart-grid">
+    <section class="cart-items" aria-label="Items in your cart">
+    {% for item in items %}
+      <article class="cart-line">
+        <div class="cart-line-icon cart-line-icon--{{ item.kind }}">{% if item.image %}<img src="{{ item.image.url }}" alt="" width="72" height="72" loading="lazy">{% else %}{% with name=item|cart_icon %}<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">{% if name == "boost" %}<path d="M12 19V5M6 11l6-6 6 6"/><path d="M5 21h14"/>{% elif name == "top" %}<path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-3-5.4 3 1.1-6-4.5-4.2 6.1-.8z"/>{% elif name == "camera" %}<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>{% elif name == "plan" %}<path d="M4 4h16v16H4zM4 12h7M11 4v10M15 12v8M15 12h5"/>{% elif name == "host" %}<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>{% else %}<path d="M12 5v14M5 12h14"/>{% endif %}</svg>
+{% endwith %}{% endif %}</div>
+        <div class="cart-line-body">
+          <p class="cart-line-kind">{% if item.kind == "package" %}Package{% if item.durationDays %} · {{ item.durationDays }} days{% else %} · until sold{% endif %}{% else %}Extra service{% endif %}{% if item.pk == packageRecommendation.product.pk %} <span class="chip is-active">Recommended for your flat</span>{% endif %}</p>
+          <h3>{{ item.name }}</h3>
+          <ul class="cart-line-points">{% for point in item|cart_points %}<li>{{ point }}</li>{% endfor %}</ul>
+          {% if selectedFlat %}<p class="cart-line-flat">{% include "storefront/ui/thumbnail.html" with flat=selectedFlat %}<span>For <b>Blk {{ selectedFlat.block }} {{ selectedFlat.town|title }}</b> · {{ selectedFlat.flatType|flat_label }}</span></p>{% endif %}
+          <p class="cart-line-when">{% include 'sellerpanel/package_dates.html' %}</p>
+        </div>
+        <div class="cart-line-side">
+          <b class="mono">${{ item.price|floatformat:2|intcomma }}</b>
+          <small>before GST</small>
+          <form method="post" action="{% url 'cart_remove' item.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-link btn-sm cart-remove">Remove <span class="visually-hidden">{{ item.name }}</span></button>
+          </form>
+        </div>
+      </article>
+    {% endfor %}
+    {% if needsFlat and selectedFlat and selectedFlat.status != 'live' %}{% include 'sellerpanel/package_warning.html' with flat=selectedFlat %}{% endif %}
+    {% if suggested %}
+      <details class="fold cart-suggested" aria-labelledby="cart-suggested-heading">
+        <summary id="cart-suggested-heading">You might also need <span class="fold-hint">{{ suggested|length }} service{{ suggested|length|pluralize }}</span></summary>
+        <div class="fold-body">{% for p in suggested %}<div class="citem"><div class="ci-txt"><b>{{ p.name }}</b><span class="muted">{{ p.description }}</span></div><b class="mono">${{ p.price|intcomma }} <small>+ GST</small></b><form method="post" action="{% url 'cart_add' p.pk %}">{% csrf_token %}<input type="hidden" name="next" value="cart"><button class="btn btn-ghost btn-sm">Add <span class="visually-hidden">{{ p.name }} to cart</span></button></form></div>{% endfor %}</div>
+      </details>
+    {% endif %}
+    </section>
+    <aside class="summary">
+      <h2>Summary</h2>
+      <div class="ex-row"><span>Subtotal</span><b class="mono">${{ subtotal|floatformat:2|intcomma }}</b></div>
+      <div class="ex-row"><span>GST (9%)</span><b class="mono">${{ gst|floatformat:2|intcomma }}</b></div>
+      <div class="ex-row total"><span>Total</span><b class="mono">${{ total|floatformat:2|intcomma }}</b></div>
+      <form method="post" action="{% url 'checkout' %}"{% if stripeOn %} target="_top"{% endif %}>
+        {% csrf_token %}
+        <input type="hidden" name="checkoutToken" value="{{ checkoutToken }}">
+        {% if selectedFlat %}
+          <input type="hidden" name="listing" value="{{ selectedListing }}">
+        {% elif listings %}
+          <label class="mini-field cart-listing-field" for="cart-listing">Which flat is this for?
+            <select id="cart-listing" name="listing"{% if needsFlat %} required{% endif %}>
+              <option value="">{% if needsFlat %}Choose your flat{% else %}No specific flat{% endif %}</option>
+              {% for flat in listings %}<option value="{{ flat.publicId }}" {% if flat.publicId|stringformat:'s' == selectedListing %}selected{% endif %}>Blk {{ flat.block }} {{ flat.town|title }} ({{ flat.flatType|flat_label }})</option>{% endfor %}
+            </select></label>
+        {% else %}
+          <p>Packages need a listed flat. <a href="{% url 'sell' %}">List your flat for free</a> first. Extra services don’t need one.</p>
+        {% endif %}
+        {% regroup items by kind as kinds %}
+        <p class="card-note">{% if stripeOn %}Stripe test mode. No money is taken.{% else %}Demo payment. No money is taken.{% endif %} Packages can’t be refunded, but services can be until work starts. <a href="{% url 'terms' %}#refunds">Refunds</a>{% if kinds|length > 1 %} You pay once, and we place two orders.{% endif %}</p>
+        {% if stripeOn %}
+          <p class="card-note">Test card 4242 4242 4242 4242, any future date, any CVC.</p>
+          <button class="btn btn-brand btn-block pay-now" name="pay" value="yes">Pay with Stripe (test)</button>
+        {% else %}
+          <div class="card-fields">
+            {% for field in card %}
+              <label class="mini-field card-{{ field.name }}">{{ field.label }} {{ field }}</label>
+            {% endfor %}
+          </div>
+          <button class="btn btn-brand btn-block pay-now" name="pay" value="yes">Pay ${{ total|floatformat:2|intcomma }} (demo)</button>
+          <details class="fold card-help"><summary>Test cards</summary><p class="card-note">Try 4242 4242 4242 4242 (Visa) or 5555 5555 5555 4444 (Mastercard). 4000 0000 0000 0002 is always declined.</p></details>
+        {% endif %}
+      </form>
+      <a class="view-all" href="{% url 'my_orders' %}">My orders</a>
+    </aside>
+  </div>
+  {% else %}
+    {% url "packages" as packagesUrl %}{% include "sellerpanel/empty.html" with icon="cart" text="Your cart is empty" action_url=packagesUrl action_label="Browse packages" %}
+    <a class="view-all" href="{% url 'my_orders' %}">My orders</a>
+  {% endif %}
+{% endblock %}

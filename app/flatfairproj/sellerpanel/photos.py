@@ -61,6 +61,12 @@ def pending(request):
     return request.session[DRAFTS_KEY][token]["photos"]
 
 
+def checks(request):
+    token = draft(request)
+
+    return request.session[DRAFTS_KEY][token]["checks"]
+
+
 def clearHeld(request, token=None):
     token = token or draft(request)
     drafts = request.session.get(DRAFTS_KEY, {})
@@ -169,6 +175,16 @@ def keepFiles(request, syncResults=True):
             errors.setdefault(room, error)
 
     return errors
+
+
+def doubtfulPhotos(request, rooms):
+    unsure = []
+
+    for room in rooms:
+        if room in pending(request) and reviewReasons(checks(request).get(room)):
+            unsure.append(room)
+
+    return unsure
 
 
 def attachPics(request, listing, rooms, savedPhotos):

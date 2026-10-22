@@ -1,0 +1,21 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Seller centre · FlatFair{% endblock %}
+{% block page_header %}
+  <div class="workspace-bar">
+    <div class="wrap">
+      <nav class="workspace-links" aria-label="Seller workspace">
+<a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>{% include "storefront/ui_icon.html" with name="grid" %} Overview</a>
+<a href="{% url 'my_listings' %}" {% if request.resolver_match.url_name == 'my_listings' %}aria-current="page"{% endif %}>{% include "storefront/ui_icon.html" with name="home" %} My listings</a>
+<a href="{% url 'seller_viewings' %}" {% if request.resolver_match.url_name == 'seller_viewings' %}aria-current="page"{% endif %}>{% include "storefront/ui_icon.html" with name="calendar" %} Offers &amp; viewings</a>
+<a href="{% url 'my_orders' %}" {% if request.resolver_match.url_name == 'my_orders' or request.resolver_match.url_name == 'receipt' %}aria-current="page"{% endif %}>{% include "storefront/ui_icon.html" with name="receipt" %} Orders</a>
+</nav>
+    </div>
+  </div>
+  {% block seller_hero %}{% endblock %}
+{% endblock %}
+{% block content %}
+  <section class="admin-main seller-main">
+  {% block seller %}{% endblock %}
+</section>
+{% endblock %}
+{% block after_main %}{% include 'sellerpanel/next_steps.html' %}{% endblock %}

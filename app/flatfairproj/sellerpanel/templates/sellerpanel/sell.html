@@ -1,0 +1,165 @@
+{% extends 'sellerpanel/seller_base.html' %}
+{% block title %}{% if editing %}Edit your listing{% else %}Sell a flat{% endif %} · FlatFair{% endblock %}
+{% load static %}
+{% load humanize %}
+{% block seller_hero %}
+  {% if not editing %}
+    {% include 'storefront/page_hero.html' with tier="task" title='List your flat' lead='It’s free to list. Register your Intent to Sell on the HDB Flat Portal first.' hide_default_action=True photo="storefront/photos/sell.jpg" photo_width=1600 photo_height=1067 %}
+  {% elif editing.status == 'live' %}
+    {% include 'storefront/page_hero.html' with tier="task" title='Edit your listing' lead='Update any detail or photo. If something looks unusual, our team will check it first.' hide_default_action=True photo="storefront/photos/sell.jpg" photo_width=1600 photo_height=1067 %}
+  {% else %}
+    {% include 'storefront/page_hero.html' with tier="task" title='Fix your listing' lead='Change the details or photos, then send it to our team to check again.' hide_default_action=True photo="storefront/photos/sell.jpg" photo_width=1600 photo_height=1067 %}
+  {% endif %}
+{% endblock %}
+{% block seller %}
+{% if holdNote or staffNote or editing.status == 'rejected' or editing.status == 'hidden' %}
+  <div class="banner sell-hold">
+    {% if editing.status == 'rejected' %}<p>This listing wasn’t approved, so buyers can’t see it.</p>{% elif editing.status == 'hidden' %}<p>Our team took this listing down, so buyers can’t see it.</p>{% elif holdNote %}<p>{{ holdNote }}</p>{% endif %}
+    {% if staffNote %}<p><b>{% if editing.status == 'rejected' or editing.status == 'hidden' %}Why:{% else %}Our team asked:{% endif %}</b> {{ staffNote }}</p>{% endif %}
+  </div>
+{% endif %}
+<nav class="sell-progress" aria-label="Listing sections">
+  <ol><li><a href="#sell-fields">1 Address</a></li><li><a href="#sell-details">2 Details</a></li><li><a href="#sell-price">3 Price</a></li><li><a href="#sell-photos">4 Photos</a></li><li><a href="#sell-rules">5 Rules</a></li></ol>
+</nav>
+<div class="sell-grid">
+  <form class="sell-form" method="post" enctype="multipart/form-data" novalidate action="{% if editing %}{% url 'edit_listing' editing.publicId %}{% else %}{% url 'sell' %}{% endif %}#sell-feedback" data-photo-check="{% url 'photo_check' %}" data-photo-status="{% url 'photo_status' %}">
+    {% csrf_token %}
+    {{ form.revision }}
+    <input type="hidden" name="draftToken" value="{{ draftToken }}">
+    {% if warningKey %}
+      <input type="hidden" name="warningsSeen" value="{{ warningKey }}">
+      <div class="error-summary warn-summary" id="sell-feedback" role="alert" tabindex="-1" aria-labelledby="sell-warnings-title">
+        <h2 id="sell-warnings-title">Please check this before you publish</h2>
+        <ul>
+          {% for field in form %}{% if field.field.warning %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ field.field.warning }}</a></li>{% endif %}{% endfor %}
+        </ul>
+        <p>If your answer is right, submit again and we’ll keep it.</p>
+      </div>
+    {% endif %}
+    {% if form.errors or photosMissing %}
+      <div class="error-summary" id="sell-feedback" role="alert" tabindex="-1" aria-labelledby="sell-errors-title">
+        <h2 id="sell-errors-title">Check these details</h2>
+        <ul>
+          {% for error in form.non_field_errors %}<li><a href="#sell-fields">{{ error }}</a></li>{% endfor %}
+          {% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}
+          {% for slot in photoSlots %}{% if slot.error %}<li><a href="#id_photo_{{ slot.key }}">{{ slot.label }}: {{ slot.error }}</a></li>{% endif %}{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <div class="sell-col">
+    <section class="sell-step" id="sell-fields" tabindex="-1"><h2>1 · Address</h2>
+      <p class="sell-step-lead">Enter your postal code and we’ll check it against HDB records.</p>
+      <div class="row3 addr-fields">
+        {% include 'sellerpanel/sell_field.html' with field=form.postalCode %}
+        {% include 'sellerpanel/sell_field.html' with field=form.block %}
+        {% include 'sellerpanel/sell_field.html' with field=form.town %}
+      </div>
+    </section>
+    <section class="sell-step" id="sell-details" tabindex="-1">
+      <h2>2 · Flat details</h2>
+      <p class="sell-step-lead">Use the details on your HDB papers.</p>
+      <div class="row3">
+        {% include 'sellerpanel/sell_field.html' with field=form.flatType %}
+        {% include 'sellerpanel/sell_field.html' with field=form.flatModel %}
+        {% include 'sellerpanel/sell_field.html' with field=form.floorAreaSqm %}
+        {% include 'sellerpanel/sell_field.html' with field=form.storey %}
+        {% include 'sellerpanel/sell_field.html' with field=form.bedrooms %}
+        {% include 'sellerpanel/sell_field.html' with field=form.bathrooms %}
+        {% include 'sellerpanel/sell_field.html' with field=form.hasBalcony %}
+        {% include 'sellerpanel/sell_field.html' with field=form.leaseCommenceYear %}
+      </div>
+      <details class="fold sell-plan-fold"><summary>Typical layout</summary><div class="fold-body"><figure class="sell-plan-preview" data-plan-preview="{% url 'floor_plan_preview' %}" hidden><img src="data:," alt="" width="1536" height="1024" decoding="async"><figcaption data-plan-caption></figcaption></figure></div></details>
+    </section>
+    <section class="sell-step sell-step--price" id="sell-price" tabindex="-1">
+      <h2>3 · Price</h2>
+      <p class="sell-step-lead">Compare your asking price with similar sales.</p>
+      {% include 'sellerpanel/sell_field.html' with field=form.askingPrice %}
+      <aside class="sell-price-check" data-price-check="{% url 'sell_price_check' %}" aria-live="polite">
+        {% include 'sellerpanel/price_check.html' with asking=form.cleaned_data.askingPrice %}
+      </aside>
+      {% if needsConfirm %}
+        <div class="sell-confirm"{% if not form.errors and not photosMissing %} id="sell-feedback" role="alert" tabindex="-1"{% endif %}>
+          <p>{% if verdict.key == 'typo' %}Your price is far below similar flats. Is it a typo?{% else %}Your price is higher than similar flats sold for.{% endif %} {% if smallPriceGap %}With clear photos and no documents to check, your listing can go live at this price.{% else %}If you keep it, our team will check it before buyers can see your listing.{% endif %}</p>
+          <div class="btn-pair">
+            <button hidden aria-hidden="true" tabindex="-1">Check price</button>
+            <button class="btn btn-brand" name="confirm" value="1">Keep my price</button>
+            <a class="btn btn-ghost" href="#id_askingPrice">Change my price</a>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+    </div>
+    <div class="sell-col">
+    <section class="sell-step" id="sell-photos" tabindex="-1">
+    <h2>4 · Photos</h2>
+    <p class="sell-step-lead">Add the required rooms first, then any optional photos.</p>
+    {% if photosMissing %}<p class="err photo-alert" role="alert">Some photos are missing or couldn’t be used. Please check the rooms marked below.</p>{% endif %}
+    <p class="hint">We check each photo in about 20 seconds. If one is still being checked when you submit, refresh the page and submit again.</p>
+    {% regroup photoSlots by optional as roomGroups %}
+    {% for rooms in roomGroups %}
+      {% if rooms.grouper %}<details class="optional-photos"{% if photosMissing %} open{% endif %}><summary>Optional photos · up to {{ rooms.list|length }} extra</summary>{% endif %}
+    <div class="photo-grid">
+      {% for slot in rooms.list %}
+        <div class="photo-slot{% if slot.url %} has-photo{% endif %}{% if slot.error %} bad{% elif slot.flagged %} flagged{% elif slot.movedNote %} moved{% elif slot.url and not slot.checking and not slot.appealed %} good{% endif %}" data-room="{{ slot.key }}" data-checking="{{ slot.checking|yesno:'true,false' }}"{% if slot.needs %} data-needs="{{ slot.needs }}"{% endif %}>
+          <label class="photo-pick">
+            <img src="{{ slot.url }}" alt="" {% if not slot.url %}hidden{% endif %}>
+            <span class="slot-name">{{ slot.label }} {% if slot.url %}<small class="slot-saved">Photo saved</small>{% else %}<small class="slot-missing">{% if slot.optional %}optional{% else %}Required{% endif %}</small>{% endif %}</span>
+            <span class="slot-action">{% if slot.appealable %}Replace photo{% elif slot.url %}Change photo{% else %}Add photo{% endif %}</span>
+            <input type="file" id="id_photo_{{ slot.key }}" name="photo_{{ slot.key }}" accept="image/jpeg,image/png,image/webp"{% if slot.error %} aria-invalid="true" aria-describedby="photo_{{ slot.key }}_error"{% endif %}>
+          </label>
+          <span class="photo-wait" role="status" aria-live="polite" aria-atomic="true">Checking photo… this can take {{ photoWait }}</span>
+          <span class="photo-status" role="status" aria-live="polite">{% if slot.checking %}Checking… refresh to see the result. <a href="{{ refreshUrl }}">Refresh</a>{% elif slot.appealed %}Our team will check this photo before your listing can go live.{% elif slot.flagged %}Our team wants to check this photo. Replace it if you can.{% elif slot.movedNote %}{{ slot.movedNote }}{% elif slot.checkMessage %}{{ slot.checkMessage }}{% endif %}</span>
+          <button type="submit" class="btn btn-link btn-sm photo-back" name="photoBack" value="{{ slot.key }}" formaction="{% url 'photo_move_back' %}" formnovalidate{% if not slot.movedNote %} hidden{% endif %}>Move it back to {{ slot.label }}</button>
+          <label class="photo-appeal"{% if not slot.appealable %} hidden{% endif %}><input type="checkbox" name="appealPhoto" value="{{ slot.key }}"> This is a photo of the room. Ask our team to check it</label>
+          {% if slot.optional and slot.url %}
+            <label class="slot-remove"><input type="checkbox" name="removePhoto" value="{{ slot.key }}"> Remove {{ slot.label|lower }} photo</label>
+          {% endif %}
+          {% if slot.error %}<span class="err" id="photo_{{ slot.key }}_error">{{ slot.error }}</span>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+      {% if rooms.grouper %}</details>{% endif %}
+    {% endfor %}
+    <details class="fold sell-photo-help"><summary>How your photos are checked</summary><div class="fold-body"><p>We check that your photo shows the right room and look for signs it was made by AI.</p><p>If a photo needs a closer look, our team will check it before your listing goes live.</p></div></details>
+    </section>
+    <section class="sell-step" id="sell-rules" tabindex="-1">
+      <h2>5 · Description and rules</h2>
+      <p class="sell-step-lead">Add a few words and confirm you’re ready to sell.</p>
+      {% include 'sellerpanel/sell_field.html' with field=form.description %}
+      {% include 'sellerpanel/sell_field.html' with field=form.intentToSellDate %}
+      {% if not editing %}
+        <label class="check-field"><input type="checkbox" id="id_ownsFlat" name="ownsFlat" required{% if form.ownsFlat.errors %} aria-invalid="true" aria-describedby="id_ownsFlat_error"{% endif %}{% if form.ownsFlat.value %} checked{% endif %}> {{ form.ownsFlat.label }}</label>
+        {% if form.ownsFlat.errors %}<span class="err" id="id_ownsFlat_error">{{ form.ownsFlat.errors.0 }}</span>{% endif %}
+      {% endif %}
+    <div class="form-foot">
+      {% if editing %}
+        <button class="btn btn-brand">{% if editing.status == 'live' %}Save changes{% else %}Save and send for checking{% endif %}</button>
+        <a class="btn btn-ghost" href="{% url 'seller_listing' editing.publicId %}">Cancel</a>
+        <p class="hint">{% if editing.status == 'live' %}With a fair price and clear photos, your changes show straight away.{% else %}Our team will check it again, usually within 1 working day.{% endif %}</p>
+      {% else %}
+        <button class="btn {% if needsConfirm %}btn-ghost{% else %}btn-brand{% endif %}">Check my price and list</button>
+        <button class="btn btn-ghost" name="action" value="saveDraft" formnovalidate>Save draft</button>
+        <details class="draft-discard">
+          <summary class="btn btn-danger">Discard draft</summary>
+          <p>This removes the saved details and photos for this draft.</p>
+          <button class="btn btn-danger" name="action" value="discardDraft" formnovalidate>Discard this draft</button>
+        </details>
+        <p class="hint">Listings with a fair price and clear photos go live straight away. Buyers can’t see a draft. By listing, you agree to our <a href="{% url 'terms' %}">terms</a>.</p>
+      {% endif %}
+    </div>
+    </section>
+    </div>
+  </form>
+  {% if editing.status == 'live' %}
+    <section class="sell-sold">
+      <h2>Sold this flat?</h2>
+      <form method="post" action="{% url 'toggle_sold' editing.publicId %}" data-ask="Mark Blk {{ editing.block }} {{ editing.town|title }} as sold? Open offers and viewings on it will be closed." data-yes="Mark as sold" data-no="Keep it for sale">{% csrf_token %}<input type="hidden" name="sold" value="1"><button class="btn btn-ghost btn-sm">Mark as sold</button></form>
+    </section>
+  {% endif %}
+</div>
+{{ sizeHints|json_script:"size-hints" }}
+<script src="{% static 'storefront/flat-rules.js' %}" defer></script>
+<script src="{% static 'sellerpanel/price-check.js' %}?v=2" defer></script>
+<script src="{% static 'sellerpanel/listing-photos.js' %}?v=9" defer></script>
+<script src="{% static 'storefront/plan-preview.js' %}" defer></script>
+{% endblock %}

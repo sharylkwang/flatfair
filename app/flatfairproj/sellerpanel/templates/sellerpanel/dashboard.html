@@ -1,0 +1,146 @@
+{% extends 'sellerpanel/seller_base.html' %}
+{% block title %}Seller centre · FlatFair{% endblock %}
+{% load humanize static estate_tags %}
+{% block extra_head %}<script src="{% static 'storefront/role_details.js' %}" defer></script>{% endblock %}
+{% block seller %}
+  <header class="seller-head">
+    <div>
+      <h1>{{ greeting }}</h1>
+      <p class="dashboard-status" data-dashboard-status>{{ dashboardStatus }}</p>
+    </div>
+  </header>
+  <div class="role-page seller-dashboard">
+    {% url "seller_viewings" as viewingsUrl %}
+    {% url "my_listings" as listingsUrl %}
+    {% url "my_orders" as ordersUrl %}
+    {% url "sell" as sellUrl %}
+    {% url "packages" as packagesUrl %}
+    {% with taskSlice=savedDraft|yesno:":2,:3" moreSlice=savedDraft|yesno:"2:,3:" draftWhen=savedDraft.updatedAt|date:"j M, g:i a" %}
+    <section class="seller-sec" aria-labelledby="seller-next-title">
+      <h2 id="seller-next-title">{% if attentionRows or savedDraft %}Needs your attention{% else %}Next step{% endif %}</h2>
+      <div class="calm-task-list seller-tasks">
+        {% for next in attentionRows|slice:taskSlice %}
+          {% if next.icon == 'offer' and dashboardOffers|length == 1 %}
+            {% with offer=dashboardOffers.0 %}{% with amount=offer.amount|floatformat:0|intcomma who=offer.buyer|buyer_name offerId=offer.pk|stringformat:"s" where=offer.listing.town|title %}
+              {% include "storefront/ui/task_card.html" with title="$"|add:amount|add:" offer from "|add:who text="Blk "|add:offer.listing.block|add:" "|add:where icon="offer" action_url=viewingsUrl|add:"#offer-"|add:offerId action_label="Review offer" flat=None %}
+            {% endwith %}{% endwith %}
+          {% else %}
+            {% include "storefront/ui/task_card.html" with title=next.title text=next.meta icon=next.icon action_url=next.url action_label=next.action flat=None %}
+          {% endif %}
+        {% endfor %}
+        {% if savedDraft %}
+          {% include "storefront/ui/task_card.html" with title="Continue your draft" text="Saved "|add:draftWhen icon="home" action_url=sellUrl action_label="Continue draft" flat=None %}
+        {% elif not attentionRows and mainFlat %}
+          {% include "storefront/ui/task_card.html" with title="You’re all caught up" text=dashboardStatus icon="check" action_url=listingsUrl action_label="Manage listing" flat=None %}
+        {% elif not attentionRows %}
+          {% include "storefront/ui/task_card.html" with title="List your flat for free" text="It takes five short steps, and you can save a draft." icon="home" action_url=sellUrl action_label="List my flat free" flat=None %}
+        {% endif %}
+      </div>
+    </section>
+    <section class="seller-sec" aria-labelledby="seller-flats-title">
+      <div class="shop-head"><h2 id="seller-flats-title">My flats</h2>{% if rows %}<a href="{{ listingsUrl }}">See all flats</a>{% endif %}</div>
+      {% if rows %}
+        <div class="s-list">
+          {% for r in rows|slice:":3" %}{% with flat=r.flat %}{% include "sellerpanel/listing_row.html" %}{% endwith %}{% endfor %}
+        </div>
+      {% elif not savedDraft %}
+        <p class="seller-none">No flats listed yet.</p>
+      {% else %}
+        <p class="seller-none">No flats listed yet. Your draft is saved.</p>
+      {% endif %}
+      {% if rows %}{% include "storefront/ui/summary_strip.html" with value_one=liveCount label_one="Live listings" value_two=openOffers label_two="Open offers" value_three=upcomingCount label_three="Viewings booked" %}{% endif %}
+    </section>
+    <div class="seller-folds">
+      {% if rows %}
+      <details class="fold" id="week-viewings">
+        <summary>Viewings this week <span class="fold-hint">{{ weekAgenda|length }} planned</span></summary>
+        <div class="fold-body">
+          <div class="s-list">{% for slot in weekAgenda %}
+            <article class="s-row">
+              <div class="s-row-main"><h3>{{ slot.startsAt|date:"l j M, g:i" }} {{ slot.startsAt|date:"A"|lower }}</h3>{% include "sellerpanel/slot_status.html" %}<p class="s-meta">Blk {{ slot.listing.block }} {{ slot.listing.town|title }} · {{ slot.confirmedCount }} of {{ slot.capacity }} place{{ slot.capacity|pluralize }} confirmed{% if slot.waitingCount %} · {{ slot.waitingCount }} request{{ slot.waitingCount|pluralize }} waiting for your reply{% endif %}{% if slot.used >= slot.capacity %} · No places left{% endif %}</p></div>
+              <div class="s-row-end"><a class="btn btn-ghost btn-sm" href="{{ viewingsUrl }}#slot-{{ slot.pk }}">View bookings <span class="visually-hidden">for {{ slot.startsAt|date:"l j M" }}</span></a></div>
+            </article>
+          {% empty %}<p class="seller-none">No viewings this week.</p>{% endfor %}</div>
+          <a class="view-all" href="{{ viewingsUrl }}{% if weekAgenda %}#viewings-tab">All viewings{% else %}#slot-form">Add a viewing time{% endif %}</a>
+        </div>
+      </details>
+      <details class="fold" id="recent-orders">
+        <summary>Recent orders <span class="fold-hint">{{ dashboardOrders|length }} latest</span></summary>
+        <div class="fold-body">
+          <div class="s-list">{% for order in dashboardOrders %}{% include "sellerpanel/order_row.html" %}{% empty %}<p class="seller-none">No orders yet.</p>{% endfor %}</div>
+          <a class="view-all" href="{% if dashboardOrders %}{{ ordersUrl }}">All orders{% else %}{{ packagesUrl }}">See packages{% endif %}</a>
+        </div>
+      </details>
+      {% endif %}
+      <details class="fold role-more" id="seller-more">
+        <summary>More numbers</summary>
+        <div class="fold-body">
+          {% for row in attentionRows|slice:moreSlice %}<article class="attention-row"><div><h3>{{ row.title }}</h3><p>{{ row.meta }}</p></div><a class="btn btn-ghost btn-sm" href="{{ row.url }}">{{ row.action }}</a></article>{% endfor %}
+          <section id="dashboard-savings" tabindex="-1">
+            <h3>Savings so far · ${{ saved|floatformat:0|intcomma }} vs an agent</h3>
+            <p class="meta">That’s an agent’s 2% fee plus GST on the prices you sold for, minus the ${{ spent|floatformat:0|intcomma }} you spent here.</p>
+          </section>
+          <div class="hero-task-actions">{% if mainFlat %}<a class="btn btn-ghost btn-sm" href="{% url 'listing_detail' mainFlat.publicId %}">View my listing</a>{% else %}<a class="btn btn-ghost btn-sm" href="{% url 'valuation' %}">Price check</a>{% endif %}{% if canListAnother and mainFlat %}<a class="btn btn-ghost btn-sm" href="{{ sellUrl }}">List another flat</a>{% endif %}</div>
+        </div>
+      </details>
+      <details class="fold" id="selling-steps"{% if not mainFlat %} open{% endif %}>
+        <summary>Your selling steps · {{ stepsDone }} of {{ steps|length }} done</summary>
+        <div class="fold-body">
+          <progress class="selling-progress" max="{{ steps|length }}" value="{{ stepsDone }}" aria-label="Selling steps completed">{{ stepsDone }} of {{ steps|length }}</progress>
+          {% if stepChoices %}
+            <nav class="selling-steps-flats" aria-label="Show the steps for another flat"><span>Steps for</span>{% for choice in stepChoices %}<a href="?flat={{ choice.publicId }}#selling-steps"{% if choice.pk == mainFlat.pk %} aria-current="true"{% endif %}>Blk {{ choice.block }} {{ choice.town|title }}</a>{% endfor %}</nav>
+          {% elif mainFlat %}
+            <p class="selling-steps-flat">For your flat at {% if mainFlat.block %}Blk {{ mainFlat.block }} {% endif %}{{ mainFlat.town|title }}.</p>
+          {% endif %}
+          <ol class="journey selling-journey progress-journey" aria-label="Your selling steps" role="list">
+            {% for s in steps %}
+              <li class="{{ s.state }}"{% if s.state == 'current' %} aria-current="step"{% endif %}>
+                <span class="tick" aria-hidden="true">{% if s.done %}{% include 'storefront/ui_icon.html' with name='check' %}{% else %}{{ forloop.counter }}{% endif %}</span>
+                <span><a href="{% if s.done and forloop.first and mainFlat %}{% url 'seller_listing' mainFlat.publicId %}{% else %}{{ s.href }}{% endif %}">{{ s.text }}</a>{% if s.done %}<small class="visually-hidden">Done</small>{% elif s.state == 'current' %}<small>Do this next</small>{% else %}<small class="visually-hidden">Later</small>{% endif %}</span>
+              </li>
+            {% endfor %}
+          </ol>
+          <a class="view-all" href="{{ packagesUrl }}">See optional packages</a>
+        </div>
+      </details>
+      <details class="fold" id="seller-packages">
+        <summary>Packages and services <span class="fold-hint">{{ packages|length }} active</span></summary>
+        <div class="fold-body">
+          {% include 'sellerpanel/package_recommendation.html' %}
+          <section id="dashboard-packages" tabindex="-1">
+            <h3>My packages · {{ packages|length }} active</h3>
+            <div class="rows">
+              {% for package in packages|slice:":3" %}
+                <div class="row"><div><b>{{ package.name }}</b><small>Blk {{ package.listing.block }} {{ package.listing.town|title }} · {{ package.status }}{% if package.startedAt %} · Started on {{ package.startedAt|date:'j M Y' }}{% endif %}</small></div><a class="btn btn-ghost btn-sm" href="{% url 'receipt' package.order.pk %}">View receipt</a></div>
+              {% empty %}
+                <p class="seller-none">No active packages. <a href="{{ packagesUrl }}">See packages</a></p>
+              {% endfor %}
+            </div>
+          </section>
+          <section id="dashboard-services" tabindex="-1">
+            <h3>My services · {{ services|length }} purchased</h3>
+            <div class="rows">
+              {% for s in services %}
+                <div class="row"><div><b>{{ s.name }}</b><small>Order #{{ s.order.pk }} · {{ s.order.createdAt|date:"j M" }}</small></div><span class="st st-{{ s.order.status }}">{{ s.step }}</span></div>
+              {% empty %}
+                <p class="seller-none">No services yet. <a href="{{ packagesUrl }}">Add services</a></p>
+              {% endfor %}
+            </div>
+          </section>
+          <a class="view-all" href="{{ ordersUrl }}">All orders</a>
+        </div>
+      </details>
+      {% latest_notices user as notices %}
+      {% if notices %}
+        <details class="fold" id="seller-news">
+          <summary>What’s new <span class="fold-hint">{{ notices|length }} update{{ notices|length|pluralize }}</span></summary>
+          <div class="fold-body">
+            <div class="rows">{% for notice in notices %}<a class="row link" href="{{ notice.url }}"><div><b>{{ notice.get_kind_display }}</b><p>{{ notice.text }}</p><small>{{ notice.createdAt|naturaltime }}</small></div></a>{% endfor %}</div>
+            <a class="view-all" href="{% url 'notifications' %}">All notifications</a>
+          </div>
+        </details>
+      {% endif %}
+    </div>
+    {% endwith %}
+  </div>
+{% endblock %}
