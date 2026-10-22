@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 .vscode/
 *.pyc
+app/flatfairproj/assets/ml/clip
+app/flatfairproj/assets/ml/depth
+app/flatfairproj/assets/ml/vision
+app/flatfairproj/assets/ml/gpu_disabled_until.txt
 .DS_Store
 
 *.sqlite3-journal
