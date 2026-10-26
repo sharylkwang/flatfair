@@ -199,6 +199,71 @@ WITHDRAW_REASONS = [
     ("other", "Something else"),
 ]
 
+ACTIVE_BOOKINGS = ("requested", "confirmed")
+RATE_PACKAGE_AFTER_DAYS = 7
+
+
+def roomOrder():
+    roomCases = [When(room=room, then=Value(index)) for room, index in ROOM_ORDER.items()]
+
+    return Case(*roomCases, default=Value(len(ROOM_ORDER)))
+
+
+def picsByRoom(lookup="photos"):
+    photos = ListingPhoto.objects.defer("embedding").order_by(roomOrder(), "pk")
+
+    return Prefetch(lookup, queryset=photos, to_attr="roomPhotos")
+
+
+def withUsed(slots):
+    return slots.annotate(
+        usedCount=Count("bookings", filter=Q(bookings__status__in=ACTIVE_BOOKINGS))
+    )
+
+
+def publicQ(prefix=""):
+    live = Q(**{prefix + "status": "live"})
+    soldLive = Q(**{prefix + "status": "sold", prefix + "statusBeforeSold": "live"})
+    sellerOn = Q(**{prefix + "seller__is_active": True})
+
+    return (live | soldLive) & sellerOn
+
+
+LISTING_DETAILS = {
+    "town",
+    "block",
+    "postalCode",
+    "flatType",
+    "flatModel",
+    "floorAreaSqm",
+    "storey",
+    "leaseCommenceYear",
+    "bedrooms",
+    "bathrooms",
+    "hasBalcony",
+    "askingPrice",
+    "description",
+    "intentToSellDate",
+}
+
+
+class ResourceCacheEntry(models.Model):
+    cacheKey = models.CharField(max_length=255, primary_key=True, db_column="cache_key")
+    value = models.TextField()
+    expires = models.DateTimeField(db_index=True)
+
+
+class ListingQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        if LISTING_DETAILS.intersection(kwargs):
+            kwargs["revision"] = F("revision") + 1
+
+        return super().update(**kwargs)
+
+    def public(self):
+        return self.filter(publicQ())
+
+
 class Listing(models.Model):
     objects = ListingQuerySet.as_manager()
     seedKey = models.CharField(max_length=100, unique=True, null=True, blank=True)
@@ -400,6 +465,16 @@ def photoPath(photo, filename):
     return f"listings/{photo.listing.publicId}/{photo.room}{ending}"
 
 
+class ListingPhotoQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        if {"image", "room", "listing", "listing_id"}.intersection(kwargs):
+            kwargs.update(staffReviewedBy=None, staffReviewedAt=None, staffReviewedRevision=None)
+
+        kwargs.setdefault("updatedAt", timezone.now())
+
+        return super().update(**kwargs)
+
+
 class ListingPhoto(models.Model):
     objects = ListingPhotoQuerySet.as_manager()
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="photos")
@@ -514,6 +589,41 @@ class Product(models.Model):
         return self.name
 
 
+class Payment(models.Model):
+    METHOD_CHOICES = [("stripe", "Stripe (test)"), ("demo", "Demo card")]
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("paid", "Paid"),
+        ("failed", "Failed"),
+        ("refunded", "Refunded"),
+        ("partly_refunded", "Partly refunded"),
+    ]
+
+    seller = models.ForeignKey(User, on_delete=models.PROTECT, related_name="payments")
+    method = models.CharField(max_length=10, choices=METHOD_CHOICES)
+    providerSessionId = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    paymentIntentId = models.CharField(max_length=255, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default="sgd")
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="pending")
+    cardBrand = models.CharField(max_length=30, blank=True)
+    cardLast4 = models.CharField(max_length=4, blank=True)
+    checkoutToken = models.CharField(max_length=64, unique=True)
+    snapshot = models.JSONField(default=dict)
+    needsAttention = models.BooleanField(default=False)
+    createdAt = models.DateTimeField(default=timezone.now)
+    paidAt = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def reference(self):
+        return f"FF-P{self.pk}"
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gte=0), name="payment_nonnegative_amount")
+        ]
+
+
 class Order(models.Model):
     STATUS_CHOICES = [
         ("paid", "Paid"),
@@ -571,6 +681,45 @@ class Order(models.Model):
         return True
 
 
+class Refund(models.Model):
+    STATUS_CHOICES = [("pending", "Pending"), ("succeeded", "Succeeded"), ("failed", "Failed")]
+    order = models.ForeignKey(
+        Order, on_delete=models.PROTECT, related_name="refunds", null=True, blank=True
+    )
+    payment = models.ForeignKey(
+        Payment, on_delete=models.PROTECT, related_name="refunds", null=True, blank=True
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    providerRefundId = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="pending")
+    createdAt = models.DateTimeField(default=timezone.now)
+    staff = models.ForeignKey(User, on_delete=models.PROTECT, related_name="refunds")
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gte=0), name="refund_nonnegative_amount"),
+            models.UniqueConstraint(
+                fields=["order"],
+                condition=Q(status__in=["pending", "succeeded"]),
+                name="one_open_or_successful_refund",
+            ),
+            models.CheckConstraint(
+                condition=Q(order__isnull=False, payment__isnull=True)
+                | Q(order__isnull=True, payment__isnull=False),
+                name="refund_exactly_one_target",
+            ),
+            models.UniqueConstraint(
+                fields=["payment"],
+                condition=Q(order__isnull=True, status__in=["pending", "succeeded"]),
+                name="one_unplaced_payment_refund",
+            ),
+        ]
+
+
+def deliveryPath(item, filename):
+    return f"deliveries/{item.order_id}/{os.path.basename(filename)}"
+
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.RESTRICT, related_name="orderItems")
@@ -612,6 +761,36 @@ class OrderItem(models.Model):
         return timezone.now() - self.order.createdAt >= timedelta(days=RATE_PACKAGE_AFTER_DAYS)
 
 
+class Review(models.Model):
+    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reviews")
+    orderItem = models.OneToOneField(OrderItem, on_delete=models.CASCADE, related_name="review")
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    comment = models.CharField(max_length=500, blank=True)
+    hidden = models.BooleanField(default=False)
+    createdAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(rating__gte=1, rating__lte=5), name="review_rating_one_to_five"
+            )
+        ]
+
+    @property
+    def firstName(self):
+        name = self.seller.first_name.strip()
+
+        if not name:
+            return "A seller"
+
+        if self.seller.last_name.strip():
+            return name
+
+        return name.split()[0]
+
+
 class Collection(models.Model):
     seedKey = models.CharField(max_length=100, unique=True, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="collections")
@@ -627,6 +806,19 @@ class Collection(models.Model):
         return self.name
 
 
+class FlatView(models.Model):
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="flatViews")
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="buyerViews")
+    count = models.PositiveIntegerField(default=1)
+    firstViewedAt = models.DateTimeField(default=timezone.now)
+    lastViewedAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["buyer", "listing"], name="flat_view_once_per_buyer")
+        ]
+
+
 class SavedListing(models.Model):
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="items")
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="savedBy")
@@ -638,6 +830,246 @@ class SavedListing(models.Model):
                 fields=["collection", "listing"], name="save_once_per_collection"
             )
         ]
+
+
+class SavedSearch(models.Model):
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="savedSearches")
+    name = models.CharField(max_length=200)
+    queryParams = models.JSONField(default=dict)
+    createdAt = models.DateTimeField(default=timezone.now)
+    lastNotifiedAt = models.DateTimeField(null=True, blank=True)
+    isActive = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+
+        from .search import searchName
+        from .search import tidySearch
+
+        self.queryParams = tidySearch(self.queryParams)
+        self.name = searchName(self.queryParams)
+
+        if not self.queryParams:
+            raise ValidationError("Choose at least one filter before saving a search.")
+
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | {"name", "queryParams"}
+
+        with transaction.atomic():
+            buyer = lock_user(self.buyer_id)
+
+            if buyer is None or not hasRole(buyer, "buyer"):
+                raise ValidationError("Only buyers can save searches.")
+
+            if type(self).objects.filter(buyer=buyer).exclude(pk=self.pk).count() >= 5:
+                raise ValidationError("You can save up to 5 searches. Delete one to save another.")
+
+            super().save(*args, **kwargs)
+
+    @property
+    def searchUrl(self):
+        from urllib.parse import urlencode
+
+        return reverse("listings") + "?" + urlencode(self.queryParams)
+
+
+class SearchAlert(models.Model):
+    savedSearch = models.ForeignKey(SavedSearch, on_delete=models.CASCADE, related_name="alerts")
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="searchAlerts")
+    kind = models.CharField(
+        max_length=20, choices=[("new_match", "New match"), ("price_drop", "Price drop")]
+    )
+    askingPrice = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["savedSearch", "listing", "kind", "askingPrice"],
+                name="search_alert_once_per_price",
+            )
+        ]
+
+
+class Offer(models.Model):
+    seedKey = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    STATUSES = [
+        (status, status.title())
+        for status in ("pending", "accepted", "declined", "withdrawn", "countered")
+    ]
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="offers")
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="offers")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    message = models.CharField(max_length=300, blank=True)
+    reply = models.CharField(max_length=300, blank=True)
+    status = models.CharField(max_length=10, choices=STATUSES, default="pending")
+    counterAmount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    hasHfe = models.BooleanField(default=False)
+    createdAt = models.DateTimeField(default=timezone.now)
+    respondedAt = models.DateTimeField(null=True, blank=True)
+    priceSteps = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(amount__gt=0), name="offer_positive_amount"),
+            models.CheckConstraint(
+                condition=Q(amount__lte=3000000, amount=Floor(F("amount"))),
+                name="offer_whole_amount_limit",
+            ),
+            models.CheckConstraint(
+                condition=Q(counterAmount__isnull=True)
+                | (
+                    Q(status__in=("countered", "accepted", "declined", "withdrawn"))
+                    & Q(
+                        counterAmount__gt=F("amount"),
+                        counterAmount__lte=3000000,
+                        counterAmount=Floor(F("counterAmount")),
+                    )
+                ),
+                name="offer_valid_counter_history",
+            ),
+            models.CheckConstraint(
+                condition=Q(status="pending") | Q(respondedAt__isnull=False),
+                name="offer_response_timestamp",
+            ),
+            models.CheckConstraint(
+                condition=~Q(status="countered")
+                | (Q(counterAmount__isnull=False) & Q(counterAmount__gt=0)),
+                name="countered_offer_positive_counter",
+            ),
+            models.UniqueConstraint(
+                fields=["listing", "buyer"],
+                condition=Q(status__in=("pending", "countered", "accepted")),
+                name="one_active_offer_per_buyer_listing",
+            ),
+            models.UniqueConstraint(
+                fields=["listing"],
+                condition=Q(status="accepted"),
+                name="one_accepted_offer_per_listing",
+            ),
+        ]
+
+    def clean(self):
+        if self.status == "countered" and self.counterAmount is None:
+            raise ValidationError(
+                {"counterAmount": "Enter a positive counter amount for a countered offer."}
+            )
+
+        costError = "Enter a positive amount between half the asking price and $3,000,000."
+
+        for value in (self.amount, self.counterAmount):
+            if value is None:
+                continue
+
+            if not value.is_finite() or value <= 0 or value > Decimal("3000000"):
+                raise ValidationError(costError)
+
+            if value != value.to_integral_value():
+                raise ValidationError(costError)
+
+            if not self.pk and value < Decimal(self.listing.askingPrice) / 2:
+                raise ValidationError(costError)
+
+        if self.counterAmount is not None:
+            tooLow = self.counterAmount <= self.amount
+
+            if tooLow or self.counterAmount > min(self.listing.askingPrice, 3000000):
+                raise ValidationError(
+                    "Counter must be higher than the buyer’s offer and no higher than the asking price."
+                )
+
+        if self.buyer_id == self.listing.seller_id:
+            raise ValidationError("You cannot offer on your own listing.")
+
+    @property
+    def askingPercent(self):
+        return round(float(self.amount) / self.listing.askingPrice * 100, 1)
+
+
+class ViewingSlot(models.Model):
+    seedKey = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    removed = models.BooleanField(default=False)
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="viewingSlots")
+    startsAt = models.DateTimeField()
+    capacity = models.PositiveSmallIntegerField(default=2)
+    reminderSentAt = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(capacity__gte=1), name="viewing_positive_capacity"),
+            models.UniqueConstraint(
+                fields=["listing", "startsAt"], name="one_slot_per_listing_time"
+            ),
+        ]
+
+    def clean(self):
+        if self.startsAt and timezone.is_naive(self.startsAt):
+            raise ValidationError("Viewing times must include a timezone.")
+
+        if self.capacity is not None and self.capacity < 1:
+            raise ValidationError("Capacity must be at least one.")
+
+    @property
+    def used(self):
+        if hasattr(self, "usedCount"):
+            return self.usedCount
+
+        return self.bookings.filter(status__in=ACTIVE_BOOKINGS).count()
+
+    @property
+    def capacityDots(self):
+        return "●" * min(self.used, self.capacity) + "○" * max(0, self.capacity - self.used)
+
+    @property
+    def placesLeft(self):
+        return max(0, self.capacity - self.used)
+
+
+class ViewingBooking(models.Model):
+    seedKey = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    slot = models.ForeignKey(ViewingSlot, on_delete=models.CASCADE, related_name="bookings")
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="viewingBookings")
+    status = models.CharField(
+        max_length=10,
+        choices=[
+            (status, status.title()) for status in ("requested", "confirmed", "cancelled", "done")
+        ],
+        default="requested",
+    )
+    createdAt = models.DateTimeField(default=timezone.now)
+    reminderSentAt = models.DateTimeField(null=True, blank=True)
+    cancelledBy = models.CharField(max_length=6, blank=True)
+    cancelReason = models.CharField(max_length=12, blank=True)
+    cancelNote = models.CharField(max_length=200, blank=True)
+    cancelledAt = models.DateTimeField(null=True, blank=True)
+    cancelCounts = models.BooleanField(default=False)
+    movedFromStatus = models.CharField(max_length=10, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["slot", "buyer"], name="one_booking_per_buyer_slot")
+        ]
+
+    @property
+    def statusLabel(self):
+        if self.status in ("confirmed", "requested") and self.slot.startsAt <= timezone.now():
+            return "Done" if self.status == "confirmed" else "Not confirmed"
+
+        return self.get_status_display()
+
+
+class Sale(models.Model):
+    month = models.DateField()
+    town = models.CharField(max_length=30)
+    flatType = models.CharField(max_length=20)
+    block = models.CharField(max_length=10)
+    street = models.CharField(max_length=60)
+    storeyRange = models.CharField(max_length=12)
+    floorAreaSqm = models.FloatField()
+    flatModel = models.CharField(max_length=40)
+    leaseCommenceYear = models.PositiveSmallIntegerField()
+    price = models.PositiveIntegerField()
+
+    class Meta:
+        indexes = [models.Index(fields=["town", "flatType", "-month"])]
 
 
 class OfferMessage(models.Model):
@@ -699,5 +1131,62 @@ class DealStep(models.Model):
     class Meta:
         ordering = ["position"]
         constraints = [models.UniqueConstraint(fields=["deal", "key"], name="one_step_per_deal")]
+
+
+class ActivityNotice(models.Model):
+    KINDS = [
+        ("offer_new", "New offer"),
+        ("offer_countered", "New price"),
+        ("offer_accepted", "Price agreed"),
+        ("offer_declined", "Offer declined"),
+        ("offer_declined_auto", "Offer below the minimum"),
+        ("deal_step", "Deal step done"),
+        ("price_coach", "Price suggestion"),
+        ("offer_buyer_reply", "Buyer replied"),
+        ("photo_refused", "Photo removed"),
+        ("saved_price_drop", "Saved flat: lower price"),
+        ("saved_under_offer", "Saved flat: under offer"),
+        ("saved_sold", "Saved flat: sold"),
+        ("offer_reopened", "Acceptance undone"),
+        ("viewing_asked", "Viewing time asked for"),
+        ("viewing_times_added", "New viewing times"),
+        ("review_hidden", "Review hidden"),
+        ("post_hidden", "Post hidden"),
+        ("listing_edited", "Listing changed by our team"),
+        ("deal_due", "Deal step due"),
+        ("offer_withdrawn", "Offer withdrawn"),
+        ("offer_reply", "Seller replied"),
+        ("viewing_booked", "Viewing requested"),
+        ("viewing_cancelled", "Viewing cancelled"),
+        ("viewing_confirmed", "Viewing confirmed"),
+        ("viewing_reminder", "Viewing reminder"),
+        ("listing_taken_down", "Listing taken down"),
+        ("listing_approved", "Listing approved"),
+        ("listing_relisted", "Your flat is live again"),
+        ("listing_rejected", "Listing not approved"),
+        ("listing_documents", "Documents needed"),
+        ("service_delivered", "Service done"),
+        ("support_reply", "Support replied"),
+        ("order_refunded", "Order refunded"),
+        ("order_completing", "Order completing soon"),
+        ("payment_update", "Payment update"),
+        ("community_reply", "New reply"),
+        ("search_match", "Search match"),
+        ("search_price_drop", "Price dropped"),
+        ("offer_suggested", "Buyer suggested a price"),
+        ("viewing_moved", "Viewing moved"),
+        ("flat_paused", "Flat paused"),
+        ("flat_resumed", "Flat back on sale"),
+        ("flat_withdrawn", "Flat taken off sale"),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="activity_notices")
+    kind = models.CharField(max_length=20, choices=KINDS)
+    text = models.CharField(max_length=200)
+    url = models.CharField(max_length=200)
+    read = models.BooleanField(default=False)
+    createdAt = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "read"])]
 
 

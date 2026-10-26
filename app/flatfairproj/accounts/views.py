@@ -1,3 +1,65 @@
+import hmac
+import logging
+import secrets
+import time
+from datetime import timedelta
+from hashlib import sha256
+from urllib.parse import urlencode
+
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
+from django.db.models import F
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.cache import never_cache
+
+from storefront.models import lock_user, currentMode, Profile
+from storefront.forms import RegisterForm, emailTaken
+from .forms import CodeForm, EmailForm, NewPasswordForm, tidyEmail
+from .models import ResetCode, ResetIssuanceLock
+from accounts.tokens import PASSWORD_RULES, PENDING_KEY, cache, cache as authCache, addTry
+from .turnstile import CHECK_FAILED, formPasses
+
+def mailBody(template, user, context):
+    if template == "reset_code":
+        return {
+            "heading": "Reset your password",
+            "lines": ["Enter this code on the reset page to choose a new password."],
+            "code": context["code"],
+            "notes": [
+                f"The code expires in {context['minutes']} minutes, and only the newest code works.",
+                "Didn’t ask for this? You can ignore this email. Your password stays the same.",
+            ],
+            "preview": f"Your reset code is {context['code']}",
+        }
+
+    if template == "password_changed":
+        return {
+            "heading": "Your password was changed",
+            "lines": [
+                f"The password for {user.email} was changed on {context['when']:%-d %b %Y, %-I:%M %p} (Singapore time). Anyone signed in on another device has been signed out."
+            ],
+            "button": {"label": "This wasn’t me", "url": context["resetUrl"]},
+            "notes": ["If you made this change, you don’t need to do anything."],
+        }
+
+    return {
+        "heading": "Your sign-in email was changed",
+        "lines": ["You now sign in to FlatFair with your new email."],
+        "rows": [
+            ("Old email", user.email, False),
+            ("New email", context["newEmail"], True),
+        ],
+        "button": {"label": "This wasn’t me", "url": context["supportUrl"]},
+        "notes": ["If you made this change, you don’t need to do anything."],
+    }
+
+
 def homeFor(user):
     if user.is_staff:
         return reverse("admin_overview")
