@@ -133,6 +133,37 @@ def flatIssues(flatType, flatModel, area):
     return issues
 
 
+def sizeHint(flatType, area):
+    from storefront.templatetags.estate_tags import flat_label
+
+    rule = FLAT_RULES.get(flatType)
+
+    if rule is None or area is None:
+        return ""
+
+    low_area, top_area = rule["sqm"]
+
+    if not low_area <= area <= top_area:
+        return f"{flat_label(flatType)} flats are usually {low_area} to {top_area} sqm. Check your HDB papers or change the flat type."
+
+    return ""
+
+
+def sizeHints():
+    from storefront.templatetags.estate_tags import flat_label
+
+    hints = {}
+
+    for flatType, rule in FLAT_RULES.items():
+        hints[flatType] = {
+            "label": flat_label(flatType),
+            "lo": rule["sqm"][0],
+            "hi": rule["sqm"][1],
+        }
+
+    return hints
+
+
 def counts(bedrooms, bathrooms, hasBalcony):
     return {"bed": bedrooms or 0, "bath": bathrooms or 0, "balcony": 1 if hasBalcony else 0}
 
