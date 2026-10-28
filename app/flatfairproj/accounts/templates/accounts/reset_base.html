@@ -1,0 +1,15 @@
+{% extends 'storefront/base.html' %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form" method="post" novalidate>
+      {% csrf_token %}
+      <ol class="reset-steps" aria-label="Step {{ step }} of 3">
+        <li{% if step >= 1 %} class="is-done"{% endif %}{% if step == 1 %} aria-current="step"{% endif %}>Email</li>
+        <li{% if step >= 2 %} class="is-done"{% endif %}{% if step == 2 %} aria-current="step"{% endif %}>Code</li>
+        <li{% if step >= 3 %} class="is-done"{% endif %}{% if step == 3 %} aria-current="step"{% endif %}>New password</li>
+      </ol>
+      {% block card %}{% endblock %}
+    </form>
+  </div>
+{% endblock %}

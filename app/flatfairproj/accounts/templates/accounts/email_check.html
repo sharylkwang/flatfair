@@ -1,0 +1,21 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Check your email · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form" method="post" novalidate>
+      {% csrf_token %}
+      <h1>{% if changing %}Confirm your new email{% else %}Check your email{% endif %}</h1>
+      {% if signingIn %}<p class="hint">You’ll be signed in once the code is checked.</p>{% endif %}
+      <p class="hint">We sent a 6-digit code to <strong>{{ email }}</strong>. It works for 15 minutes.{% if changing %} Your email stays {{ user.email }} until you enter it.{% endif %}</p>
+      {% if demoCode %}<div class="banner" role="status">Local development code: {{ demoCode }}</div>{% endif %}
+      {% if form.non_field_errors %}<p class="err" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+      <label class="mini-field">6-digit code<input class="reset-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus{% if form.code.errors %} aria-invalid="true" aria-describedby="code-error"{% endif %}>{% if form.code.errors %}<span class="err" id="code-error" role="alert">{{ form.code.errors.0 }}</span>{% endif %}</label>
+      <button class="btn btn-brand btn-block">Check code</button>
+      <p class="reset-resend">
+        <button class="link-button" name="resend" value="1" formnovalidate{% if resendIn %} disabled{% endif %} data-resend-button data-resend-seconds="{{ resendIn }}">Send a new code{% if resendIn %} in <span data-resend-countdown>{{ resendIn }}</span>s{% endif %}</button>
+        {% if signingIn %}<a href="{% url 'signin' %}">Use another account</a>{% elif changing %}<button class="link-button" name="cancel" value="1" formnovalidate>Keep my old email</button>{% else %}<a href="{% url 'account_settings' %}#account-email">Change email</a>{% endif %}
+      </p>
+    </form>
+  </div>
+{% endblock %}

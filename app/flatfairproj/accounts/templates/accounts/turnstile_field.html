@@ -1,0 +1,8 @@
+{% if turnstileOn %}
+  <div class="human-check" data-human-check data-sitekey="{{ turnstileKey }}"{% if auto %} data-auto{% endif %}{% if onSubmit %} data-on-submit{% endif %}>
+    <div class="human-inner">
+      <p class="human-note" role="status">Please tick the box to continue.</p>
+      <div class="human-box cf-turnstile"></div>
+    </div>
+  </div>
+{% endif %}

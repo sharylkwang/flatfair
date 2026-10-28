@@ -1,0 +1,19 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Quick check · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form human-page" method="post" action="{% url 'human_check' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <input type="hidden" name="force" value="1">
+      <span class="site-logo human-logo">{% include 'storefront/logo.html' %}</span>
+      <h1>Just a moment</h1>
+      {% if error %}<p class="err" role="alert">{{ error }}</p>{% else %}<p class="hint">We’re making sure you’re a real person. You’ll be on your way in a second.</p>{% endif %}
+      {% include 'accounts/turnstile_field.html' with auto=True %}
+      <button class="btn btn-brand btn-block">{% if error %}Try again{% else %}Continue{% endif %}</button>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "storefront/base.html" %}
+{% block title %}Account settings · FlatFair{% endblock %}
+{% block page_header %}
+  {% include "storefront/page_hero.html" with tier="task" title="Account settings" lead="Open the part you want to change." hide_default_action=True %}
+{% endblock %}
+{% block content %}
+  <div class="account-settings">
+  {% if errorForm.errors %}
+    <div class="error-summary" id="account-feedback" role="alert" tabindex="-1" aria-labelledby="account-errors-title">
+      <h2 id="account-errors-title">Check these details</h2>
+      <ul>
+        {% for error in errorForm.non_field_errors %}<li><a href="#{{ errorTarget }}">{{ error }}</a></li>{% endfor %}
+        {% for field in errorForm %}{% for error in field.errors %}<li><a href="#{% if blockedAction %}account-password{% else %}{{ field.id_for_label }}{% endif %}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+    <details class="fold"{% if errorForm.errors and activeAction == 'name' %} open{% endif %}>
+      <summary>Name <span class="fold-hint">{{ user.first_name }}</span></summary>
+      <div class="fold-body" id="account-name" tabindex="-1">
+        <form method="post" action="{% url 'account_settings' %}#account-feedback" class="support-form" novalidate>
+          {% csrf_token %}<input type="hidden" name="action" value="name">
+          {% include "accounts/settings_fields.html" with form=nameForm %}
+          <button class="btn btn-brand" type="submit">Save name</button>
+        </form>
+      </div>
+    </details>
+    <details class="fold"{% if errorForm.errors and activeAction == 'email' or not emailVerified %} open{% endif %}>
+      <summary>Email <span class="fold-hint">{{ user.email }}</span></summary>
+      <div class="fold-body" id="account-email" tabindex="-1">
+        {% if pendingEmail %}<p>You asked to change your email to <strong>{{ pendingEmail }}</strong>. <a href="{% url 'email_check' %}">Send or enter a code</a> to finish.</p>{% elif not emailVerified %}<p><a href="{% url 'email_check' %}">Verify your email</a> to buy and sell.</p>{% endif %}
+        <p class="hint">We’ll send a code to your new email{% if hasPassword %} and let your old one know{% endif %}.</p>
+        <form method="post" action="{% url 'account_settings' %}#account-feedback" class="support-form" novalidate>
+          {% csrf_token %}<input type="hidden" name="action" value="email">
+          {% include "accounts/settings_fields.html" with form=emailForm %}
+          <button class="btn btn-brand" type="submit">Change email</button>
+        </form>
+      </div>
+    </details>
+    <details class="fold"{% if errorForm.errors and activeAction == 'password' %} open{% endif %}>
+      <summary>Password{% if not hasPassword %} <span class="fold-hint">Not set</span>{% endif %}</summary>
+      <div class="fold-body" id="account-password" tabindex="-1">
+        {% if not hasPassword %}<p class="hint">You signed in with Google, so you can set a password here without a current one.</p>{% endif %}
+        <ul class="password-rules" aria-label="Your password needs">{% for key, pattern, label, words in rules %}<li>{{ label }}</li>{% endfor %}</ul>
+        <p class="hint">It can’t be one of your last 3 passwords.</p>
+        <form method="post" action="{% url 'account_settings' %}#account-feedback" class="support-form" novalidate>
+          {% csrf_token %}<input type="hidden" name="action" value="password">
+          {% include "accounts/settings_fields.html" with form=passwordForm %}
+          <button class="btn btn-brand" type="submit">{% if hasPassword %}Change password{% else %}Set password{% endif %}</button>
+        </form>
+      </div>
+    </details>
+    <details class="fold">
+      <summary>Sign-in security <span class="fold-hint">Authenticator {% if totpEnabled %}on{% else %}off{% endif %}</span></summary>
+      <div class="fold-body" id="account-authenticator" tabindex="-1">
+        {% if totpEnabled %}<p>Microsoft Authenticator is on for your account.</p>{% else %}<p>Add Microsoft Authenticator for safer sign-in. Until then, we’ll email you a code.</p><a class="btn btn-brand" href="{% url 'authenticator_setup' %}">Set up Authenticator</a>{% endif %}
+      </div>
+    </details>
+    <details class="fold"{% if errorForm.errors and activeAction == 'delete' %} open{% endif %}>
+      <summary>Delete account</summary>
+      <div class="fold-body" id="account-delete" tabindex="-1">
+        <p>Our team reviews each request. Your account stays active until then. You can follow your request in <a href="{% url 'my_messages' %}">My messages</a>.</p>
+        {% if hasPassword %}
+          <form method="post" action="{% url 'account_settings' %}#account-feedback" class="support-form" novalidate>
+            {% csrf_token %}<input type="hidden" name="action" value="delete">
+            {% include "accounts/settings_fields.html" with form=deletionForm %}
+            <button class="btn btn-ghost" type="submit">Request account deletion</button>
+          </form>
+        {% else %}
+          <p>Set a password first, then confirm it here to request account deletion.</p>
+          {% if deletionForm.errors %}<p class="err" role="alert">{{ deletionForm.errors|striptags }}</p>{% endif %}
+        {% endif %}
+      </div>
+    </details>
+  </div>
+{% endblock %}

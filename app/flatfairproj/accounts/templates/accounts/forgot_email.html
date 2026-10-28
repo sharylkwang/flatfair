@@ -1,0 +1,11 @@
+{% extends 'accounts/reset_base.html' %}
+{% block title %}Forgot password · FlatFair{% endblock %}
+{% block card %}
+  <h1>Forgot password</h1>
+  <p class="hint">We’ll email you a 6-digit code.</p>
+  {% if form.non_field_errors %}<p class="err" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+  <label class="mini-field">Email<input name="email" type="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="e.g. weiling@gmail.com" maxlength="254" required autofocus value="{{ form.email.value|default:'' }}"{% if form.email.errors %} aria-invalid="true" aria-describedby="email-error"{% endif %}>{% if form.email.errors %}<span class="err" id="email-error" role="alert">{{ form.email.errors.0 }}</span>{% endif %}</label>
+  {% include 'accounts/turnstile_field.html' with onSubmit=True %}
+  <button class="btn btn-brand btn-block">Send code</button>
+  <p class="auth-switch">Remembered it? <a href="{% url 'signin' %}">Sign in</a></p>
+{% endblock %}

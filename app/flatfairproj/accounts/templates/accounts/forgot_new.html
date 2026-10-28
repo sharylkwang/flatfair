@@ -1,0 +1,12 @@
+{% extends 'accounts/reset_base.html' %}
+{% block title %}Set a new password · FlatFair{% endblock %}
+{% block card %}
+  <h1>Set a new password</h1>
+  <p class="hint">It can’t be one of your last 3 passwords.</p>
+  {% if form.non_field_errors %}<p class="err" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+  <input type="email" name="username" value="{{ email }}" autocomplete="username" hidden readonly>
+  <label class="mini-field">New password<input id="new-password" name="password" type="password" autocomplete="new-password" maxlength="128" required autofocus{% if form.password.errors %} aria-invalid="true" aria-describedby="password-error"{% endif %}>{% if form.password.errors %}<span class="err" id="password-error" role="alert">{{ form.password.errors.0 }}</span>{% endif %}</label>
+  {% include 'accounts/password_rules.html' with input='new-password' %}
+  <label class="mini-field">Type it again<input name="confirm" type="password" autocomplete="new-password" maxlength="128" required{% if form.confirm.errors %} aria-invalid="true" aria-describedby="confirm-error"{% endif %}>{% if form.confirm.errors %}<span class="err" id="confirm-error" role="alert">{{ form.confirm.errors.0 }}</span>{% endif %}</label>
+  <button class="btn btn-brand btn-block">Save new password</button>
+{% endblock %}

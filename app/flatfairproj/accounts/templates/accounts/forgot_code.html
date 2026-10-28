@@ -1,0 +1,13 @@
+{% extends 'accounts/reset_base.html' %}
+{% block title %}Enter your code · FlatFair{% endblock %}
+{% block card %}
+  <h1>Enter your code</h1>
+  <p class="hint">If <strong>{{ email }}</strong> has an account, we’ve sent it a 6-digit code. It works for {{ minutes }} minutes.</p>
+  {% if form.non_field_errors %}<p class="err" role="alert">{{ form.non_field_errors.0 }}</p>{% endif %}
+  <label class="mini-field">6-digit code<input class="reset-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus{% if form.code.errors %} aria-invalid="true" aria-describedby="code-error"{% endif %}>{% if form.code.errors %}<span class="err" id="code-error" role="alert">{{ form.code.errors.0 }}</span>{% endif %}</label>
+  <button class="btn btn-brand btn-block">Check code</button>
+  <p class="reset-resend">
+    <button class="link-button" name="resend" value="1"{% if resendIn %} disabled{% endif %}>Send a new code{% if resendIn %} in {{ resendIn }}s{% endif %}</button>
+    <a href="{% url 'forgot_password' %}">Use a different email</a>
+  </p>
+{% endblock %}

@@ -192,6 +192,51 @@ def extraRooms(have):
     return rooms
 
 
+def hasRole(user, role):
+    if not user.is_authenticated or not user.is_active or user.is_staff:
+        return False
+
+    profile = getattr(user, "profile", None)
+
+    return bool(profile and {"buyer": profile.canBuy, "seller": profile.canSell}.get(role, False))
+
+
+def modeContext(request):
+    mode = currentMode(request)
+
+    return {
+        "currentMode": mode,
+        "headerMode": "staff" if request.user.is_staff else mode,
+        "canBuy": hasRole(request.user, "buyer"),
+        "canSell": hasRole(request.user, "seller"),
+    }
+
+
+def notAllowed(request, role):
+    return render(request, "storefront/forbidden.html", {"role": role}, status=403)
+
+
+def needEmail(view):
+    @wraps(view)
+    def checked(request, *args, **kwargs):
+        from accounts.verification import emailVerified
+        from accounts.verification import saveBack
+
+        if (
+            request.user.is_authenticated
+            and not request.user.is_staff
+            and not emailVerified(request.user)
+        ):
+            saveBack(request)
+            messages.info(request, "Verify your email before buying or selling.")
+
+            return redirect("email_check")
+
+        return view(request, *args, **kwargs)
+
+    return checked
+
+
 def object_id(value):
     value = str(value or "")
 

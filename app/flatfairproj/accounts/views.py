@@ -25,6 +25,28 @@ from .models import ResetCode, ResetIssuanceLock
 from accounts.tokens import PASSWORD_RULES, PENDING_KEY, cache, cache as authCache, addTry
 from .turnstile import CHECK_FAILED, formPasses
 
+log = logging.getLogger(__name__)
+CODE_MINUTES = 10
+RESEND_SECONDS = 60
+WRONG_PER_CODE = 5
+SESSION_KEY = "passwordReset"
+TOO_MANY_CODES = "You’ve asked for too many codes. Please wait an hour, then try again."
+
+
+def client_Ip(request):
+    return request.META.get("REMOTE_ADDR") or None
+
+
+def hashCode(userId, code):
+    return hmac.new(settings.SECRET_KEY.encode(), f"{userId}:{code}".encode(), sha256).hexdigest()
+
+
+def find_user(email):
+    users = User.objects.filter(email__iexact=email, is_active=True)
+
+    return users.order_by("pk").first()
+
+
 def mailBody(template, user, context):
     if template == "reset_code":
         return {
@@ -58,6 +80,283 @@ def mailBody(template, user, context):
         "button": {"label": "This wasn’t me", "url": context["supportUrl"]},
         "notes": ["If you made this change, you don’t need to do anything."],
     }
+
+
+def deliver(subject, user, template, context):
+    from storefront.notices import buildEmail
+
+    message = buildEmail(
+        subject,
+        user.email,
+        name=user.first_name,
+        **mailBody(template, user, context),
+    )
+
+    try:
+        message.send()
+    except Exception as error:
+        log.error("Could not send the %s email", template)
+
+
+def tellChange(request, user):
+    context = {
+        "when": timezone.localtime(),
+        "resetUrl": request.build_absolute_uri(reverse("forgot_password")),
+    }
+
+    deliver("Your FlatFair password was changed", user, "password_changed", context)
+
+
+@transaction.atomic
+def sendCode(request, user):
+    user = lock_user(user.pk)
+
+    if not user or not user.is_active:
+        return False
+
+    from_ip = client_Ip(request)
+
+    if from_ip:
+        codeLock, created = ResetIssuanceLock.objects.get_or_create(requestIp=from_ip)
+
+        ResetIssuanceLock.objects.select_for_update().get(pk=codeLock.pk)
+
+    now = timezone.now()
+    dayAgo = now - timedelta(days=1)
+
+    if ResetCode.objects.filter(user=user, createdAt__gte=dayAgo).count() >= (2):
+        return False
+
+    hourAgo = now - timedelta(hours=1)
+
+    if ResetCode.objects.filter(user=user, createdAt__gte=hourAgo).count() >= (3):
+        return False
+
+    if from_ip and ResetCode.objects.filter(requestIp=from_ip, createdAt__gte=hourAgo).count() >= (
+        10
+    ):
+        return False
+
+    ResetCode.objects.filter(createdAt__lt=now - timedelta(days=1)).delete()
+    ResetCode.objects.filter(user=user, usedAt__isnull=True).update(expiresAt=now)
+    code = f"{secrets.randbelow(10 ** 6):06d}"
+
+    ResetCode.objects.create(
+        user=user,
+        codeHash=hashCode(user.pk, code),
+        requestIp=from_ip,
+        expiresAt=now + timedelta(minutes=CODE_MINUTES),
+    )
+
+    transaction.on_commit(
+        lambda: deliver(
+            "Your FlatFair reset code",
+            user,
+            "reset_code",
+            {"code": code, "minutes": CODE_MINUTES},
+        )
+    )
+
+    return True
+
+
+def activeCode(email):
+    codes = ResetCode.objects.filter(
+        user__email__iexact=email,
+        user__is_active=True,
+        usedAt__isnull=True,
+        verifiedAt__isnull=True,
+        expiresAt__gt=timezone.now(),
+        attempts__lt=WRONG_PER_CODE,
+    )
+
+    return codes.order_by("-createdAt", "-pk").first()
+
+
+def goodCode(state):
+    since = timezone.now() - timedelta(minutes=CODE_MINUTES)
+
+    codes = ResetCode.objects.select_related("user").filter(
+        pk=state.get("codeId"),
+        usedAt__isnull=True,
+        verifiedAt__gte=since,
+        expiresAt__gt=timezone.now(),
+        user__is_active=True,
+    )
+
+    return codes.first()
+
+
+@never_cache
+def forgot(request):
+    state = request.session.get(SESSION_KEY, {})
+    form = EmailForm(request.POST or None, initial={"email": state.get("email", "")})
+
+    if request.method == "POST" and not formPasses(request):
+        form.add_error(None, CHECK_FAILED)
+
+    if request.method == "POST" and form.is_valid():
+        email = form.cleaned_data["email"]
+
+        if email == state.get("email") and time.time() - state["sentAt"] < RESEND_SECONDS:
+            return redirect("forgot_code")
+
+        user = find_user(email)
+
+        if user and not sendCode(request, user):
+            form.add_error(None, TOO_MANY_CODES)
+        else:
+            request.session[SESSION_KEY] = {
+                "email": email,
+                "sentAt": time.time(),
+                "wrong": 0,
+            }
+
+            return redirect("forgot_code")
+
+    return render(request, "accounts/forgot_email.html", {"form": form, "step": 1})
+
+
+@never_cache
+def forgotCode(request):
+    tries = "Too many wrong tries. Please ask for a new code."
+    state = request.session.get(SESSION_KEY)
+
+    if not state:
+        return redirect("forgot_password")
+
+    if goodCode(state):
+        return redirect("forgot_new")
+
+    retryIn = int(RESEND_SECONDS - (time.time() - state["sentAt"]))
+    form = CodeForm()
+
+    if request.method == "POST" and "resend" in request.POST:
+        if retryIn <= 0:
+            user = find_user(state["email"])
+
+            if user and not sendCode(request, user):
+                messages.error(request, TOO_MANY_CODES)
+            else:
+                state["sentAt"] = time.time()
+                state["wrong"] = 0
+                request.session[SESSION_KEY] = state
+
+                messages.success(request, "We sent a new code. Only the newest code works.")
+
+        return redirect("forgot_code")
+
+    if request.method == "POST":
+        form = CodeForm(request.POST)
+
+        if state["wrong"] >= WRONG_PER_CODE:
+            form.add_error(None, tries)
+        elif form.is_valid():
+            code = activeCode(state["email"])
+            typed = form.cleaned_data["code"]
+
+            if code and hmac.compare_digest(code.codeHash, hashCode(code.user_id, typed)):
+                claimed = ResetCode.objects.filter(
+                    pk=code.pk,
+                    usedAt__isnull=True,
+                    verifiedAt__isnull=True,
+                    expiresAt__gt=timezone.now(),
+                    attempts__lt=WRONG_PER_CODE,
+                    user__is_active=True,
+                ).update(verifiedAt=timezone.now())
+
+                if claimed:
+                    state["codeId"] = code.pk
+                    request.session[SESSION_KEY] = state
+
+                    return redirect("forgot_new")
+
+            if code:
+                ResetCode.objects.filter(
+                    pk=code.pk, attempts__lt=WRONG_PER_CODE, verifiedAt__isnull=True
+                ).update(attempts=F("attempts") + 1)
+
+            state["wrong"] += 1
+            request.session[SESSION_KEY] = state
+
+            if state["wrong"] >= WRONG_PER_CODE:
+                form.add_error("code", tries)
+            else:
+                form.add_error(
+                    "code",
+                    "That code is wrong or has expired. Check the email and try again.",
+                )
+
+    context = {
+        "form": form,
+        "step": 2,
+        "email": state["email"],
+        "resendIn": max(retryIn, 0),
+        "minutes": CODE_MINUTES,
+    }
+
+    return render(request, "accounts/forgot_code.html", context)
+
+
+@never_cache
+def forgotNew(request):
+    state = request.session.get(SESSION_KEY, {})
+    code = goodCode(state)
+
+    if not code:
+        if state.get("codeId"):
+            del request.session[SESSION_KEY]
+
+            messages.error(request, "Your code has expired. Ask for a new one.")
+
+        return redirect("forgot_password")
+
+    user = code.user
+    form = NewPasswordForm(user, request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            now = timezone.now()
+
+            used = ResetCode.objects.filter(
+                pk=code.pk,
+                usedAt__isnull=True,
+                verifiedAt__gte=now - timedelta(minutes=CODE_MINUTES),
+                expiresAt__gt=now,
+                user__is_active=True,
+            ).update(usedAt=now)
+
+            if not used:
+                del request.session[SESSION_KEY]
+
+                messages.error(request, "Your code has expired. Ask for a new one.")
+
+                return redirect("forgot_password")
+
+            ResetCode.objects.filter(user=user, usedAt__isnull=True).update(usedAt=now)
+            form.save()
+
+        signKey = sha256(
+            f"{state['email']}:{request.META.get('REMOTE_ADDR', '')}".encode()
+        ).hexdigest()
+
+        cache.delete("signin:" + signKey)
+        tellChange(request, user)
+
+        del request.session[SESSION_KEY]
+
+        messages.success(request, "Password changed. Sign in with your new password.")
+
+        return redirect("signin")
+
+    context = {
+        "form": form,
+        "step": 3,
+        "email": state["email"],
+        "rules": PASSWORD_RULES,
+    }
+
+    return render(request, "accounts/forgot_new.html", context)
 
 
 def homeFor(user):

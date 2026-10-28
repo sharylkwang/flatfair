@@ -1,0 +1,4 @@
+{% if form.non_field_errors %}<div class="err" role="alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+{% for field in form %}
+  <label class="mini-field" for="{{ field.id_for_label }}">{{ field.label }}{{ field }}{% if field.errors %}<span class="err" id="{{ field.auto_id }}_error" role="alert">{{ field.errors|join:" " }}</span>{% endif %}</label>
+{% endfor %}
