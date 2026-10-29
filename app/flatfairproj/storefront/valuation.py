@@ -7,8 +7,13 @@ import numpy as np
 import pandas as pd
 from pretrained import ML, TRAINING, ArtifactUnavailable, warnGone
 
+log = logging.getLogger(__name__)
 priceBacktestPath = TRAINING / "price_backtest_eval.json"
+ARTIFACT = ML / "price_model_v5.joblib"
 VERSION = "v5.3"
+_CACHE = None
+_CACHE_SIGNATURE = None
+
 TOWNS = [
     "ANG MO KIO",
     "BEDOK",
@@ -59,6 +64,132 @@ FLAT_MODELS = [
     "Type S1",
     "Type S2",
 ]
+
+
+def _bundleOk(candidate):
+    if candidate["version"] != VERSION:
+        raise ValueError("Invalid model schema")
+
+    for name in ("median", "q10", "q90"):
+        if name not in candidate["models"]:
+            raise ValueError("Invalid model schema")
+
+    if candidate.get("calibration_scale") != "dollars":
+        raise ValueError("Serving requires dollar calibration")
+
+    needed = (
+        "features",
+        "categories",
+        "max_training_month",
+        "calibration_offsets",
+        "calibration_scale",
+    )
+
+    for key in needed:
+        if key not in candidate:
+            raise ValueError("Incomplete model schema")
+
+
+def _load():
+    global _CACHE, _CACHE_SIGNATURE
+
+    try:
+        mark = (ARTIFACT.stat().st_mtime_ns, ARTIFACT.stat().st_size)
+
+        if _CACHE is None or mark != _CACHE_SIGNATURE:
+            option = joblib.load(ARTIFACT)
+
+            try:
+                _bundleOk(option)
+            except (KeyError, TypeError, ValueError) as error:
+                raise ArtifactUnavailable("Invalid price model schema") from error
+
+            _CACHE, _CACHE_SIGNATURE = option, mark
+
+        return _CACHE
+    except (OSError, ValueError, EOFError) as error:
+        warnGone(log, f"Price model unavailable: {error}")
+        _CACHE = None
+        _CACHE_SIGNATURE = None
+
+        raise ValueError(
+            "Sorry, the price check isn’t available right now. Please try again later."
+        ) from error
+    except Exception as error:
+        log.exception("Price model loading failed")
+        _CACHE = None
+        _CACHE_SIGNATURE = None
+
+        raise ValueError(
+            "Sorry, the price check isn’t available right now. Please try again later."
+        ) from error
+
+
+def modelInfo():
+    try:
+        bundle = _load()
+
+        return {
+            "available": True,
+            "version": VERSION,
+            "month": bundle["max_training_month"],
+            "mape": bundle["metrics"][bundle.get("selected_variant", "v5")]["test"]["MAPE"],
+            "coverage": bundle["metrics"]["band"]["coverage"] * 100,
+            "target": (80),
+        }
+    except ValueError:
+        return {"available": False, "version": VERSION}
+    except Exception:
+        log.exception("Price model information failed")
+
+        return {"available": False, "version": VERSION}
+
+
+def _distance(lat, lon, lat2, lon2):
+    lat_one, lon_one, lat_two, lon_two = map(np.radians, (lat, lon, lat2, lon2))
+
+    arc = (
+        np.sin((lat_two - lat_one) / 2) ** 2
+        + np.cos(lat_one) * np.cos(lat_two) * np.sin((lon_two - lon_one) / 2) ** 2
+    )
+
+    return 6371 * 2 * np.arcsin(np.sqrt(np.clip(arc, 0, 1)))
+
+
+def _mapPlaces(geo):
+    postals = {}
+    blocks = {}
+
+    for record in geo["addresses"]:
+        code = str(record.get("postal", "")).strip()
+
+        if len(code) == 6 and code.isdigit():
+            postals.setdefault(code, record)
+
+        key = (str(record.get("block", "")).strip().upper(), record.get("town"))
+        blocks.setdefault(key, []).append(record)
+
+    geo["_postal_lookup"] = postals
+    geo["_block_lookup"] = {}
+
+    for key, records in blocks.items():
+        if len(records) == 1:
+            geo["_block_lookup"][key] = records[0]
+
+
+def geoPoint(geo, town, postal=None, block=None):
+    if "_postal_lookup" not in geo:
+        _mapPlaces(geo)
+
+    point = geo["_postal_lookup"].get(str(postal or "").strip())
+
+    if point is None:
+        point = geo["_block_lookup"].get((str(block or "").strip().upper(), town))
+
+    if point is None:
+        point = geo["centroids"][town]
+
+    return point
 
 
 def makeRow(town, flatType, flatModel, floorAreaSqm, storey, leaseYear, postal=None, block=None):
@@ -123,6 +254,28 @@ def makeRow(town, flatType, flatModel, floorAreaSqm, storey, leaseYear, postal=N
         return row[bundle["features"]]
     except (TypeError, KeyError, OverflowError) as error:
         raise ValueError("Invalid valuation input") from error
+
+
+def rawBand(predictions, calibrationOffsets):
+    fair_cost = round(np.exp(predictions["median"]))
+    low = np.exp(min(predictions["q10"], predictions["q90"])) - calibrationOffsets["lower"]
+    high = np.exp(max(predictions["q10"], predictions["q90"])) + calibrationOffsets["upper"]
+
+    if not all(math.isfinite(price) for price in (low, fair_cost, high)):
+        raise ValueError("Invalid model prediction")
+
+    return low, fair_cost, high
+
+
+def guessBand(predictions, calibrationOffsets):
+    low, fair_cost, high = rawBand(predictions, calibrationOffsets)
+    spread = max(10000, round(fair_cost * 0.05))
+
+    return (
+        max(1, min(round(low), fair_cost - spread)),
+        fair_cost,
+        max(round(high), fair_cost + spread),
+    )
 
 
 def band(town, flatType, flatModel, floorAreaSqm, storey, leaseYear, postal=None, block=None):

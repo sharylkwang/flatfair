@@ -1,0 +1,32 @@
+{% load humanize estate_tags %}
+{% with floors=glance.floors %}
+<details class="fold glance-fold glance-floors">
+  <summary>{% include "storefront/ui_icon.html" with name="chart" only %}Prices by floor <span class="fold-hint">{% if floors %}{% if floors.gap > 0 %}High floors +{{ floors.gap|short_money }}{% else %}No high-floor premium{% endif %}{% else %}Not enough sales{% endif %}</span></summary>
+  <div class="fold-body" id="floor-prices">
+    {% if floors %}
+      <p class="glance-fact">{% if floors.gap > 0 %}High floors +{{ floors.gap|short_money }}{% else %}No high-floor premium{% endif %} · last 12 months</p>
+      <ol class="glance-floor-bars" role="img" aria-label="Average sale prices by floor. {{ glance.floorOverview.label }}.">
+        {% for row in glance.floorOverview.rows %}
+          <li{% if row.mine %} class="is-current"{% endif %}>
+            <span>{{ row.name }} <small>{{ row.range }}</small>{% if row.mine %} <b>This flat</b>{% endif %}</span>
+            <strong>{% if row.average %}{{ row.average|short_money }}{% else %}No data{% endif %}</strong>
+            <span class="glance-floor-track" aria-hidden="true"><span style="width: {{ row.width }}%"></span></span>
+          </li>
+        {% endfor %}
+      </ol>
+      <ol class="floor-bars">
+        {% for row in floors.rows %}
+          <li{% if row.mine %} class="is-this"{% endif %}>
+            <span class="floor-name">Floors {{ row.label }}{% if row.mine %} <b>This flat</b>{% endif %}</span>
+            <span class="floor-track" aria-hidden="true"><span style="width: {{ row.width }}%"></span></span>
+            <span class="floor-value">${{ row.average|intcomma }} <small>{{ row.sales }} sold</small></span>
+          </li>
+        {% endfor %}
+      </ol>
+      <p class="glance-preview-note">{{ flat.flatType|flat_label }} flats in {{ flat.town|title }}. {% if floors.gap > 0 %}High floors averaged ${{ floors.gap|intcomma }} more than low floors.{% else %}High floors averaged no more than low floors.{% endif %} Other things affect price too, so a higher floor doesn’t guarantee a higher price.</p>
+    {% else %}
+      <p class="glance-empty">Not enough recent sales to compare floors yet.</p>
+    {% endif %}
+  </div>
+</details>
+{% endwith %}

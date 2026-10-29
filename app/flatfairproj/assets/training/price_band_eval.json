@@ -1,0 +1,533 @@
+{
+  "schemaVersion": 1,
+  "evaluationPeriod": {
+    "start": "2025-11",
+    "end": "2026-10"
+  },
+  "trainingPeriod": {
+    "start": "2017-01",
+    "end": "2025-10",
+    "count": 217915
+  },
+  "modelConfig": {
+    "variant": "v5.3",
+    "seed": 42,
+    "learningRate": 0.05,
+    "nJobs": 4,
+    "params": {
+      "num_leaves": 127,
+      "min_child_samples": 50,
+      "reg_lambda": 0,
+      "colsample_bytree": 1.0
+    },
+    "trees": {
+      "median": 3981,
+      "q10": 1435,
+      "q90": 1184
+    },
+    "objectives": {
+      "median": {
+        "objective": "regression_l1"
+      },
+      "q10": {
+        "objective": "quantile",
+        "alpha": 0.1
+      },
+      "q90": {
+        "objective": "quantile",
+        "alpha": 0.9
+      }
+    },
+    "features": [
+      "town",
+      "flat_type",
+      "flat_model",
+      "floor_area_sqm",
+      "storey_mid",
+      "sale_year",
+      "sale_month",
+      "month_index",
+      "flat_age",
+      "remaining_lease_months",
+      "lat",
+      "lon",
+      "dist_cbd_km",
+      "dist_mrt_km",
+      "n_mrt_1km"
+    ],
+    "categories": {
+      "town": [
+        "ANG MO KIO",
+        "BEDOK",
+        "BISHAN",
+        "BUKIT BATOK",
+        "BUKIT MERAH",
+        "BUKIT PANJANG",
+        "BUKIT TIMAH",
+        "CENTRAL AREA",
+        "CHOA CHU KANG",
+        "CLEMENTI",
+        "GEYLANG",
+        "HOUGANG",
+        "JURONG EAST",
+        "JURONG WEST",
+        "KALLANG/WHAMPOA",
+        "MARINE PARADE",
+        "PASIR RIS",
+        "PUNGGOL",
+        "QUEENSTOWN",
+        "SEMBAWANG",
+        "SENGKANG",
+        "SERANGOON",
+        "TAMPINES",
+        "TOA PAYOH",
+        "WOODLANDS",
+        "YISHUN"
+      ],
+      "flat_type": [
+        "2 ROOM",
+        "3 ROOM",
+        "4 ROOM",
+        "5 ROOM",
+        "EXECUTIVE"
+      ],
+      "flat_model": [
+        "2-room",
+        "3Gen",
+        "Adjoined flat",
+        "Apartment",
+        "DBSS",
+        "Improved",
+        "Improved-Maisonette",
+        "Maisonette",
+        "Model A",
+        "Model A-Maisonette",
+        "Model A2",
+        "New Generation",
+        "Premium Apartment",
+        "Premium Apartment Loft",
+        "Premium Maisonette",
+        "Simplified",
+        "Standard",
+        "Terrace",
+        "Type S1",
+        "Type S2"
+      ]
+    },
+    "geoCoverage": 0.9809425168306577,
+    "choices": "Fixed shipped v5.3 features and VALID-selected tree counts; no evaluation-period selection or early stopping in this script.",
+    "calibrationFitEnd": "2025-04",
+    "refitEnd": "2025-10",
+    "trendCap": "2025-10; flat age and remaining lease use each sale month, as in serving"
+  },
+  "calibration": {
+    "scheme": "exponential80_with_pooled80_safeguard",
+    "monthly_decay": 0.8,
+    "target": 0.8,
+    "pooled_offset": 8570.978777953249,
+    "weighted_offset": 8767.608750179701,
+    "dollar_offset": 8767.608750179701,
+    "valid_coverage": 0.8025173950433899,
+    "weighted_valid_coverage": 0.8000794192290871,
+    "calibration_start": "2025-05",
+    "calibration_end": "2025-10"
+  },
+  "definitions": {
+    "rawCoverage": "Ordered q10/q90 interval with historical dollar calibration, before serving rounding and minimum width.",
+    "meanWidthPercent": "Mean of (served high - served low) / rounded estimate * 100.",
+    "flaggedShare": "Real sale price treated as asking price; above high or strictly below 70% of low. Proxy for false holds, not observed moderation errors."
+  },
+  "limitations": [
+    "This period previously informed the shipped location-feature choice. This fixed historical replay avoids new selection but cannot create a fresh independent holdout.",
+    "Uses the local static block and station files, not historical geographic snapshots.",
+    "Evaluates a temporary historical refit, not the served artifact refit through October 2026."
+  ],
+  "overall": {
+    "count": 24542,
+    "servedCoverage": 0.8096732132670524,
+    "rawCoverage": 0.7639556678347323,
+    "meanWidthDollars": 88234.14134952327,
+    "meanWidthPercent": 13.230482463459365,
+    "mapePercent": 4.084552750657713,
+    "medianAbsolutePercentError": 3.0570263319044706,
+    "flaggedShare": 0.07440306413495233,
+    "aboveShare": 0.07428082470866271,
+    "typoShare": 0.00012223942628962595
+  },
+  "byTown": {
+    "ANG MO KIO": {
+      "count": 852,
+      "servedCoverage": 0.7946009389671361,
+      "rawCoverage": 0.7535211267605634,
+      "meanWidthDollars": 92421.40610328638,
+      "meanWidthPercent": 14.479159106973318,
+      "mapePercent": 4.753555999928432,
+      "medianAbsolutePercentError": 3.6731311202506856,
+      "flaggedShare": 0.07276995305164319,
+      "aboveShare": 0.07276995305164319,
+      "typoShare": 0.0
+    },
+    "BEDOK": {
+      "count": 1322,
+      "servedCoverage": 0.7526475037821483,
+      "rawCoverage": 0.7140695915279879,
+      "meanWidthDollars": 85613.26475037822,
+      "meanWidthPercent": 13.639284172975529,
+      "mapePercent": 4.921617455343327,
+      "medianAbsolutePercentError": 3.794588638673406,
+      "flaggedShare": 0.11195158850226929,
+      "aboveShare": 0.11195158850226929,
+      "typoShare": 0.0
+    },
+    "BISHAN": {
+      "count": 420,
+      "servedCoverage": 0.75,
+      "rawCoverage": 0.7166666666666667,
+      "meanWidthDollars": 137476.37857142856,
+      "meanWidthPercent": 15.304612648600488,
+      "mapePercent": 5.230451917938694,
+      "medianAbsolutePercentError": 4.246225435559557,
+      "flaggedShare": 0.1380952380952381,
+      "aboveShare": 0.1380952380952381,
+      "typoShare": 0.0
+    },
+    "BUKIT BATOK": {
+      "count": 1356,
+      "servedCoverage": 0.8547197640117994,
+      "rawCoverage": 0.8089970501474927,
+      "meanWidthDollars": 73589.94026548673,
+      "meanWidthPercent": 11.98244970149359,
+      "mapePercent": 3.4033213595173466,
+      "medianAbsolutePercentError": 2.5169327372235717,
+      "flaggedShare": 0.033185840707964605,
+      "aboveShare": 0.033185840707964605,
+      "typoShare": 0.0
+    },
+    "BUKIT MERAH": {
+      "count": 900,
+      "servedCoverage": 0.7733333333333333,
+      "rawCoverage": 0.7233333333333334,
+      "meanWidthDollars": 120394.33777777778,
+      "meanWidthPercent": 16.175510415433948,
+      "mapePercent": 5.169809909681234,
+      "medianAbsolutePercentError": 3.877779541345202,
+      "flaggedShare": 0.12555555555555556,
+      "aboveShare": 0.12555555555555556,
+      "typoShare": 0.0
+    },
+    "BUKIT PANJANG": {
+      "count": 778,
+      "servedCoverage": 0.7917737789203085,
+      "rawCoverage": 0.7339331619537275,
+      "meanWidthDollars": 85160.22236503856,
+      "meanWidthPercent": 13.159648842941086,
+      "mapePercent": 3.9032748121208343,
+      "medianAbsolutePercentError": 2.9796190956221196,
+      "flaggedShare": 0.055269922879177376,
+      "aboveShare": 0.055269922879177376,
+      "typoShare": 0.0
+    },
+    "BUKIT TIMAH": {
+      "count": 60,
+      "servedCoverage": 0.5833333333333334,
+      "rawCoverage": 0.5833333333333334,
+      "meanWidthDollars": 186748.9,
+      "meanWidthPercent": 20.32139325545802,
+      "mapePercent": 6.872657339747852,
+      "medianAbsolutePercentError": 6.495453441295547,
+      "flaggedShare": 0.4166666666666667,
+      "aboveShare": 0.4166666666666667,
+      "typoShare": 0.0
+    },
+    "CENTRAL AREA": {
+      "count": 177,
+      "servedCoverage": 0.768361581920904,
+      "rawCoverage": 0.6497175141242938,
+      "meanWidthDollars": 133947.91525423728,
+      "meanWidthPercent": 17.14190766765081,
+      "mapePercent": 5.144016414593938,
+      "medianAbsolutePercentError": 3.985164835164835,
+      "flaggedShare": 0.12429378531073447,
+      "aboveShare": 0.12429378531073447,
+      "typoShare": 0.0
+    },
+    "CHOA CHU KANG": {
+      "count": 1008,
+      "servedCoverage": 0.8511904761904762,
+      "rawCoverage": 0.8115079365079365,
+      "meanWidthDollars": 73107.89484126984,
+      "meanWidthPercent": 11.981806706365264,
+      "mapePercent": 3.4529849154464896,
+      "medianAbsolutePercentError": 2.7579787817405412,
+      "flaggedShare": 0.034722222222222224,
+      "aboveShare": 0.034722222222222224,
+      "typoShare": 0.0
+    },
+    "CLEMENTI": {
+      "count": 495,
+      "servedCoverage": 0.7353535353535353,
+      "rawCoverage": 0.6888888888888889,
+      "meanWidthDollars": 100051.82222222222,
+      "meanWidthPercent": 13.927608847520617,
+      "mapePercent": 4.713559594366137,
+      "medianAbsolutePercentError": 3.9038580246913583,
+      "flaggedShare": 0.13333333333333333,
+      "aboveShare": 0.13333333333333333,
+      "typoShare": 0.0
+    },
+    "GEYLANG": {
+      "count": 645,
+      "servedCoverage": 0.8155038759689922,
+      "rawCoverage": 0.772093023255814,
+      "meanWidthDollars": 96083.32868217054,
+      "meanWidthPercent": 15.880484223301485,
+      "mapePercent": 4.441543926169001,
+      "medianAbsolutePercentError": 3.3400174066125348,
+      "flaggedShare": 0.09922480620155039,
+      "aboveShare": 0.09922480620155039,
+      "typoShare": 0.0
+    },
+    "HOUGANG": {
+      "count": 1232,
+      "servedCoverage": 0.8035714285714286,
+      "rawCoverage": 0.7589285714285714,
+      "meanWidthDollars": 85528.35146103895,
+      "meanWidthPercent": 12.869019872738047,
+      "mapePercent": 3.960820977448468,
+      "medianAbsolutePercentError": 3.0823724058472206,
+      "flaggedShare": 0.08279220779220779,
+      "aboveShare": 0.08279220779220779,
+      "typoShare": 0.0
+    },
+    "JURONG EAST": {
+      "count": 469,
+      "servedCoverage": 0.8123667377398721,
+      "rawCoverage": 0.7889125799573561,
+      "meanWidthDollars": 84753.04690831556,
+      "meanWidthPercent": 14.364131462093653,
+      "mapePercent": 4.671377888812673,
+      "medianAbsolutePercentError": 3.7548192771084334,
+      "flaggedShare": 0.03624733475479744,
+      "aboveShare": 0.03411513859275053,
+      "typoShare": 0.0021321961620469083
+    },
+    "JURONG WEST": {
+      "count": 1453,
+      "servedCoverage": 0.7777013076393668,
+      "rawCoverage": 0.735719201651755,
+      "meanWidthDollars": 68809.63799036476,
+      "meanWidthPercent": 12.03991641980998,
+      "mapePercent": 4.066590729673141,
+      "medianAbsolutePercentError": 3.198757763975155,
+      "flaggedShare": 0.051617343427391604,
+      "aboveShare": 0.051617343427391604,
+      "typoShare": 0.0
+    },
+    "KALLANG/WHAMPOA": {
+      "count": 742,
+      "servedCoverage": 0.8113207547169812,
+      "rawCoverage": 0.7466307277628033,
+      "meanWidthDollars": 111518.71428571429,
+      "meanWidthPercent": 15.203153844582069,
+      "mapePercent": 4.725632525102526,
+      "medianAbsolutePercentError": 3.456074722782147,
+      "flaggedShare": 0.09164420485175202,
+      "aboveShare": 0.09164420485175202,
+      "typoShare": 0.0
+    },
+    "MARINE PARADE": {
+      "count": 129,
+      "servedCoverage": 0.7054263565891473,
+      "rawCoverage": 0.689922480620155,
+      "meanWidthDollars": 108383.00775193798,
+      "meanWidthPercent": 16.769075680326033,
+      "mapePercent": 6.392278107328473,
+      "medianAbsolutePercentError": 5.264466019417475,
+      "flaggedShare": 0.17054263565891473,
+      "aboveShare": 0.17054263565891473,
+      "typoShare": 0.0
+    },
+    "PASIR RIS": {
+      "count": 755,
+      "servedCoverage": 0.8490066225165563,
+      "rawCoverage": 0.8264900662251655,
+      "meanWidthDollars": 91228.659602649,
+      "meanWidthPercent": 12.167685092942014,
+      "mapePercent": 3.3518488988098576,
+      "medianAbsolutePercentError": 2.5856733524355304,
+      "flaggedShare": 0.06754966887417219,
+      "aboveShare": 0.06754966887417219,
+      "typoShare": 0.0
+    },
+    "PUNGGOL": {
+      "count": 1626,
+      "servedCoverage": 0.7988929889298892,
+      "rawCoverage": 0.7244772447724477,
+      "meanWidthDollars": 77733.19311193112,
+      "meanWidthPercent": 11.454257262576874,
+      "mapePercent": 3.64766642973986,
+      "medianAbsolutePercentError": 2.7154148375768217,
+      "flaggedShare": 0.08487084870848709,
+      "aboveShare": 0.08487084870848709,
+      "typoShare": 0.0
+    },
+    "QUEENSTOWN": {
+      "count": 770,
+      "servedCoverage": 0.7025974025974026,
+      "rawCoverage": 0.6831168831168831,
+      "meanWidthDollars": 131845.7,
+      "meanWidthPercent": 17.241935565970092,
+      "mapePercent": 6.526846191264705,
+      "medianAbsolutePercentError": 5.553893633540373,
+      "flaggedShare": 0.19090909090909092,
+      "aboveShare": 0.19090909090909092,
+      "typoShare": 0.0
+    },
+    "SEMBAWANG": {
+      "count": 851,
+      "servedCoverage": 0.8319623971797885,
+      "rawCoverage": 0.7685076380728555,
+      "meanWidthDollars": 70487.55699177439,
+      "meanWidthPercent": 11.732437901872114,
+      "mapePercent": 3.248145511097045,
+      "medianAbsolutePercentError": 2.50933147632312,
+      "flaggedShare": 0.07403055229142186,
+      "aboveShare": 0.07403055229142186,
+      "typoShare": 0.0
+    },
+    "SENGKANG": {
+      "count": 1722,
+      "servedCoverage": 0.835075493612079,
+      "rawCoverage": 0.7723577235772358,
+      "meanWidthDollars": 83955.92334494773,
+      "meanWidthPercent": 12.33128415260388,
+      "mapePercent": 3.6419927406178862,
+      "medianAbsolutePercentError": 2.8647403846153847,
+      "flaggedShare": 0.04645760743321719,
+      "aboveShare": 0.04645760743321719,
+      "typoShare": 0.0
+    },
+    "SERANGOON": {
+      "count": 388,
+      "servedCoverage": 0.8247422680412371,
+      "rawCoverage": 0.7989690721649485,
+      "meanWidthDollars": 108638.14432989691,
+      "meanWidthPercent": 15.389136315142634,
+      "mapePercent": 4.227601854665134,
+      "medianAbsolutePercentError": 3.3345167610787207,
+      "flaggedShare": 0.09278350515463918,
+      "aboveShare": 0.09278350515463918,
+      "typoShare": 0.0
+    },
+    "TAMPINES": {
+      "count": 2032,
+      "servedCoverage": 0.8612204724409449,
+      "rawCoverage": 0.8090551181102362,
+      "meanWidthDollars": 84585.61761811023,
+      "meanWidthPercent": 11.784118929885063,
+      "mapePercent": 3.1165047675327022,
+      "medianAbsolutePercentError": 2.3580959127079817,
+      "flaggedShare": 0.0688976377952756,
+      "aboveShare": 0.06840551181102363,
+      "typoShare": 0.0004921259842519685
+    },
+    "TOA PAYOH": {
+      "count": 1002,
+      "servedCoverage": 0.7934131736526946,
+      "rawCoverage": 0.7544910179640718,
+      "meanWidthDollars": 116746.89121756487,
+      "meanWidthPercent": 15.918001748502434,
+      "mapePercent": 4.884498335714915,
+      "medianAbsolutePercentError": 3.7280082316267027,
+      "flaggedShare": 0.09281437125748503,
+      "aboveShare": 0.09281437125748503,
+      "typoShare": 0.0
+    },
+    "WOODLANDS": {
+      "count": 1814,
+      "servedCoverage": 0.8467475192943771,
+      "rawCoverage": 0.8087100330760749,
+      "meanWidthDollars": 74356.70617420066,
+      "meanWidthPercent": 12.099280490459355,
+      "mapePercent": 3.507932448165434,
+      "medianAbsolutePercentError": 2.707907580477674,
+      "flaggedShare": 0.03914002205071665,
+      "aboveShare": 0.03858875413450937,
+      "typoShare": 0.0005512679162072767
+    },
+    "YISHUN": {
+      "count": 1544,
+      "servedCoverage": 0.8238341968911918,
+      "rawCoverage": 0.7966321243523317,
+      "meanWidthDollars": 72670.47603626944,
+      "meanWidthPercent": 12.78806952716826,
+      "mapePercent": 3.963569113184262,
+      "medianAbsolutePercentError": 3.03227725236436,
+      "flaggedShare": 0.027202072538860103,
+      "aboveShare": 0.027202072538860103,
+      "typoShare": 0.0
+    }
+  },
+  "byFlatType": {
+    "2 ROOM": {
+      "count": 729,
+      "servedCoverage": 0.8491083676268861,
+      "rawCoverage": 0.8244170096021948,
+      "meanWidthDollars": 52607.07956104253,
+      "meanWidthPercent": 14.372565463778626,
+      "mapePercent": 4.132018781410488,
+      "medianAbsolutePercentError": 3.226027397260274,
+      "flaggedShare": 0.07133058984910837,
+      "aboveShare": 0.07133058984910837,
+      "typoShare": 0.0
+    },
+    "3 ROOM": {
+      "count": 5673,
+      "servedCoverage": 0.8103296315882249,
+      "rawCoverage": 0.779305482108232,
+      "meanWidthDollars": 67377.67442270403,
+      "meanWidthPercent": 14.278579793419375,
+      "mapePercent": 4.473226529972053,
+      "medianAbsolutePercentError": 3.2621478873239433,
+      "flaggedShare": 0.061166931077031556,
+      "aboveShare": 0.060990657500440686,
+      "typoShare": 0.00017627357659086903
+    },
+    "4 ROOM": {
+      "count": 10729,
+      "servedCoverage": 0.8206729424923106,
+      "rawCoverage": 0.7609283251001957,
+      "meanWidthDollars": 85632.63659241308,
+      "meanWidthPercent": 12.544067260565804,
+      "mapePercent": 3.7562893523411702,
+      "medianAbsolutePercentError": 2.857421875,
+      "flaggedShare": 0.06188834001304875,
+      "aboveShare": 0.06179513468170379,
+      "typoShare": 9.320533134495293e-05
+    },
+    "5 ROOM": {
+      "count": 5844,
+      "servedCoverage": 0.7871321013004792,
+      "rawCoverage": 0.7481177275838466,
+      "meanWidthDollars": 106663.18514715949,
+      "meanWidthPercent": 13.245764777618168,
+      "mapePercent": 4.2268717975407,
+      "medianAbsolutePercentError": 3.123155406286683,
+      "flaggedShare": 0.10335386721423682,
+      "aboveShare": 0.10318275154004107,
+      "typoShare": 0.00017111567419575633
+    },
+    "EXECUTIVE": {
+      "count": 1567,
+      "servedCoverage": 0.797702616464582,
+      "rawCoverage": 0.7600510529674538,
+      "meanWidthDollars": 129397.5603063178,
+      "meanWidthPercent": 13.547524076608758,
+      "mapePercent": 4.372157348031672,
+      "medianAbsolutePercentError": 3.455138121546961,
+      "flaggedShare": 0.10146777281429484,
+      "aboveShare": 0.10146777281429484,
+      "typoShare": 0.0
+    }
+  }
+}

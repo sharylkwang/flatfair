@@ -1,3 +1,129 @@
+from statistics import median
+from decimal import Decimal
+from urllib.parse import urlencode
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import (
+    Case, Exists, When, Value,
+    OuterRef, Subquery, prefetch_related_objects, Count,
+    Min, Q, Avg, Prefetch,
+)
+from django.db.models.functions import Coalesce
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
+from sellerpanel.plans import goodPacks, packsNow, cartFlat, planNote, CART_LISTING_STATUSES
+from sellerpanel.recommend import showTip
+from sellerpanel.stripepay import savings
+from vision.templatetags.vision_tags import shop_look
+from .forms import FLAT_TYPES
+from .models import (
+    Offer, picsByRoom, ListingPhoto, Review, hasRole, notAllowed,
+    SavedListing, publicQ, Collection, Product, listing_id, Listing,
+)
+from storefront.address import get_postal, distance, walk_index
+from .offeradvice import floorCosts, lastSales
+from storefront.templatetags.estate_tags import nearest_mrt
+
+BUDGET_BANDS = (
+    {"label": "Under $500k", "maxPrice": 499999},
+    {"label": "$500k to $700k", "minPrice": 500000, "maxPrice": 699999},
+    {"label": "$700k to $1m", "minPrice": 700000, "maxPrice": 999999},
+    {"label": "$1m and above", "minPrice": 1000000},
+)
+RATING_CHOICES = [1, 2, 3, 4, 5]
+LOW_RATING = 2
+
+
+def helloFor(user):
+    hour = timezone.localtime().hour
+    if hour < 12:
+        period = "morning"
+    elif hour < 18:
+        period = "afternoon"
+    else:
+        period = "evening"
+
+    name = user.get_full_name().strip() or user.username
+
+    return f"Good {period}, {name}"
+
+
+def alertRow(icon, tone, title, meta, url, action, hero=""):
+    return {
+        "icon": icon,
+        "tone": tone,
+        "title": title,
+        "meta": meta,
+        "url": url,
+        "action": action,
+        "hero": hero,
+    }
+
+
+def typeShelf(live, shown=()):
+    rows = live.filter(flatType__in=FLAT_TYPES).values("flatType")
+    shelf = list(rows.annotate(count=Count("pk"), lowest=Min("askingPrice")).order_by("flatType"))
+    withPics = Exists(ListingPhoto.objects.filter(listing_id=OuterRef("pk")))
+
+    for row in shelf:
+        flats = starFirst(live.filter(flatType=row["flatType"])).prefetch_related(picsByRoom())
+        fresh = flats.exclude(pk__in=shown)
+        row["flat"] = fresh.filter(withPics).first() or fresh.first() or flats.first()
+
+    return shelf
+
+
+def budgetShelf(live):
+    lookups = {
+        "minPrice": "askingPrice__gte",
+        "maxPrice": "askingPrice__lte",
+    }
+
+    counts = {}
+
+    for index, band in enumerate(BUDGET_BANDS):
+        prices = {lookups[field]: band[field] for field in lookups if field in band}
+        counts[f"band{index}"] = Count("pk", filter=Q(**prices))
+
+    found = live.aggregate(**counts)
+    shelf = []
+
+    for index, band in enumerate(BUDGET_BANDS):
+        if found[f"band{index}"]:
+            query = urlencode({field: band[field] for field in lookups if field in band})
+            shelf.append({"label": band["label"], "count": found[f"band{index}"], "query": query})
+
+    return shelf
+
+
+def addRatings(products):
+    shown = Q(orderItems__review__hidden=False)
+
+    return products.annotate(
+        reviewCount=Count("orderItems__review", filter=shown),
+        averageRating=Avg("orderItems__review__rating", filter=shown),
+    )
+
+
+def newReviews(limit=6):
+    reviews = (
+        Review.objects.filter(hidden=False)
+        .exclude(comment="")
+        .select_related("orderItem__product", "seller")
+        .order_by("-createdAt", "-pk")
+    )
+
+    return list(reviews[:limit])
+
+
 def my_folders(user):
     if not hasRole(user, "buyer"):
         return None

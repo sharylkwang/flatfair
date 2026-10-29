@@ -16,6 +16,18 @@ from adminpanel.models import TicketMessage
 
 register = template.Library()
 
+@register.simple_tag
+def nearest_mrt(flat):
+    from storefront.address import nearest_mrt
+
+    return nearest_mrt(flat.postalCode, flat.block, flat.town)
+
+
+@register.inclusion_tag("storefront/mrt_badges.html")
+def mrt_badges(badges):
+    return {"badges": badges}
+
+
 @register.filter
 def flat_label(flat_type):
     kind = str(flat_type).upper().strip()

@@ -8,7 +8,12 @@ import re
 
 BLOCKS_JSON = ML_DIR / "hdb_blocks.json"
 SEARCH_LIMIT = 8
+STATIONS_CSV = ML_DIR / "mrt_stations.csv"
+STATIONS_JSON = ML_DIR / "mrt" / "stations.json"
 WALK_FILE = ML_DIR / "mrt" / "block_mrt.json"
+DARK_TEXT_LINES = {"CC", "CE", "CR"}
+
+
 @file_cache(lambda: BLOCKS_JSON)
 def blocks():
     return json.loads(BLOCKS_JSON.read_text(encoding="utf-8"))["blocks"]
@@ -238,6 +243,17 @@ def check(postal, town=None, block=None, flatType=None, area=None, lease=None, s
     return record, errors, warns, fixes
 
 
+@file_cache(lambda: STATIONS_CSV)
+def stations():
+    rows = []
+
+    with open(STATIONS_CSV, newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            rows.append((row["name"], float(row["lat"]), float(row["lon"])))
+
+    return rows
+
+
 @file_cache(lambda: (STATIONS_JSON, WALK_FILE))
 def walk_index():
     try:
@@ -297,6 +313,62 @@ def nearest_station(postal):
     best["metres"] = int(round(best["metres"], -1))
 
     return best
+
+
+def line_tags(codes, lines):
+    lrt_codes = {
+        "STC": "SK",
+        "SE": "SK",
+        "SW": "SK",
+        "PTC": "PG",
+        "PE": "PG",
+        "PW": "PG",
+    }
+    colours = {"#009645": "#007A38", "#748477": "#5F6D62"}
+    badges = []
+
+    for code in codes:
+        line = re.match(r"[A-Z]+", code).group()
+        line = lrt_codes.get(line, line)
+        meta = lines.get(line, {})
+        colour = meta.get("colour", "#748477").upper()
+        colour = colours.get(colour, colour)
+        text = "#FFFFFF"
+
+        if line in DARK_TEXT_LINES:
+            text = "#1B2A3A"
+
+        badges.append(
+            {"code": code, "lineName": meta.get("name", line), "colour": colour, "text": text}
+        )
+
+    return badges
+
+
+def walk_stop(postal, block="", town=""):
+    index = walk_index()
+    row = index["blocks"].get(str(postal or "").strip())
+
+    if row is None and block and town:
+        row = index["byBlock"].get(f"{town.strip().upper()}|{block.strip().upper()}")
+
+    if row is None:
+        return None
+
+    station = index["stations"][row[0]]
+    wayOut = ""
+
+    if row[2] >= 0:
+        wayOut = station["exits"][row[2]]["code"]
+
+    return {
+        "name": f"{station['name']} {station['kind']}",
+        "metres": int(round(row[1], -1)),
+        "minutes": max(1, round(row[1] / (80))),
+        "exit": wayOut,
+        "badges": line_tags(station["codes"], index["lines"]),
+        "walking": True,
+    }
 
 
 def nearest_mrt(postal, block="", town=""):

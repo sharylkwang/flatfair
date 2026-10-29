@@ -1,0 +1,16 @@
+{% load estate_tags %}
+{% seller_floor_plan flat as sellerPlan %}
+{% with planUrl=flat|plan_src planText=flat|plan_caption %}
+<details class="fold glance-fold glance-plan" data-lightbox-group>
+  <summary>{% include "storefront/ui_icon.html" with name="grid" only %}Floor plan <span class="fold-hint">{{ flat.flatType|flat_label }} · {{ flat.floorAreaSqm|floatformat:"-1" }} sqm</span></summary>
+  <div class="fold-body" id="floor-plan">
+    {% if planUrl %}
+      <a class="glance-plan-link" href="{{ planUrl }}" data-lightbox data-caption="{% if planText %}{{ planText }}{% else %}{{ flat.flatType|flat_label }} · {{ flat.floorAreaSqm|floatformat }} sqm{% endif %} · typical layout"><img class="glance-plan-thumbnail" src="{{ planUrl }}" alt="Typical floor plan of a {{ flat.flatType|flat_label }} flat with {{ flat.bedrooms }} bedroom{{ flat.bedrooms|pluralize }} and {{ flat.bathrooms }} bathroom{{ flat.bathrooms|pluralize }}" {% if planText %}width="1536" height="1024"{% else %}width="900" height="760"{% endif %} loading="lazy" decoding="async"></a>
+      <p class="muted">A typical {{ flat.flatType|flat_label }} layout at this size. The real flat may look different.</p>
+    {% else %}
+      <p class="glance-empty">We don’t have a floor plan preview for this flat.</p>
+    {% endif %}
+    {% if sellerPlan %}<a class="btn btn-ghost btn-sm" href="{% url 'seller_floor_plan' flat.publicId %}">Seller's floor plan (PDF)</a>{% endif %}
+  </div>
+</details>
+{% endwith %}

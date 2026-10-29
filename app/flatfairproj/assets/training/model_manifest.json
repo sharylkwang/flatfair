@@ -1,0 +1,554 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T09:12:58.915724+00:00",
+  "metadataProvenance": "Training source and recorded metrics; artifacts are hashed, never deserialized. Training-time dependency versions were not recorded.",
+  "pythonVersion": "3.12.3",
+  "libraryVersions": {
+    "annotated-doc": {
+      "required": "0.0.5",
+      "installed": "0.0.5"
+    },
+    "anyio": {
+      "required": "4.15.1",
+      "installed": "4.15.1"
+    },
+    "asgiref": {
+      "required": "3.12.1",
+      "installed": "3.12.1"
+    },
+    "click": {
+      "required": "8.5.0",
+      "installed": "8.5.0"
+    },
+    "cloudpickle": {
+      "required": "3.1.2",
+      "installed": "3.1.2"
+    },
+    "Django": {
+      "required": "5.2.17",
+      "installed": "5.2.17"
+    },
+    "filelock": {
+      "required": "4.2.4",
+      "installed": "4.2.4"
+    },
+    "fsspec": {
+      "required": "2026.9.0",
+      "installed": "2026.9.0"
+    },
+    "h11": {
+      "required": "0.16.0",
+      "installed": "0.16.0"
+    },
+    "hf-xet": {
+      "required": "1.7.0",
+      "installed": "1.7.0"
+    },
+    "httpcore2": {
+      "required": "2.16.0",
+      "installed": "2.16.0"
+    },
+    "httpx2": {
+      "required": "2.16.0",
+      "installed": "2.16.0"
+    },
+    "huggingface_hub": {
+      "required": "2.2.0",
+      "installed": "2.2.0"
+    },
+    "idna": {
+      "required": "3.20",
+      "installed": "3.20"
+    },
+    "Jinja2": {
+      "required": "3.1.6",
+      "installed": "3.1.6"
+    },
+    "joblib": {
+      "required": "1.6.0",
+      "installed": "1.6.0"
+    },
+    "lightgbm": {
+      "required": "4.7.0",
+      "installed": "4.7.0"
+    },
+    "markdown-it-py": {
+      "required": "4.2.0",
+      "installed": "4.2.0"
+    },
+    "MarkupSafe": {
+      "required": "3.0.4",
+      "installed": "3.0.4"
+    },
+    "mdurl": {
+      "required": "0.1.2",
+      "installed": "0.1.2"
+    },
+    "mpmath": {
+      "required": "1.3.0",
+      "installed": "1.3.0"
+    },
+    "narwhals": {
+      "required": "2.26.0",
+      "installed": "2.26.0"
+    },
+    "networkx": {
+      "required": "3.7",
+      "installed": "3.7"
+    },
+    "numpy": {
+      "required": "2.5.3",
+      "installed": "2.5.3"
+    },
+    "packaging": {
+      "required": "26.3",
+      "installed": "26.3"
+    },
+    "pandas": {
+      "required": "3.0.6",
+      "installed": "3.0.6"
+    },
+    "pillow": {
+      "required": "13.0.0",
+      "installed": "13.0.0"
+    },
+    "Pygments": {
+      "required": "2.21.0",
+      "installed": "2.21.0"
+    },
+    "python-dateutil": {
+      "required": "2.9.0.post0",
+      "installed": "2.9.0.post0"
+    },
+    "PyYAML": {
+      "required": "6.0.3",
+      "installed": "6.0.3"
+    },
+    "regex": {
+      "required": "2026.9.29",
+      "installed": "2026.9.29"
+    },
+    "rich": {
+      "required": "15.0.0",
+      "installed": "15.0.0"
+    },
+    "safetensors": {
+      "required": "0.8.0",
+      "installed": "0.8.0"
+    },
+    "scikit-learn": {
+      "required": "1.9.1",
+      "installed": "1.9.1"
+    },
+    "scipy": {
+      "required": "1.18.1",
+      "installed": "1.18.1"
+    },
+    "shellingham": {
+      "required": "1.5.4",
+      "installed": "1.5.4"
+    },
+    "six": {
+      "required": "1.17.0",
+      "installed": "1.17.0"
+    },
+    "sqlparse": {
+      "required": "0.6.0",
+      "installed": "0.6.0"
+    },
+    "sympy": {
+      "required": "1.14.0",
+      "installed": "1.14.0"
+    },
+    "threadpoolctl": {
+      "required": "3.7.0",
+      "installed": "3.7.0"
+    },
+    "tokenizers": {
+      "required": "0.23.3",
+      "installed": "0.23.3"
+    },
+    "torch": {
+      "required": "2.14.1",
+      "installed": "2.14.1"
+    },
+    "tqdm": {
+      "required": "4.70.1",
+      "installed": "4.70.1"
+    },
+    "transformers": {
+      "required": "5.20.2",
+      "installed": "5.20.2"
+    },
+    "truststore": {
+      "required": "0.10.5",
+      "installed": "0.10.5"
+    },
+    "typer": {
+      "required": "0.27.3",
+      "installed": "0.27.3"
+    },
+    "typing_extensions": {
+      "required": "4.16.0",
+      "installed": "4.16.0"
+    },
+    "tzdata": {
+      "required": "2026.5",
+      "installed": "2026.5"
+    },
+    "requests": {
+      "required": "2.34.2",
+      "installed": "2.34.2"
+    }
+  },
+  "pretrained": [
+    {
+      "modelId": "openai/clip-vit-base-patch32",
+      "localPath": "clip",
+      "resolvedPath": "assets/ml/clip",
+      "status": "installed",
+      "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+      "revisionSource": "~/.cache/huggingface/hub/models--openai--clip-vit-base-patch32/refs/main",
+      "files": [
+        {
+          "path": "config.json",
+          "sizeBytes": 2129,
+          "sha256": "3b7e6fb6243489086ebac37943c44c4515f2cc7d1d72936f95148bf512b56cd4"
+        },
+        {
+          "path": "model.safetensors",
+          "sizeBytes": 605156676,
+          "sha256": "d5853196afb60ca6373692d9af911aacd8fa821af6d4af54720d4eb9c8f5da0a"
+        },
+        {
+          "path": "processor_config.json",
+          "sizeBytes": 581,
+          "sha256": "38d5457ba35b9eee2b4fb2b8d3f151ca8cb5932348e6979d1c5d8f05966ce810"
+        },
+        {
+          "path": "tokenizer.json",
+          "sizeBytes": 3642073,
+          "sha256": "6d9109cc838977f3ca94a379eec36aecc7c807e1785cd729660ca2fc0171fb35"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "sizeBytes": 387,
+          "sha256": "e251a8dbcc02b3b3979660b54b0a7c6051d0e6d33b3d7b3d5b9cce7cd9216565"
+        }
+      ]
+    },
+    {
+      "modelId": "IDEA-Research/grounding-dino-tiny",
+      "localPath": "vision/grounding_dino",
+      "resolvedPath": "assets/ml/vision/grounding_dino",
+      "status": "installed",
+      "revision": "a2bb814dd30d776dcf7e30523b00659f4f141c71",
+      "revisionSource": "~/.cache/huggingface/hub/models--IDEA-Research--grounding-dino-tiny/refs/main",
+      "files": [
+        {
+          "path": "added_tokens.json",
+          "sizeBytes": 82,
+          "sha256": "909e96cb32d92ce728a01bc99850cbba26196d74115c17ebeb019275412588f2"
+        },
+        {
+          "path": "config.json",
+          "sizeBytes": 1644,
+          "sha256": "eec82c5ab66e16df12a9a212e68ac011779927c2536cf9078658e35d85f0c67a"
+        },
+        {
+          "path": "model.safetensors",
+          "sizeBytes": 689359096,
+          "sha256": "1a2412ef99bd74bcd3c2a246fa1e48581f8889a1300c9051974741314fc042f3"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "sizeBytes": 457,
+          "sha256": "8454179ba95e2ad22947835aad7b45862a601fc0055ab88bf1ee70892d3aea60"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "sizeBytes": 125,
+          "sha256": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3"
+        },
+        {
+          "path": "tokenizer.json",
+          "sizeBytes": 711396,
+          "sha256": "d241a60d5e8f04cc1b2b3e9ef7a4921b27bf526d9f6050ab90f9267a1f9e5c66"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "sizeBytes": 1237,
+          "sha256": "d40ab645b68211910b9170d22433d43186a6ec8ee6fd10ba170524b25bf4fb56"
+        },
+        {
+          "path": "vocab.txt",
+          "sizeBytes": 231508,
+          "sha256": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3"
+        }
+      ]
+    },
+    {
+      "modelId": "Zigeng/SlimSAM-uniform-77",
+      "localPath": "vision/slimsam",
+      "resolvedPath": "assets/ml/vision/slimsam",
+      "status": "installed",
+      "revision": "79c09c1ce6b4ae51f00634ed171d9b8e888f6911",
+      "revisionSource": "~/.cache/huggingface/hub/models--Zigeng--SlimSAM-uniform-77/refs/main",
+      "files": [
+        {
+          "path": "config.json",
+          "sizeBytes": 364,
+          "sha256": "75baa88a4780233d7a1d5525b702ab9552938d383f65f658d20e6c345d3f7eeb"
+        },
+        {
+          "path": "model.safetensors",
+          "sizeBytes": 38931272,
+          "sha256": "b0ee221e3d33935807a820c157fec81a537b3b9979edc88b148a8dae8bbdd5d2"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "sizeBytes": 466,
+          "sha256": "225545a743c654e3c495ec6f545a0eaba57c8ba3fbbd8483b3cb1c0fc58db517"
+        }
+      ]
+    },
+    {
+      "modelId": "florence-community/Florence-2-base",
+      "localPath": "vision/florence2",
+      "resolvedPath": "assets/ml/vision/florence2",
+      "status": "installed",
+      "revision": "00921df66db728a9ceb750f5eca43e5c203a2051",
+      "revisionSource": "~/Desktop/c_windows/Users/Koko/Desktop/HELP/25_10_2026/IS2108/flatfair/app/flatfairproj/ml/vision/florence2/.cache/huggingface/download/config.json.metadata",
+      "files": [
+        {
+          "path": "added_tokens.json",
+          "sizeBytes": 22430,
+          "sha256": "1d75deda84dfa81fb6c09301f3fed00f9695059568bbb1403a6bf299cd84fc37"
+        },
+        {
+          "path": "config.json",
+          "sizeBytes": 2387,
+          "sha256": "2a4dfe9885d183da121f239ada734bd700ee6908b650a7a25ab32eb104fe1d7a"
+        },
+        {
+          "path": "generation_config.json",
+          "sizeBytes": 292,
+          "sha256": "0251459c49cc358ac033b5d4b8569e61ac22bde5d76be404b97a44cfb33fb12e"
+        },
+        {
+          "path": "merges.txt",
+          "sizeBytes": 456318,
+          "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"
+        },
+        {
+          "path": "model.safetensors",
+          "sizeBytes": 463178864,
+          "sha256": "62f3e696da74f8869a68ddb529a9b3e14eb25b21c592cb3dea6179bf944df6a0"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "sizeBytes": 603,
+          "sha256": "1396ec5a0a7adfe1c04fb777b09e8ba753be6dbb5868212ab3c3ef39d91fe031"
+        },
+        {
+          "path": "processor_config.json",
+          "sizeBytes": 2264,
+          "sha256": "cd0e3bf41a39b1276503fbd273bc03b9afc70d7a15ea681a92a1b4b77f858ee6"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "sizeBytes": 146627,
+          "sha256": "72ff172dc769bc1551b1b4211628ce3271643bc60379e4da45d85a9be9332c39"
+        },
+        {
+          "path": "tokenizer.json",
+          "sizeBytes": 3748144,
+          "sha256": "3ad7001f773409abe6bba33eac92662611a73d72f459bda2f00d2a221dd31ce4"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "sizeBytes": 197922,
+          "sha256": "cb5f80bd9afa767bb1bb798ee5f0a79eae45239b8e72506166b4218175a16723"
+        },
+        {
+          "path": "vocab.json",
+          "sizeBytes": 798293,
+          "sha256": "ed19656ea1707df69134c4af35c8ceda2cc9860bf2c3495026153a133670ab5e"
+        }
+      ]
+    },
+    {
+      "modelId": "depth-anything/Depth-Anything-V2-Small-hf",
+      "localPath": "depth",
+      "resolvedPath": "assets/ml/depth",
+      "status": "installed",
+      "revision": "5426e4f0f36572d16453bbda7a8389317b1bef99",
+      "revisionSource": "~/.cache/huggingface/hub/models--depth-anything--Depth-Anything-V2-Small-hf/refs/main",
+      "files": [
+        {
+          "path": "config.json",
+          "sizeBytes": 950,
+          "sha256": "c56698d3643dde1f83ea2212759e6b31a22b8f827246a36dd007ee8a22b3ff75"
+        },
+        {
+          "path": "model.safetensors",
+          "sizeBytes": 99173660,
+          "sha256": "3152477ce0d8d6978d76b995120de97cb5b928701fd0f817769f59e249a16b70"
+        },
+        {
+          "path": "preprocessor_config.json",
+          "sizeBytes": 775,
+          "sha256": "d41175c0d889477ca8fc67191e540faef14baf6275157b3fdecf78469e6bbf84"
+        }
+      ]
+    }
+  ],
+  "clip": {
+    "modelId": "openai/clip-vit-base-patch32",
+    "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "embeddingSize": 512,
+    "photoModelVersion": "c54c344a58921c4eb4d096cb86f97684be2926cc025c3d5bd876181fa415f3cc"
+  },
+  "vision": {
+    "pipelineVersion": "6",
+    "models": [
+      {
+        "modelId": "IDEA-Research/grounding-dino-tiny",
+        "revision": "a2bb814dd30d776dcf7e30523b00659f4f141c71",
+        "localPath": "vision/grounding_dino"
+      },
+      {
+        "modelId": "Zigeng/SlimSAM-uniform-77",
+        "revision": "79c09c1ce6b4ae51f00634ed171d9b8e888f6911",
+        "localPath": "vision/slimsam"
+      },
+      {
+        "modelId": "florence-community/Florence-2-base",
+        "revision": "00921df66db728a9ceb750f5eca43e5c203a2051",
+        "localPath": "vision/florence2"
+      },
+      {
+        "modelId": "depth-anything/Depth-Anything-V2-Small-hf",
+        "revision": "5426e4f0f36572d16453bbda7a8389317b1bef99",
+        "localPath": "depth"
+      }
+    ]
+  },
+  "revisionLimitation": "Pinned commits come from local Hugging Face refs/main or per-file download metadata. Cache refs associate a revision with a repository but do not prove the origin of copied or converted files; installed SHA-256 hashes are the runtime baseline. Missing folders are explicitly not installed. No models are loaded and no .env is read.",
+  "artifacts": [
+    {
+      "path": "assets/ml/aigen_head.joblib",
+      "sha256": "b6c09c7c5c0c4a49efc9ef5b454c9307a2078fcbc1763d2d4d871b5a88243c8e",
+      "sizeBytes": 47391,
+      "modelType": "sklearn.linear_model.LogisticRegression, frozen CLIP features",
+      "version": "photo-v2",
+      "trainingScript": "photo_training.ipynb",
+      "data": {
+        "sources": [
+          "MIT Indoor-67 and wrong-photo classes",
+          "ELSA D3 generators and paired real LAION interiors"
+        ],
+        "dateRange": null,
+        "dateRangeNote": "Image capture/generation dates are not recorded in supplied training evidence.",
+        "splitDates": null,
+        "split": "Stratified random 70/15/15, seed 2108; not a temporal split.",
+        "splitEvidence": "photo_metrics.json: ai.split_paths and ai.calibration_method"
+      },
+      "metricsFiles": [
+        "photo_metrics.json"
+      ]
+    },
+    {
+      "path": "assets/ml/package_model.joblib",
+      "sha256": "3c218c2f5ebe199c8dbc9a27ed24ed21c8729edb34578af416ec355ca4d56d44",
+      "sizeBytes": 1306501,
+      "modelType": "sklearn.pipeline.Pipeline: DictVectorizer and RandomForestClassifier",
+      "version": "package-v1",
+      "trainingScript": "package_training.ipynb",
+      "data": {
+        "sources": [
+          "ResaleflatpricesbasedonregistrationdatefromJan2017onwards.csv",
+          "Synthetic valuation, asking-price and listing-age fields; assumed noisy policy labels"
+        ],
+        "dateRange": {
+          "start": "2023-11",
+          "end": "2026-10"
+        },
+        "activityDateRange": {
+          "start": "2025-11",
+          "end": "2026-10"
+        },
+        "splitDates": null,
+        "split": "Stratified 75/25 holdout; no tuning or refitting on test rows",
+        "seed": 2108,
+        "trainRows": 13500,
+        "testRows": 4500
+      },
+      "metricsFiles": [
+        "package_model_metrics.json",
+        "package_model_eval.json"
+      ]
+    },
+    {
+      "path": "assets/ml/photo_head.joblib",
+      "sha256": "59764c96b9de6e28eddbe3a44b964ab6c7ea5aad21f08ab4d732f3264cf07963",
+      "sizeBytes": 435295,
+      "modelType": "sklearn.neural_network.MLPClassifier, hidden layer 64, frozen CLIP features",
+      "version": "photo-v2",
+      "trainingScript": "photo_training.ipynb",
+      "data": {
+        "sources": [
+          "MIT Indoor-67 and wrong-photo classes",
+          "ELSA D3 generators and paired real LAION interiors"
+        ],
+        "dateRange": null,
+        "dateRangeNote": "Image capture/generation dates are not recorded in supplied training evidence.",
+        "splitDates": null,
+        "split": "Stratified random 70/15/15, seed 2108; not a temporal split.",
+        "splitRows": {
+          "train": 5392,
+          "val": 1155,
+          "test": 1156
+        }
+      },
+      "metricsFiles": [
+        "photo_metrics.json",
+        "lens_eval.json"
+      ]
+    },
+    {
+      "path": "assets/ml/price_model_v5.joblib",
+      "sha256": "49db3c767892c5c0418bdd28eb74d67e3dab879262b11dcbe960988e03aa6cf7",
+      "sizeBytes": 29502418,
+      "modelType": "Three lightgbm.LGBMRegressor models: median, q10, q90 on log price",
+      "version": "v5.3",
+      "trainingScript": "price_training.ipynb",
+      "data": {
+        "sources": [
+          "ResaleflatpricesbasedonregistrationdatefromJan2017onwards.csv",
+          "geo/hdb_blocks_geo.csv",
+          "geo/mrt_stations.csv",
+          "legacy_mappings.json"
+        ],
+        "dateRange": {
+          "start": "2017-01",
+          "end": "2026-10"
+        },
+        "splitDates": {
+          "trainEnd": "2025-04",
+          "validationStart": "2025-05",
+          "validationEnd": "2025-10",
+          "testStart": "2025-11",
+          "testEnd": "2026-10"
+        },
+        "finalRefit": "All supported source sales, including former test months.",
+        "limitation": "Test period previously informed geographic feature selection; metrics precede final refit."
+      },
+      "metricsFiles": [
+        "price_model_v5_metrics.json",
+        "price_band_eval.json",
+        "price_backtest_eval.json"
+      ]
+    }
+  ]
+}
