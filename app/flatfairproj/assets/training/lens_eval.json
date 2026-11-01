@@ -1,0 +1,7881 @@
+{
+  "evaluatedAt": "2026-11-10T06:35:40.531750+00:00",
+  "database": "db.sqlite3",
+  "databaseSha256": "b9a8e0bafd6fbc6aa7057b7390ce15e14a4ae10e8692b1fa723ff603a092155a",
+  "querySnapshotSha256": "f9f517080b986d4b77c43e5fa5a99a3f5a6d1a424e9347d5a770bf9f63cf3863",
+  "photoModelVersion": "c54c344a58921c4eb4d096cb86f97684be2926cc025c3d5bd876181fa415f3cc",
+  "rankingCodeSha256": "259c2340d643a13b6aaf05a975b494635a9bf644cd33084365971c6bad36890b",
+  "method": "Execute unchanged similarFlats, validEmbedding and closeness functions extracted via AST to avoid importing photo heads or vision models; minimal Django settings never read .env; read-only SQLite URI and query_only.",
+  "queryScope": "Every stored valid current-version photo, regardless of source listing status; skip its entire listing.",
+  "candidateScope": "Serving helper: current-version valid photos of live listings whose sellers are active; best photo per flat; up to 12 flats.",
+  "relevance": "Seller-declared room type; all bedroom slots combined as bedroom and toilet slots as bathroom; other slots unchanged.",
+  "metricDefinitions": "Macro average over all queries; P@5 divides by 5 even with fewer results; empty results score zero. MRR is truncated at serving RESULTS (12). Ranking ignores only the no-close-match threshold; served applies it. Coverage is the fraction of queries with any served results.",
+  "minimumUsefulSimilarity": 0.75,
+  "currentVersionPhotos": 90,
+  "invalidEmbeddingsSkipped": 0,
+  "ranking": {
+    "queries": 90,
+    "precisionAt1": 0.9888888888888889,
+    "precisionAt5": 0.9777777777777777,
+    "meanReciprocalRank": 0.9925925925925926,
+    "resultCoverage": 1.0
+  },
+  "served": {
+    "queries": 90,
+    "precisionAt1": 0.9888888888888889,
+    "precisionAt5": 0.9777777777777777,
+    "meanReciprocalRank": 0.9925925925925926,
+    "resultCoverage": 1.0
+  },
+  "noCloseMatchesQueries": 0,
+  "perRoom": {
+    "bathroom": {
+      "ranking": {
+        "queries": 26,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "meanReciprocalRank": 1.0,
+        "resultCoverage": 1.0
+      },
+      "served": {
+        "queries": 26,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "meanReciprocalRank": 1.0,
+        "resultCoverage": 1.0
+      }
+    },
+    "bedroom": {
+      "ranking": {
+        "queries": 38,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "meanReciprocalRank": 1.0,
+        "resultCoverage": 1.0
+      },
+      "served": {
+        "queries": 38,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "meanReciprocalRank": 1.0,
+        "resultCoverage": 1.0
+      }
+    },
+    "kitchen": {
+      "ranking": {
+        "queries": 13,
+        "precisionAt1": 1.0,
+        "precisionAt5": 0.9538461538461539,
+        "meanReciprocalRank": 1.0,
+        "resultCoverage": 1.0
+      },
+      "served": {
+        "queries": 13,
+        "precisionAt1": 1.0,
+        "precisionAt5": 0.9538461538461539,
+        "meanReciprocalRank": 1.0,
+        "resultCoverage": 1.0
+      }
+    },
+    "living_room": {
+      "ranking": {
+        "queries": 13,
+        "precisionAt1": 0.9230769230769231,
+        "precisionAt5": 0.8923076923076922,
+        "meanReciprocalRank": 0.9487179487179488,
+        "resultCoverage": 1.0
+      },
+      "served": {
+        "queries": 13,
+        "precisionAt1": 0.9230769230769231,
+        "precisionAt5": 0.8923076923076922,
+        "meanReciprocalRank": 0.9487179487179488,
+        "resultCoverage": 1.0
+      }
+    }
+  },
+  "elapsedSeconds": 1.2317236539965961,
+  "limitations": [
+    "Room labels are seller-declared upload slots, not independently judged visual relevance.",
+    "The demo set is small and may repeat photos across flats; no duplicate-photo exclusion is applied because serving does not apply one.",
+    "This measures stored-embedding retrieval only, not upload inference latency, visual style, room-slot correctness or real-user utility."
+  ],
+  "queries": [
+    {
+      "photoId": 6,
+      "listingId": 2,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 0.4,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 0.4,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.9221217977645411
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.8954180742737298
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.8926256631396277
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.892451750635074
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.8891148660902812
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.8727594086338366
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.8572731349719868
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8565948530176983
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.855939019612269
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8271745848718349
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.8253860746906576
+        }
+      ]
+    },
+    {
+      "photoId": 7,
+      "listingId": 2,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9556329408683402
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9343615238523884
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.929472146839041
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.9283962290215094
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.9282188968611714
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9230581120272563
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9181368771340608
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9174986165732428
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.9087333987078023
+        },
+        {
+          "photoId": 65,
+          "listingId": 10,
+          "room": "kitchen",
+          "similarity": 0.9034654942577863
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8834556555674581
+        }
+      ]
+    },
+    {
+      "photoId": 8,
+      "listingId": 2,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.955590417564044
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9553352874651184
+        },
+        {
+          "photoId": 54,
+          "listingId": 8,
+          "room": "bedroom_4",
+          "similarity": 0.9549218824053229
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.94554126602576
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9373251711424889
+        },
+        {
+          "photoId": 80,
+          "listingId": 12,
+          "room": "bedroom_3",
+          "similarity": 0.9295566114401512
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9240335879609405
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9211119965537791
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9128588802568783
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8970039737881969
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.8938668485104377
+        }
+      ]
+    },
+    {
+      "photoId": 9,
+      "listingId": 2,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9475256918308714
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9470538375403167
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9346474560956666
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9346383743166077
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9338982175738442
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9261624449878851
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9186751942453529
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.91722213890022
+        },
+        {
+          "photoId": 66,
+          "listingId": 10,
+          "room": "master_bedroom",
+          "similarity": 0.9160671568765577
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9135894118314337
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.911350335611426
+        }
+      ]
+    },
+    {
+      "photoId": 10,
+      "listingId": 2,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9400853184751656
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9382524113603163
+        },
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.9381470545245348
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9352371852244691
+        },
+        {
+          "photoId": 51,
+          "listingId": 8,
+          "room": "master_bedroom",
+          "similarity": 0.9341796313766186
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9306282692231601
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9294129498350326
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9283745860514645
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9270394655466293
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9254916747428644
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.9036935366408712
+        }
+      ]
+    },
+    {
+      "photoId": 11,
+      "listingId": 2,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 26,
+          "listingId": 4,
+          "room": "common_toilet",
+          "similarity": 0.9529128819109092
+        },
+        {
+          "photoId": 40,
+          "listingId": 6,
+          "room": "common_toilet",
+          "similarity": 0.950843497998711
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9472144909046378
+        },
+        {
+          "photoId": 82,
+          "listingId": 12,
+          "room": "master_toilet",
+          "similarity": 0.943836196927685
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9429279707768636
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9395486387742392
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9380697522852485
+        },
+        {
+          "photoId": 18,
+          "listingId": 3,
+          "room": "common_toilet",
+          "similarity": 0.9307786760032668
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9200878331901987
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9090618505878052
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.8987251138450785
+        }
+      ]
+    },
+    {
+      "photoId": 12,
+      "listingId": 2,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9330254259728749
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9319745525354105
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9297643962131665
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9175262183048647
+        },
+        {
+          "photoId": 27,
+          "listingId": 4,
+          "room": "master_toilet",
+          "similarity": 0.9148216386908079
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9128292077363824
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9029102851973254
+        },
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9022375589753877
+        },
+        {
+          "photoId": 63,
+          "listingId": 9,
+          "room": "master_toilet",
+          "similarity": 0.9002805721024956
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.8885390691204187
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.8836823933156976
+        }
+      ]
+    },
+    {
+      "photoId": 13,
+      "listingId": 3,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.959725918214867
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.9312026816648344
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.9308226955514672
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.928260913829558
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.9223315968974962
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.9119383033215314
+        },
+        {
+          "photoId": 69,
+          "listingId": 11,
+          "room": "living_room",
+          "similarity": 0.9107734903346174
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.900028449089151
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8837906798056465
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8717223154183202
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.8590281034154206
+        }
+      ]
+    },
+    {
+      "photoId": 14,
+      "listingId": 3,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.952582141670756
+        },
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9514511765998876
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9456758505184719
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9321182492598481
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9306141736601713
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9283962290215094
+        },
+        {
+          "photoId": 65,
+          "listingId": 10,
+          "room": "kitchen",
+          "similarity": 0.9219106624155723
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9117833248815502
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.9069194095720092
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.8977533167683315
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.8916076908594193
+        }
+      ]
+    },
+    {
+      "photoId": 15,
+      "listingId": 3,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9552579644042087
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9382732051006314
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9306282692231601
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9304563179711358
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9295391033506724
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.923980643319352
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9234598610623208
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9230066855875224
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9225638108921814
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.9125595566917997
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.888521573071851
+        }
+      ]
+    },
+    {
+      "photoId": 16,
+      "listingId": 3,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 25,
+          "listingId": 4,
+          "room": "bedroom_4",
+          "similarity": 0.9554807029719298
+        },
+        {
+          "photoId": 61,
+          "listingId": 9,
+          "room": "bedroom_3",
+          "similarity": 0.9059021595318947
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.8965277122917004
+        },
+        {
+          "photoId": 39,
+          "listingId": 6,
+          "room": "bedroom_2",
+          "similarity": 0.8917734259014317
+        },
+        {
+          "photoId": 32,
+          "listingId": 5,
+          "room": "bedroom_2",
+          "similarity": 0.8862187185450289
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.8778452381036195
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.8707343886771106
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.8705219749250209
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8639325231442865
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.862862438306674
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.8287695213086939
+        }
+      ]
+    },
+    {
+      "photoId": 17,
+      "listingId": 3,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9337815977156845
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9276886972521541
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9274749105596305
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9244048444988814
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9211032081486877
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.919490365753342
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.909290738021453
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9072629520722111
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.9067742670888554
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9035470567227719
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8696822487304401
+        }
+      ]
+    },
+    {
+      "photoId": 18,
+      "listingId": 3,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9679014397910433
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9656173486401614
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9640731160533297
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9604248376722705
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9393217123983613
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9358291365511846
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9348832908572632
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9307786760032668
+        },
+        {
+          "photoId": 26,
+          "listingId": 4,
+          "room": "common_toilet",
+          "similarity": 0.9235112645193772
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9124519852888373
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9059661189005799
+        }
+      ]
+    },
+    {
+      "photoId": 19,
+      "listingId": 3,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.960642072036049
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9574930289979782
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9532636590072394
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9501843369001506
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9422323825860913
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.941877904177278
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9361268969596431
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9336459663884712
+        },
+        {
+          "photoId": 26,
+          "listingId": 4,
+          "room": "common_toilet",
+          "similarity": 0.9296645763995524
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9226367125511917
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9074227916469682
+        }
+      ]
+    },
+    {
+      "photoId": 20,
+      "listingId": 4,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.943111404096776
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.9287653004227945
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.9209682699768789
+        },
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.9141521687844393
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.9105703261462004
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.9036727345784552
+        },
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.900028449089151
+        },
+        {
+          "photoId": 6,
+          "listingId": 2,
+          "room": "living_room",
+          "similarity": 0.8926256631396277
+        },
+        {
+          "photoId": 83,
+          "listingId": 13,
+          "room": "living_room",
+          "similarity": 0.8786694264759818
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8701764773866147
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.8642978522774232
+        }
+      ]
+    },
+    {
+      "photoId": 21,
+      "listingId": 4,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9343615238523884
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9332786375099236
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.9261263176282617
+        },
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9194210313015589
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.917645482798903
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9097712647642395
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9095098076208583
+        },
+        {
+          "photoId": 65,
+          "listingId": 10,
+          "room": "kitchen",
+          "similarity": 0.9093714752036511
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.9047935345577002
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.8977533167683315
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8572982183245241
+        }
+      ]
+    },
+    {
+      "photoId": 22,
+      "listingId": 4,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 51,
+          "listingId": 8,
+          "room": "master_bedroom",
+          "similarity": 0.9510713179130291
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9461316181841052
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9381470545245348
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9307659715519242
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9248306196250214
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9216783907718571
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.9175046792680605
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9171646004061983
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9169198783527217
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9092666921474324
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.8879685624475733
+        }
+      ]
+    },
+    {
+      "photoId": 23,
+      "listingId": 4,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 54,
+          "listingId": 8,
+          "room": "bedroom_4",
+          "similarity": 0.9293996073945094
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.909992557235302
+        },
+        {
+          "photoId": 80,
+          "listingId": 12,
+          "room": "bedroom_3",
+          "similarity": 0.9009996545797456
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.9009833470525528
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.8980777379218987
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8961653633865192
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.8952766645081102
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.8858993661036595
+        },
+        {
+          "photoId": 66,
+          "listingId": 10,
+          "room": "master_bedroom",
+          "similarity": 0.88324505681675
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.8829430181140162
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.8319286554481848
+        }
+      ]
+    },
+    {
+      "photoId": 24,
+      "listingId": 4,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 51,
+          "listingId": 8,
+          "room": "master_bedroom",
+          "similarity": 0.9555699828295448
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9454003860553815
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9323515304077993
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.9273816549743296
+        },
+        {
+          "photoId": 9,
+          "listingId": 2,
+          "room": "bedroom_2",
+          "similarity": 0.9261624449878851
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9244801661931557
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.923913967556641
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9230066855875224
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9216979666149424
+        },
+        {
+          "photoId": 66,
+          "listingId": 10,
+          "room": "master_bedroom",
+          "similarity": 0.9213953668567647
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.8990333638704753
+        }
+      ]
+    },
+    {
+      "photoId": 25,
+      "listingId": 4,
+      "room": "bedroom_4",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 16,
+          "listingId": 3,
+          "room": "bedroom_2",
+          "similarity": 0.9554807029719298
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9000572656845072
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.8967993466214058
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8938811192076858
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8882369658266301
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.8831599677506426
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8787201669975025
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.8735272918358101
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.8730927035331522
+        },
+        {
+          "photoId": 32,
+          "listingId": 5,
+          "room": "bedroom_2",
+          "similarity": 0.8679535301452216
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.8505732955277984
+        }
+      ]
+    },
+    {
+      "photoId": 26,
+      "listingId": 4,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 40,
+          "listingId": 6,
+          "room": "common_toilet",
+          "similarity": 0.9677405193812195
+        },
+        {
+          "photoId": 82,
+          "listingId": 12,
+          "room": "master_toilet",
+          "similarity": 0.9606416200650713
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9529128819109092
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9440866153757833
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9421214127008186
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9359697200341682
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9296645763995524
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.92721096203901
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9218018063348266
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9118615814498477
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.8967625530135868
+        }
+      ]
+    },
+    {
+      "photoId": 27,
+      "listingId": 4,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 82,
+          "listingId": 12,
+          "room": "master_toilet",
+          "similarity": 0.9615745534980936
+        },
+        {
+          "photoId": 40,
+          "listingId": 6,
+          "room": "common_toilet",
+          "similarity": 0.9571301602813576
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9420892693435063
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9412618839519636
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9378460707087605
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9345819172443489
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9288764763531214
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.924500304063294
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9240329703557343
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9095250083709512
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.8931335052200957
+        }
+      ]
+    },
+    {
+      "photoId": 28,
+      "listingId": 4,
+      "room": "common_toilet_2",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 82,
+          "listingId": 12,
+          "room": "master_toilet",
+          "similarity": 0.9540289328433548
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9500576995310902
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9500122378603176
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9476971552723529
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9471023307070732
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9466952828893501
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9307286624032806
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9301266577313588
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9286825867877773
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9150096519057433
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.8930347972227919
+        }
+      ]
+    },
+    {
+      "photoId": 29,
+      "listingId": 5,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.928260913829558
+        },
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.9263680425151773
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.9242970974184814
+        },
+        {
+          "photoId": 69,
+          "listingId": 11,
+          "room": "living_room",
+          "similarity": 0.9220367738102195
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.9208352908186701
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.9081380821538197
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.9017003092127364
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8770158813802679
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8737075707119311
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.8642978522774232
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.8642943635688041
+        }
+      ]
+    },
+    {
+      "photoId": 30,
+      "listingId": 5,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.952582141670756
+        },
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9386091152675158
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9368426560004073
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9282188968611714
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9273320198058189
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.923658173978067
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.907164084581461
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.907138868521741
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9047935345577002
+        },
+        {
+          "photoId": 65,
+          "listingId": 10,
+          "room": "kitchen",
+          "similarity": 0.9000170683272025
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8958946414028683
+        }
+      ]
+    },
+    {
+      "photoId": 31,
+      "listingId": 5,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9572947964763729
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9484375688964155
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9457048158464865
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9413926819051258
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9406172474623382
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.9373251711424889
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9294639215634326
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9234598610623208
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.9045479678747329
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.8990333638704753
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8953912585735525
+        }
+      ]
+    },
+    {
+      "photoId": 32,
+      "listingId": 5,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 61,
+          "listingId": 9,
+          "room": "bedroom_3",
+          "similarity": 0.9443587561234492
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9304114209143399
+        },
+        {
+          "photoId": 87,
+          "listingId": 13,
+          "room": "bedroom_3",
+          "similarity": 0.9206984106840882
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9188484284395532
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9173279982481484
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9071615519489012
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.900336663517882
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8972651759519565
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8961603207472503
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.8872252979850161
+        },
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.8779794672398636
+        }
+      ]
+    },
+    {
+      "photoId": 33,
+      "listingId": 5,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 9,
+          "listingId": 2,
+          "room": "bedroom_2",
+          "similarity": 0.9235333239341059
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9225575529351073
+        },
+        {
+          "photoId": 39,
+          "listingId": 6,
+          "room": "bedroom_2",
+          "similarity": 0.9183819035227394
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.9174497825863028
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9141543500531728
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9119309010352946
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9116390878654119
+        },
+        {
+          "photoId": 60,
+          "listingId": 9,
+          "room": "bedroom_2",
+          "similarity": 0.9070072450392315
+        },
+        {
+          "photoId": 72,
+          "listingId": 11,
+          "room": "bedroom_2",
+          "similarity": 0.9005237125766106
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.8767404135511874
+        },
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.8703646408147911
+        }
+      ]
+    },
+    {
+      "photoId": 34,
+      "listingId": 5,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 18,
+          "listingId": 3,
+          "room": "common_toilet",
+          "similarity": 0.9679014397910433
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9659026774421521
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9608945996161471
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9570683770318933
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9542839233223128
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9453785095801059
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9402336318084776
+        },
+        {
+          "photoId": 28,
+          "listingId": 4,
+          "room": "common_toilet_2",
+          "similarity": 0.9301266577313588
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9287046127101674
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9200878331901987
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9017380840558988
+        }
+      ]
+    },
+    {
+      "photoId": 35,
+      "listingId": 5,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9665400029295294
+        },
+        {
+          "photoId": 63,
+          "listingId": 9,
+          "room": "master_toilet",
+          "similarity": 0.9570084721398611
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9568824074918396
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.955724035494148
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.946598349285527
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9454988359995997
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9423031058360838
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9400499123169072
+        },
+        {
+          "photoId": 28,
+          "listingId": 4,
+          "room": "common_toilet_2",
+          "similarity": 0.9242681993807553
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.912768929289415
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.8960734205473243
+        }
+      ]
+    },
+    {
+      "photoId": 36,
+      "listingId": 6,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.9487690917574276
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.9321505535078731
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.9287653004227945
+        },
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.9268055557047785
+        },
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.9119383033215314
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.910828515168993
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.9081380821538197
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.902167065269945
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8990166898807701
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.8957309295567359
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.8917627972566582
+        }
+      ]
+    },
+    {
+      "photoId": 37,
+      "listingId": 6,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9556329408683402
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.9514511765998876
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9455518365702531
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.9386091152675158
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9380536912477434
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9353830459795283
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9338693548442949
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.9198322329163856
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9194210313015589
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.9148102895279637
+        },
+        {
+          "photoId": 65,
+          "listingId": 10,
+          "room": "kitchen",
+          "similarity": 0.8988762462712528
+        }
+      ]
+    },
+    {
+      "photoId": 38,
+      "listingId": 6,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9597035018377941
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9554622668592281
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9493465092305315
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9484375688964155
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.94554126602576
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9330086928739425
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9295391033506724
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9244801661931557
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9214903530216824
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9047063502019426
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.8983535620063844
+        }
+      ]
+    },
+    {
+      "photoId": 39,
+      "listingId": 6,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 33,
+          "listingId": 5,
+          "room": "bedroom_3",
+          "similarity": 0.9183819035227394
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9134935527755946
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9040097109602866
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.904006060512129
+        },
+        {
+          "photoId": 45,
+          "listingId": 7,
+          "room": "bedroom_2",
+          "similarity": 0.9030723261728164
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9006561981958205
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.8968127635598775
+        },
+        {
+          "photoId": 23,
+          "listingId": 4,
+          "room": "bedroom_2",
+          "similarity": 0.8945140607592993
+        },
+        {
+          "photoId": 16,
+          "listingId": 3,
+          "room": "bedroom_2",
+          "similarity": 0.8917734259014317
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.890620588607131
+        },
+        {
+          "photoId": 72,
+          "listingId": 11,
+          "room": "bedroom_2",
+          "similarity": 0.8687749656157375
+        }
+      ]
+    },
+    {
+      "photoId": 40,
+      "listingId": 6,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 26,
+          "listingId": 4,
+          "room": "common_toilet",
+          "similarity": 0.9677405193812195
+        },
+        {
+          "photoId": 82,
+          "listingId": 12,
+          "room": "master_toilet",
+          "similarity": 0.963910692220202
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.950843497998711
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9428873107846876
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9418813489314263
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9400190678299334
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9337760840287161
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9255493091861302
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9218970901562218
+        },
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9212460682073923
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.8885755463197509
+        }
+      ]
+    },
+    {
+      "photoId": 41,
+      "listingId": 6,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9648498702310611
+        },
+        {
+          "photoId": 26,
+          "listingId": 4,
+          "room": "common_toilet",
+          "similarity": 0.960097296947163
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9596249660750772
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9590357869909383
+        },
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.946598349285527
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9422323825860913
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9417878913976497
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9409548868291808
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9293522036294786
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9198897355433082
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9180050801633901
+        }
+      ]
+    },
+    {
+      "photoId": 42,
+      "listingId": 7,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.9343923497768516
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.9321505535078731
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.9258861647169215
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.9242970974184814
+        },
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.9223315968974962
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.9209682699768789
+        },
+        {
+          "photoId": 69,
+          "listingId": 11,
+          "room": "living_room",
+          "similarity": 0.920290503008477
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.9157889030184108
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.9129965078979667
+        },
+        {
+          "photoId": 83,
+          "listingId": 13,
+          "room": "living_room",
+          "similarity": 0.8883671989233018
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8829920435663735
+        }
+      ]
+    },
+    {
+      "photoId": 43,
+      "listingId": 7,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9523368373022223
+        },
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9455518365702531
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9332786375099236
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.9306141736601713
+        },
+        {
+          "photoId": 65,
+          "listingId": 10,
+          "room": "kitchen",
+          "similarity": 0.9282913975058605
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9230581120272563
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.9209093712887344
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9134262677930165
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.907164084581461
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9044948246504811
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8806104164067224
+        }
+      ]
+    },
+    {
+      "photoId": 44,
+      "listingId": 7,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9614050999170315
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.955590417564044
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9554622668592281
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9467399069662059
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9457048158464865
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.935503615291666
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9276886972521541
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9260125011637919
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.923913967556641
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.9190670682655335
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9133245596998811
+        }
+      ]
+    },
+    {
+      "photoId": 45,
+      "listingId": 7,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.9280528405231552
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.919841353414752
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9140572925037652
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9130052505101798
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9122027803989899
+        },
+        {
+          "photoId": 72,
+          "listingId": 11,
+          "room": "bedroom_2",
+          "similarity": 0.9094806431548554
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9053993494983336
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9044574460980271
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.902103608920185
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.900906424537407
+        },
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.8798298080748164
+        }
+      ]
+    },
+    {
+      "photoId": 46,
+      "listingId": 7,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.9478903321248082
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9169504426026875
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9059506173864466
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9053821836421545
+        },
+        {
+          "photoId": 32,
+          "listingId": 5,
+          "room": "bedroom_2",
+          "similarity": 0.8985036797032525
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.8950448208758661
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.891244203509049
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.889046713744047
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.8882221709854317
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8842286419788132
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8614513587059882
+        }
+      ]
+    },
+    {
+      "photoId": 47,
+      "listingId": 7,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 82,
+          "listingId": 12,
+          "room": "master_toilet",
+          "similarity": 0.9589876785609621
+        },
+        {
+          "photoId": 28,
+          "listingId": 4,
+          "room": "common_toilet_2",
+          "similarity": 0.9500576995310902
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9465306531454695
+        },
+        {
+          "photoId": 40,
+          "listingId": 6,
+          "room": "common_toilet",
+          "similarity": 0.9428873107846876
+        },
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9400499123169072
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9395486387742392
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9361268969596431
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9294245128171518
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9239166436872993
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9228459884569404
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9196995746009187
+        }
+      ]
+    },
+    {
+      "photoId": 48,
+      "listingId": 7,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 82,
+          "listingId": 12,
+          "room": "master_toilet",
+          "similarity": 0.895109712516079
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.8828303408315787
+        },
+        {
+          "photoId": 26,
+          "listingId": 4,
+          "room": "common_toilet",
+          "similarity": 0.8766850320531585
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.8730400707941591
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.8668826332302759
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.8651697960990462
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.8579168138090811
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.857912400331551
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.8522639085516259
+        },
+        {
+          "photoId": 18,
+          "listingId": 3,
+          "room": "common_toilet",
+          "similarity": 0.8504345777374566
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.8421781653609199
+        }
+      ]
+    },
+    {
+      "photoId": 49,
+      "listingId": 8,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.9634539299528898
+        },
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.9312026816648344
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.9258861647169215
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.9195714416423361
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.9158651983188422
+        },
+        {
+          "photoId": 69,
+          "listingId": 11,
+          "room": "living_room",
+          "similarity": 0.913754073675945
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.9036727345784552
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.9017003092127364
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.8957309295567359
+        },
+        {
+          "photoId": 83,
+          "listingId": 13,
+          "room": "living_room",
+          "similarity": 0.8821905753550193
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8733647317947049
+        }
+      ]
+    },
+    {
+      "photoId": 50,
+      "listingId": 8,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9338693548442949
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9317697725860523
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.923658173978067
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.9195025905454784
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9174986165732428
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.9117833248815502
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9095098076208583
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9060192209611544
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9044948246504811
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8885832516921599
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8805011048581712
+        }
+      ]
+    },
+    {
+      "photoId": 51,
+      "listingId": 8,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9555699828295448
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9402754501483785
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9341796313766186
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9287090250217142
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9214522441752397
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.9203250721631107
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9179769132725251
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9163973153088866
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9129128070321385
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9056877522123676
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9026471060182557
+        }
+      ]
+    },
+    {
+      "photoId": 52,
+      "listingId": 8,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9482842283755528
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9406172474623382
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9382732051006314
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9355906866977878
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9332749144836241
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9301260501652157
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9274136756359622
+        },
+        {
+          "photoId": 87,
+          "listingId": 13,
+          "room": "bedroom_3",
+          "similarity": 0.9271845210895222
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9222428619551832
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9156222601741992
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.9018440190342047
+        }
+      ]
+    },
+    {
+      "photoId": 53,
+      "listingId": 8,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 9,
+          "listingId": 2,
+          "room": "bedroom_2",
+          "similarity": 0.9470538375403167
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9467399069662059
+        },
+        {
+          "photoId": 80,
+          "listingId": 12,
+          "room": "bedroom_3",
+          "similarity": 0.944735483488746
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9436156726159846
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.9397504607524476
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9330403898245184
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9330086928739425
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9274749105596305
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9130883178390954
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.9103874159809602
+        },
+        {
+          "photoId": 66,
+          "listingId": 10,
+          "room": "master_bedroom",
+          "similarity": 0.8921925351017217
+        }
+      ]
+    },
+    {
+      "photoId": 54,
+      "listingId": 8,
+      "room": "bedroom_4",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.9549218824053229
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9526728381967922
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9359598609788564
+        },
+        {
+          "photoId": 23,
+          "listingId": 4,
+          "room": "bedroom_2",
+          "similarity": 0.9293996073945094
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9267792376204527
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9248541560924707
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9240882883780537
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9141807040945715
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.902186811219031
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8958003473051048
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.8943740426814684
+        }
+      ]
+    },
+    {
+      "photoId": 55,
+      "listingId": 8,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 18,
+          "listingId": 3,
+          "room": "common_toilet",
+          "similarity": 0.9640731160533297
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9635158975853622
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9604214075664043
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9578403838450799
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9551095039949828
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.945973726710304
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9380697522852485
+        },
+        {
+          "photoId": 28,
+          "listingId": 4,
+          "room": "common_toilet_2",
+          "similarity": 0.9361005997427009
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9360482077651255
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9354333397290343
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9141241689357231
+        }
+      ]
+    },
+    {
+      "photoId": 56,
+      "listingId": 8,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9665400029295294
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9628817182193483
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9590357869909383
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9581294453133977
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9565326245278329
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.952890864734706
+        },
+        {
+          "photoId": 28,
+          "listingId": 4,
+          "room": "common_toilet_2",
+          "similarity": 0.9466952828893501
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9465306531454695
+        },
+        {
+          "photoId": 75,
+          "listingId": 11,
+          "room": "master_toilet",
+          "similarity": 0.9336086910963691
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9185129284543442
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9114933094076734
+        }
+      ]
+    },
+    {
+      "photoId": 57,
+      "listingId": 9,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.9634539299528898
+        },
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.959725918214867
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.95004360298924
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.9343923497768516
+        },
+        {
+          "photoId": 69,
+          "listingId": 11,
+          "room": "living_room",
+          "similarity": 0.9329773845407443
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.9268055557047785
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.9263680425151773
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.9141521687844393
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.9130847528857349
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8882057370516978
+        },
+        {
+          "photoId": 83,
+          "listingId": 13,
+          "room": "living_room",
+          "similarity": 0.8790621908845474
+        }
+      ]
+    },
+    {
+      "photoId": 58,
+      "listingId": 9,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9288175797742164
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9261263176282617
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9209093712887344
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9195025905454784
+        },
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9148102895279637
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9087333987078023
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9067576113476681
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.8977093641516206
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.8869014640041669
+        },
+        {
+          "photoId": 65,
+          "listingId": 10,
+          "room": "kitchen",
+          "similarity": 0.875043095510943
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8563732834644053
+        }
+      ]
+    },
+    {
+      "photoId": 59,
+      "listingId": 9,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9614050999170315
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9572947964763729
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.9553352874651184
+        },
+        {
+          "photoId": 54,
+          "listingId": 8,
+          "room": "bedroom_4",
+          "similarity": 0.9526728381967922
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9493465092305315
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9454003860553815
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9408334300697168
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.936809985577175
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9337815977156845
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.9146986959245444
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.904178244335061
+        }
+      ]
+    },
+    {
+      "photoId": 60,
+      "listingId": 9,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9538894383203359
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.9460706995084232
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9434349090982956
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9420584729939383
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9318311880138983
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.9309308415088735
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9250112323316452
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9099150564205218
+        },
+        {
+          "photoId": 72,
+          "listingId": 11,
+          "room": "bedroom_2",
+          "similarity": 0.9065009500944271
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.8985522628423419
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8921133900818636
+        }
+      ]
+    },
+    {
+      "photoId": 61,
+      "listingId": 9,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 32,
+          "listingId": 5,
+          "room": "bedroom_2",
+          "similarity": 0.9443587561234492
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9378535374969381
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.9349421262159575
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9145173339220852
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9128229424917274
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9120436549763428
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9094744090435737
+        },
+        {
+          "photoId": 16,
+          "listingId": 3,
+          "room": "bedroom_2",
+          "similarity": 0.9059021595318947
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8912950347839877
+        },
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.891152644283574
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.8754785025926903
+        }
+      ]
+    },
+    {
+      "photoId": 62,
+      "listingId": 9,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9659026774421521
+        },
+        {
+          "photoId": 18,
+          "listingId": 3,
+          "room": "common_toilet",
+          "similarity": 0.9656173486401614
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9646305192562892
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9635158975853622
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9527182264790848
+        },
+        {
+          "photoId": 26,
+          "listingId": 4,
+          "room": "common_toilet",
+          "similarity": 0.9440866153757833
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9429279707768636
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9409548868291808
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9334158848078473
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9239166436872993
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9124767252408725
+        }
+      ]
+    },
+    {
+      "photoId": 63,
+      "listingId": 9,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9570084721398611
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9530767313854129
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9504079372997583
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9454409411928952
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9445278274580236
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9370986304843576
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9320115960382942
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9188078019441561
+        },
+        {
+          "photoId": 27,
+          "listingId": 4,
+          "room": "master_toilet",
+          "similarity": 0.9156209269976788
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.914651422098704
+        },
+        {
+          "photoId": 12,
+          "listingId": 2,
+          "room": "master_toilet",
+          "similarity": 0.9002805721024956
+        }
+      ]
+    },
+    {
+      "photoId": 64,
+      "listingId": 10,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.943111404096776
+        },
+        {
+          "photoId": 6,
+          "listingId": 2,
+          "room": "living_room",
+          "similarity": 0.9221217977645411
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.9195714416423361
+        },
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.9130847528857349
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.9129965078979667
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9017089416566961
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.8990166898807701
+        },
+        {
+          "photoId": 83,
+          "listingId": 13,
+          "room": "living_room",
+          "similarity": 0.8919095876820394
+        },
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.8837906798056465
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.8770158813802679
+        },
+        {
+          "photoId": 69,
+          "listingId": 11,
+          "room": "living_room",
+          "similarity": 0.8662875795600495
+        }
+      ]
+    },
+    {
+      "photoId": 65,
+      "listingId": 10,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.932787065709312
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9282913975058605
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.9219106624155723
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9093714752036511
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9034654942577863
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.900358393497131
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.9000170683272025
+        },
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.8988762462712528
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.875043095510943
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.8657000031420586
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.835431467258687
+        }
+      ]
+    },
+    {
+      "photoId": 66,
+      "listingId": 10,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9213953668567647
+        },
+        {
+          "photoId": 9,
+          "listingId": 2,
+          "room": "bedroom_2",
+          "similarity": 0.9160671568765577
+        },
+        {
+          "photoId": 87,
+          "listingId": 13,
+          "room": "bedroom_3",
+          "similarity": 0.9113656413591602
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9051785023152514
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8923267839583467
+        },
+        {
+          "photoId": 33,
+          "listingId": 5,
+          "room": "bedroom_3",
+          "similarity": 0.891526918843382
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.891385539704875
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.8872825878197939
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.8791712880636864
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.8773323503141953
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.8622746426529434
+        }
+      ]
+    },
+    {
+      "photoId": 67,
+      "listingId": 10,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9382524113603163
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9331050457178315
+        },
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.9307659715519242
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9222428619551832
+        },
+        {
+          "photoId": 39,
+          "listingId": 6,
+          "room": "bedroom_2",
+          "similarity": 0.9134935527755946
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9133245596998811
+        },
+        {
+          "photoId": 33,
+          "listingId": 5,
+          "room": "bedroom_3",
+          "similarity": 0.9119309010352946
+        },
+        {
+          "photoId": 87,
+          "listingId": 13,
+          "room": "bedroom_3",
+          "similarity": 0.9089819300804074
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.9076452783369713
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.904178244335061
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.888521573071851
+        }
+      ]
+    },
+    {
+      "photoId": 68,
+      "listingId": 10,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 27,
+          "listingId": 4,
+          "room": "master_toilet",
+          "similarity": 0.9420892693435063
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.937853226851675
+        },
+        {
+          "photoId": 12,
+          "listingId": 2,
+          "room": "master_toilet",
+          "similarity": 0.9330254259728749
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9302219736716338
+        },
+        {
+          "photoId": 40,
+          "listingId": 6,
+          "room": "common_toilet",
+          "similarity": 0.9218970901562218
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9196995746009187
+        },
+        {
+          "photoId": 63,
+          "listingId": 9,
+          "room": "master_toilet",
+          "similarity": 0.914651422098704
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9141241689357231
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9074227916469682
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9035193886134516
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9017380840558988
+        }
+      ]
+    },
+    {
+      "photoId": 69,
+      "listingId": 11,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.9329773845407443
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.9220367738102195
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.920290503008477
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.913754073675945
+        },
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.9107734903346174
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.9104283787235133
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.8979569655930194
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8662875795600495
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8660042306006906
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.8610890965024895
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.8592045273832097
+        }
+      ]
+    },
+    {
+      "photoId": 70,
+      "listingId": 11,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 0.4,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 0.4,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9198322329163856
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.9069194095720092
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.9036083174906877
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.8975615879240756
+        },
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.8973189487922415
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.8958946414028683
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.8953822528053479
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.8834556555674581
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.8827364570119975
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.8701764773866147
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8656482845256354
+        }
+      ]
+    },
+    {
+      "photoId": 71,
+      "listingId": 11,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9379868898692305
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9273816549743296
+        },
+        {
+          "photoId": 51,
+          "listingId": 8,
+          "room": "master_bedroom",
+          "similarity": 0.9203250721631107
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9125595566917997
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9111618006643314
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9076452783369713
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9036935366408712
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9034789690208552
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.8984700436295623
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8983535620063844
+        },
+        {
+          "photoId": 32,
+          "listingId": 5,
+          "room": "bedroom_2",
+          "similarity": 0.8809261078615619
+        }
+      ]
+    },
+    {
+      "photoId": 72,
+      "listingId": 11,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9219287549434418
+        },
+        {
+          "photoId": 45,
+          "listingId": 7,
+          "room": "bedroom_2",
+          "similarity": 0.9094806431548554
+        },
+        {
+          "photoId": 60,
+          "listingId": 9,
+          "room": "bedroom_2",
+          "similarity": 0.9065009500944271
+        },
+        {
+          "photoId": 33,
+          "listingId": 5,
+          "room": "bedroom_3",
+          "similarity": 0.9005237125766106
+        },
+        {
+          "photoId": 9,
+          "listingId": 2,
+          "room": "bedroom_2",
+          "similarity": 0.8937372781985867
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.883556296853037
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.8776472825389013
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.8771278201118079
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8721130111840665
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8651458854979965
+        },
+        {
+          "photoId": 23,
+          "listingId": 4,
+          "room": "bedroom_2",
+          "similarity": 0.8172305879837519
+        }
+      ]
+    },
+    {
+      "photoId": 73,
+      "listingId": 11,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 46,
+          "listingId": 7,
+          "room": "bedroom_3",
+          "similarity": 0.9478903321248082
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9146986959245444
+        },
+        {
+          "photoId": 9,
+          "listingId": 2,
+          "room": "bedroom_2",
+          "similarity": 0.911350335611426
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9112133051294224
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9103874159809602
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9067742670888554
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9045479678747329
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.901659757402719
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.8980314653931081
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8945068451445021
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8665804257446307
+        }
+      ]
+    },
+    {
+      "photoId": 74,
+      "listingId": 11,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9423031058360838
+        },
+        {
+          "photoId": 63,
+          "listingId": 9,
+          "room": "master_toilet",
+          "similarity": 0.9370986304843576
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9360482077651255
+        },
+        {
+          "photoId": 18,
+          "listingId": 3,
+          "room": "common_toilet",
+          "similarity": 0.9348832908572632
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9240821313804719
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9228459884569404
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9212828690648933
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9180050801633901
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9035193886134516
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.8987251138450785
+        },
+        {
+          "photoId": 26,
+          "listingId": 4,
+          "room": "common_toilet",
+          "similarity": 0.8967625530135868
+        }
+      ]
+    },
+    {
+      "photoId": 75,
+      "listingId": 11,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9336086910963691
+        },
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9263184154549017
+        },
+        {
+          "photoId": 63,
+          "listingId": 9,
+          "room": "master_toilet",
+          "similarity": 0.9110625540618843
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.907365761927082
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9062324611560162
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9047752722475735
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.8950109916630833
+        },
+        {
+          "photoId": 28,
+          "listingId": 4,
+          "room": "common_toilet_2",
+          "similarity": 0.8869754487834942
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.8849185853666128
+        },
+        {
+          "photoId": 12,
+          "listingId": 2,
+          "room": "master_toilet",
+          "similarity": 0.8440534504570736
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.8438816681012128
+        }
+      ]
+    },
+    {
+      "photoId": 76,
+      "listingId": 12,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.95004360298924
+        },
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.9487690917574276
+        },
+        {
+          "photoId": 13,
+          "listingId": 3,
+          "room": "living_room",
+          "similarity": 0.9308226955514672
+        },
+        {
+          "photoId": 29,
+          "listingId": 5,
+          "room": "living_room",
+          "similarity": 0.9208352908186701
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.9158651983188422
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.9157889030184108
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.9105703261462004
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.9036083174906877
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8971610696377132
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.8832095128863451
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.881717711882621
+        }
+      ]
+    },
+    {
+      "photoId": 77,
+      "listingId": 12,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.9368426560004073
+        },
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9353830459795283
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.9321182492598481
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9317697725860523
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9313448507685279
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.929472146839041
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.9288175797742164
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9134262677930165
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9097712647642395
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.9017089416566961
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8946746451233358
+        }
+      ]
+    },
+    {
+      "photoId": 78,
+      "listingId": 12,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.9461316181841052
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.9379868898692305
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9352371852244691
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9331050457178315
+        },
+        {
+          "photoId": 85,
+          "listingId": 13,
+          "room": "master_bedroom",
+          "similarity": 0.9310967499615004
+        },
+        {
+          "photoId": 51,
+          "listingId": 8,
+          "room": "master_bedroom",
+          "similarity": 0.9287090250217142
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9232605391538841
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9225638108921814
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.919233513241565
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9181654544013671
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9105202518678657
+        }
+      ]
+    },
+    {
+      "photoId": 79,
+      "listingId": 12,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 60,
+          "listingId": 9,
+          "room": "bedroom_2",
+          "similarity": 0.9434349090982956
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.9339012793850678
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9322132097347957
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9317302490376388
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9300727764939978
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9294639215634326
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9260125011637919
+        },
+        {
+          "photoId": 72,
+          "listingId": 11,
+          "room": "bedroom_2",
+          "similarity": 0.9219287549434418
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9214903530216824
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.909290738021453
+        },
+        {
+          "photoId": 23,
+          "listingId": 4,
+          "room": "bedroom_2",
+          "similarity": 0.8939044959148752
+        }
+      ]
+    },
+    {
+      "photoId": 80,
+      "listingId": 12,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.944735483488746
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.9295566114401512
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.9204520078308108
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9136338074581275
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9121445396274854
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9105500072815749
+        },
+        {
+          "photoId": 23,
+          "listingId": 4,
+          "room": "bedroom_2",
+          "similarity": 0.9009996545797456
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8953585070077368
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.8945504848114749
+        },
+        {
+          "photoId": 72,
+          "listingId": 11,
+          "room": "bedroom_2",
+          "similarity": 0.8904377811019722
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8720458502311779
+        }
+      ]
+    },
+    {
+      "photoId": 81,
+      "listingId": 12,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9653485109993335
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9648498702310611
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.9578403838450799
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9542839233223128
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9532636590072394
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9527182264790848
+        },
+        {
+          "photoId": 27,
+          "listingId": 4,
+          "room": "master_toilet",
+          "similarity": 0.9493492342740792
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.937853226851675
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9363035563193147
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.930424784833782
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9240821313804719
+        }
+      ]
+    },
+    {
+      "photoId": 82,
+      "listingId": 12,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 40,
+          "listingId": 6,
+          "room": "common_toilet",
+          "similarity": 0.963910692220202
+        },
+        {
+          "photoId": 27,
+          "listingId": 4,
+          "room": "master_toilet",
+          "similarity": 0.9615745534980936
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9589876785609621
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.943836196927685
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9436824266333944
+        },
+        {
+          "photoId": 55,
+          "listingId": 8,
+          "room": "common_toilet",
+          "similarity": 0.940351527841355
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9352971191745447
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9320599919742061
+        },
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9279677105260657
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9257427029961668
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9082770116142873
+        }
+      ]
+    },
+    {
+      "photoId": 83,
+      "listingId": 13,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 0.0,
+        "precisionAt5": 0.2,
+        "reciprocalRank": 0.3333333333333333
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 0.0,
+        "precisionAt5": 0.2,
+        "reciprocalRank": 0.3333333333333333
+      },
+      "matches": [
+        {
+          "photoId": 60,
+          "listingId": 9,
+          "room": "bedroom_2",
+          "similarity": 0.9051643474109157
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.8922580023624449
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.8919095876820394
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.8908127483667978
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.8895648613379561
+        },
+        {
+          "photoId": 42,
+          "listingId": 7,
+          "room": "living_room",
+          "similarity": 0.8883671989233018
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.8821905753550193
+        },
+        {
+          "photoId": 6,
+          "listingId": 2,
+          "room": "living_room",
+          "similarity": 0.8812689342927102
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.8786694264759818
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8747741389957444
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.8505548184539684
+        }
+      ]
+    },
+    {
+      "photoId": 84,
+      "listingId": 13,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9523368373022223
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.9456758505184719
+        },
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9380536912477434
+        },
+        {
+          "photoId": 65,
+          "listingId": 10,
+          "room": "kitchen",
+          "similarity": 0.932787065709312
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9313448507685279
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.9273320198058189
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9181368771340608
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.917645482798903
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.9067576113476681
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9060192209611544
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8953822528053479
+        }
+      ]
+    },
+    {
+      "photoId": 85,
+      "listingId": 13,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9597035018377941
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9552579644042087
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9413926819051258
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9408334300697168
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.935503615291666
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9310967499615004
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9254916747428644
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.924412189810242
+        },
+        {
+          "photoId": 24,
+          "listingId": 4,
+          "room": "bedroom_3",
+          "similarity": 0.9216979666149424
+        },
+        {
+          "photoId": 73,
+          "listingId": 11,
+          "room": "bedroom_3",
+          "similarity": 0.9112133051294224
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.8961338150888457
+        }
+      ]
+    },
+    {
+      "photoId": 86,
+      "listingId": 13,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 60,
+          "listingId": 9,
+          "room": "bedroom_2",
+          "similarity": 0.9460706995084232
+        },
+        {
+          "photoId": 53,
+          "listingId": 8,
+          "room": "bedroom_3",
+          "similarity": 0.9397504607524476
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9387983209056587
+        },
+        {
+          "photoId": 79,
+          "listingId": 12,
+          "room": "bedroom_2",
+          "similarity": 0.9339012793850678
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9335358301702781
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9189817742099575
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9121625168403236
+        },
+        {
+          "photoId": 66,
+          "listingId": 10,
+          "room": "master_bedroom",
+          "similarity": 0.8970365000506284
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.896921075430955
+        },
+        {
+          "photoId": 23,
+          "listingId": 4,
+          "room": "bedroom_2",
+          "similarity": 0.8952766645081102
+        },
+        {
+          "photoId": 72,
+          "listingId": 11,
+          "room": "bedroom_2",
+          "similarity": 0.8771278201118079
+        }
+      ]
+    },
+    {
+      "photoId": 87,
+      "listingId": 13,
+      "room": "bedroom_3",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9271845210895222
+        },
+        {
+          "photoId": 61,
+          "listingId": 9,
+          "room": "bedroom_3",
+          "similarity": 0.926081580545622
+        },
+        {
+          "photoId": 32,
+          "listingId": 5,
+          "room": "bedroom_2",
+          "similarity": 0.9206984106840882
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9136548571171101
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9134472659862746
+        },
+        {
+          "photoId": 66,
+          "listingId": 10,
+          "room": "master_bedroom",
+          "similarity": 0.9113656413591602
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9011090693520394
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.8997405742241003
+        },
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.8993387847257843
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.8940402829853222
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.8935154757956496
+        }
+      ]
+    },
+    {
+      "photoId": 88,
+      "listingId": 13,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9653485109993335
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9646305192562892
+        },
+        {
+          "photoId": 18,
+          "listingId": 3,
+          "room": "common_toilet",
+          "similarity": 0.9604248376722705
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9596249660750772
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9570683770318933
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9552231615434928
+        },
+        {
+          "photoId": 28,
+          "listingId": 4,
+          "room": "common_toilet_2",
+          "similarity": 0.9500122378603176
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9472144909046378
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9299440227393624
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9202160994519861
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9161821455053044
+        }
+      ]
+    },
+    {
+      "photoId": 89,
+      "listingId": 13,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 11,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9628817182193483
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9586269652962895
+        },
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9568824074918396
+        },
+        {
+          "photoId": 63,
+          "listingId": 9,
+          "room": "master_toilet",
+          "similarity": 0.9530767313854129
+        },
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9492731992576383
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.941877904177278
+        },
+        {
+          "photoId": 28,
+          "listingId": 4,
+          "room": "common_toilet_2",
+          "similarity": 0.9365727298019533
+        },
+        {
+          "photoId": 12,
+          "listingId": 2,
+          "room": "master_toilet",
+          "similarity": 0.9319745525354105
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9302219736716338
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9294245128171518
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9212828690648933
+        }
+      ]
+    },
+    {
+      "photoId": 97,
+      "listingId": 15,
+      "room": "living_room",
+      "roomType": "living_room",
+      "ranking": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 36,
+          "listingId": 6,
+          "room": "living_room",
+          "similarity": 0.9056330859334973
+        },
+        {
+          "photoId": 83,
+          "listingId": 13,
+          "room": "living_room",
+          "similarity": 0.9030530111404774
+        },
+        {
+          "photoId": 76,
+          "listingId": 12,
+          "room": "living_room",
+          "similarity": 0.902872217633184
+        },
+        {
+          "photoId": 20,
+          "listingId": 4,
+          "room": "living_room",
+          "similarity": 0.9028135992890968
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.9014759558788806
+        },
+        {
+          "photoId": 6,
+          "listingId": 2,
+          "room": "living_room",
+          "similarity": 0.900629528940087
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.8951556341391718
+        },
+        {
+          "photoId": 57,
+          "listingId": 9,
+          "room": "living_room",
+          "similarity": 0.8885852285000339
+        },
+        {
+          "photoId": 49,
+          "listingId": 8,
+          "room": "living_room",
+          "similarity": 0.8792297564968921
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.8765753093302532
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.8751785074144116
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.8677143652682968
+        }
+      ]
+    },
+    {
+      "photoId": 98,
+      "listingId": 15,
+      "room": "kitchen",
+      "roomType": "kitchen",
+      "ranking": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 37,
+          "listingId": 6,
+          "room": "kitchen",
+          "similarity": 0.9626441914936087
+        },
+        {
+          "photoId": 7,
+          "listingId": 2,
+          "room": "kitchen",
+          "similarity": 0.9614850526822065
+        },
+        {
+          "photoId": 77,
+          "listingId": 12,
+          "room": "kitchen",
+          "similarity": 0.9566939131002804
+        },
+        {
+          "photoId": 50,
+          "listingId": 8,
+          "room": "kitchen",
+          "similarity": 0.9464597447830607
+        },
+        {
+          "photoId": 21,
+          "listingId": 4,
+          "room": "kitchen",
+          "similarity": 0.9404842684652539
+        },
+        {
+          "photoId": 30,
+          "listingId": 5,
+          "room": "kitchen",
+          "similarity": 0.9380722788335268
+        },
+        {
+          "photoId": 43,
+          "listingId": 7,
+          "room": "kitchen",
+          "similarity": 0.9370428676147563
+        },
+        {
+          "photoId": 14,
+          "listingId": 3,
+          "room": "kitchen",
+          "similarity": 0.935964383053969
+        },
+        {
+          "photoId": 84,
+          "listingId": 13,
+          "room": "kitchen",
+          "similarity": 0.9355186556837471
+        },
+        {
+          "photoId": 58,
+          "listingId": 9,
+          "room": "kitchen",
+          "similarity": 0.9308834669222852
+        },
+        {
+          "photoId": 70,
+          "listingId": 11,
+          "room": "kitchen",
+          "similarity": 0.9132332536479087
+        },
+        {
+          "photoId": 64,
+          "listingId": 10,
+          "room": "living_room",
+          "similarity": 0.9093490373116535
+        }
+      ]
+    },
+    {
+      "photoId": 99,
+      "listingId": 15,
+      "room": "master_bedroom",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9308581085441218
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9267823878819015
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9260029689562719
+        },
+        {
+          "photoId": 8,
+          "listingId": 2,
+          "room": "master_bedroom",
+          "similarity": 0.9222606306587365
+        },
+        {
+          "photoId": 33,
+          "listingId": 5,
+          "room": "bedroom_3",
+          "similarity": 0.9199280516997097
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9112302865641488
+        },
+        {
+          "photoId": 52,
+          "listingId": 8,
+          "room": "bedroom_2",
+          "similarity": 0.9080109294616363
+        },
+        {
+          "photoId": 86,
+          "listingId": 13,
+          "room": "bedroom_2",
+          "similarity": 0.9055499121814067
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9027335648201558
+        },
+        {
+          "photoId": 15,
+          "listingId": 3,
+          "room": "master_bedroom",
+          "similarity": 0.9014830181728485
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.8937222070642512
+        },
+        {
+          "photoId": 23,
+          "listingId": 4,
+          "room": "bedroom_2",
+          "similarity": 0.8917871562217985
+        }
+      ]
+    },
+    {
+      "photoId": 100,
+      "listingId": 15,
+      "room": "bedroom_2",
+      "roomType": "bedroom",
+      "ranking": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 22,
+          "listingId": 4,
+          "room": "master_bedroom",
+          "similarity": 0.9577075963447994
+        },
+        {
+          "photoId": 10,
+          "listingId": 2,
+          "room": "bedroom_3",
+          "similarity": 0.9523592716919755
+        },
+        {
+          "photoId": 51,
+          "listingId": 8,
+          "room": "master_bedroom",
+          "similarity": 0.9396987710424285
+        },
+        {
+          "photoId": 67,
+          "listingId": 10,
+          "room": "bedroom_2",
+          "similarity": 0.9366158683178276
+        },
+        {
+          "photoId": 78,
+          "listingId": 12,
+          "room": "master_bedroom",
+          "similarity": 0.9366138511766136
+        },
+        {
+          "photoId": 59,
+          "listingId": 9,
+          "room": "master_bedroom",
+          "similarity": 0.9281845933124759
+        },
+        {
+          "photoId": 44,
+          "listingId": 7,
+          "room": "master_bedroom",
+          "similarity": 0.9247995259372745
+        },
+        {
+          "photoId": 87,
+          "listingId": 13,
+          "room": "bedroom_3",
+          "similarity": 0.9235180830217964
+        },
+        {
+          "photoId": 38,
+          "listingId": 6,
+          "room": "master_bedroom",
+          "similarity": 0.9204430566079815
+        },
+        {
+          "photoId": 17,
+          "listingId": 3,
+          "room": "bedroom_3",
+          "similarity": 0.9117666264583242
+        },
+        {
+          "photoId": 31,
+          "listingId": 5,
+          "room": "master_bedroom",
+          "similarity": 0.9099903371192166
+        },
+        {
+          "photoId": 71,
+          "listingId": 11,
+          "room": "master_bedroom",
+          "similarity": 0.90097352973183
+        }
+      ]
+    },
+    {
+      "photoId": 101,
+      "listingId": 15,
+      "room": "common_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 81,
+          "listingId": 12,
+          "room": "common_toilet",
+          "similarity": 0.9660442757247756
+        },
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9605096982925703
+        },
+        {
+          "photoId": 27,
+          "listingId": 4,
+          "room": "master_toilet",
+          "similarity": 0.9589026310368107
+        },
+        {
+          "photoId": 88,
+          "listingId": 13,
+          "room": "common_toilet",
+          "similarity": 0.9580665882321825
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.952938999135404
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.952409505725885
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.9452838944166251
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9431528545897265
+        },
+        {
+          "photoId": 34,
+          "listingId": 5,
+          "room": "common_toilet",
+          "similarity": 0.9421252967580244
+        },
+        {
+          "photoId": 19,
+          "listingId": 3,
+          "room": "master_toilet",
+          "similarity": 0.9390131120143069
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9320554939597789
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.9129422346287991
+        }
+      ]
+    },
+    {
+      "photoId": 102,
+      "listingId": 15,
+      "room": "master_toilet",
+      "roomType": "bathroom",
+      "ranking": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "served": {
+        "returned": 12,
+        "precisionAt1": 1.0,
+        "precisionAt5": 1.0,
+        "reciprocalRank": 1.0
+      },
+      "matches": [
+        {
+          "photoId": 41,
+          "listingId": 6,
+          "room": "master_toilet",
+          "similarity": 0.9506028912019588
+        },
+        {
+          "photoId": 27,
+          "listingId": 4,
+          "room": "master_toilet",
+          "similarity": 0.9497625207961644
+        },
+        {
+          "photoId": 89,
+          "listingId": 13,
+          "room": "master_toilet",
+          "similarity": 0.9462304992240497
+        },
+        {
+          "photoId": 82,
+          "listingId": 12,
+          "room": "master_toilet",
+          "similarity": 0.9323477503347654
+        },
+        {
+          "photoId": 56,
+          "listingId": 8,
+          "room": "master_toilet",
+          "similarity": 0.9316393974885313
+        },
+        {
+          "photoId": 68,
+          "listingId": 10,
+          "room": "common_toilet",
+          "similarity": 0.9180297766146395
+        },
+        {
+          "photoId": 62,
+          "listingId": 9,
+          "room": "common_toilet",
+          "similarity": 0.916493990563447
+        },
+        {
+          "photoId": 11,
+          "listingId": 2,
+          "room": "common_toilet",
+          "similarity": 0.9145501978542507
+        },
+        {
+          "photoId": 35,
+          "listingId": 5,
+          "room": "master_toilet",
+          "similarity": 0.9130017256380752
+        },
+        {
+          "photoId": 18,
+          "listingId": 3,
+          "room": "common_toilet",
+          "similarity": 0.9120221057506903
+        },
+        {
+          "photoId": 47,
+          "listingId": 7,
+          "room": "common_toilet",
+          "similarity": 0.9060210901431767
+        },
+        {
+          "photoId": 74,
+          "listingId": 11,
+          "room": "common_toilet",
+          "similarity": 0.881642206832849
+        }
+      ]
+    }
+  ]
+}

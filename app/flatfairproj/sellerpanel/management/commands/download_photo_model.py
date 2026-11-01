@@ -3,6 +3,8 @@ from pretrained import TRAINING, verifyModel
 from sellerpanel.photocheck import CLIP_NAME, CLIP_REVISION, ML
 
 NAME = CLIP_NAME
+REVISION = CLIP_REVISION
+
 FILES = [
     "config.json",
     "preprocessor_config.json",
@@ -14,6 +16,23 @@ FILES = [
     "special_tokens_map.json",
     "pytorch_model.bin",
 ]
+
+
+def clip_ready():
+    return (
+        (ML / "config.json").is_file()
+        and any(
+            (ML / file_name).is_file() for file_name in ["model.safetensors", "pytorch_model.bin"]
+        )
+        and any(
+            (ML / file_name).is_file()
+            for file_name in ["preprocessor_config.json", "processor_config.json"]
+        )
+        and (
+            (ML / "tokenizer.json").is_file()
+            or all((ML / file_name).is_file() for file_name in ["vocab.json", "merges.txt"])
+        )
+    )
 
 
 class Command(BaseCommand):

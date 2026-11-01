@@ -179,6 +179,15 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    "default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"},
+    "resources": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "storefront_resourcecacheentry",
+        "OPTIONS": {"MAX_ENTRIES": 100000},
+    },
+}
+
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
     "django.contrib.auth.hashers.PBKDF2PasswordHasher",

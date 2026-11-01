@@ -27,6 +27,9 @@ from .photocheck import (
 from .photoqueue import queuePics, ensureWorker
 
 MAX_MB = 10
+DRAFTS_KEY = "photoDrafts"
+MAX_PIXELS = 40000000
+MAX_APPEALS = 3
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 
 
@@ -55,6 +58,104 @@ def shrink(upload):
     return ContentFile(out.getvalue())
 
 
+def pic_paths():
+    paths = set()
+
+    for photos in ListingDraft.objects.values_list("photos", flat=True):
+        for path in photos.values():
+            paths.add(path)
+
+    return paths
+
+
+def dropPaths(paths):
+    paths = set(paths)
+
+    if not paths:
+        return
+
+    inUse = set(
+        PhotoCheckJob.objects.filter(status__in=("queued", "running")).values_list(
+            "pendingPath", flat=True
+        )
+    )
+
+    for path in paths - pic_paths() - inUse:
+        default_storage.delete(path)
+
+
+def sweepPics():
+    try:
+        _, files = default_storage.listdir("pending")
+    except FileNotFoundError:
+        files = []
+
+    removed = 0
+    cutoff = timezone.now() - timedelta(hours=24)
+    oldJobs = PhotoCheckJob.objects.filter(status__in=("done", "failed"), finishedAt__lt=cutoff)
+    oldOnes = list(oldJobs.values_list("pendingPath", flat=True))
+    oldJobs.delete()
+    dropPaths(oldOnes)
+    saves = pic_paths() | set(
+        PhotoCheckJob.objects.filter(status__in=("queued", "running")).values_list(
+            "pendingPath", flat=True
+        )
+    )
+
+    for name in files:
+        path = f"pending/{name}"
+
+        if path in saves:
+            continue
+
+        try:
+            if default_storage.get_modified_time(path) < cutoff:
+                default_storage.delete(path)
+                removed += 1
+        except FileNotFoundError:
+            pass
+
+    return removed
+
+
+def draft(request):
+    if hasattr(request, "_photoDraft"):
+        return request._photoDraft
+
+    drafts = request.session.get(DRAFTS_KEY, {})
+    now = time.time()
+
+    for token, data in list(drafts.items()):
+        if data["created"] < now - 86400:
+            dropPaths(
+                [
+                    *data["photos"].values(),
+                    *[photo["path"] for photo in data.get("refused", {}).values()],
+                ]
+            )
+
+            del drafts[token]
+
+    token = (
+        request.POST.get("draftToken")
+        if request.method == "POST"
+        else request.GET.get("draftToken")
+    )
+
+    if token not in drafts:
+        token = uuid.uuid4().hex
+        drafts[token] = {"created": now, "photos": {}, "checks": {}}
+
+    request._photoDraft = token
+    request.session[DRAFTS_KEY] = drafts
+
+    if now - request.session.get("pendingCleanupAt", 0) > 3600:
+        sweepPics()
+        request.session["pendingCleanupAt"] = now
+
+    return token
+
+
 def pending(request):
     token = draft(request)
 
@@ -65,6 +166,106 @@ def checks(request):
     token = draft(request)
 
     return request.session[DRAFTS_KEY][token]["checks"]
+
+
+def refused(request):
+    token = draft(request)
+
+    return request.session[DRAFTS_KEY][token].get("refused", {})
+
+
+def forget_bad(request, room):
+    token = draft(request)
+    photo = request.session[DRAFTS_KEY][token].get("refused", {}).pop(room, None)
+
+    if photo:
+        dropPaths([photo["path"]])
+        request.session.modified = True
+
+
+def appealWhy(room):
+    return (
+        f"Seller says this is a photo of the {ROOM_LABELS[room].lower()}; the photo check disagreed"
+    )
+
+
+def appealNum(request, room=None):
+    token = draft(request)
+    data = request.session[DRAFTS_KEY][token]
+    total = sum(bool(result.get("appeal")) for key, result in data["checks"].items() if key != room)
+    optional = {key for key, label, needs in OPTIONAL_ROOMS}
+    replaced = [
+        *data["photos"],
+        *[key for key in request.POST.getlist("removePhoto") if key in optional],
+    ]
+
+    if room:
+        replaced.append(room)
+
+    already = ListingPhoto.objects.filter(
+        listing_id=data.get("listingId"), listing__seller=request.user
+    ).exclude(room__in=replaced)
+
+    return total + sum(appealWhy(photo.room) in photo.photoReview for photo in already)
+
+
+def badAppeal(request):
+    if appealNum(request) <= MAX_APPEALS:
+        return {}
+
+    errors = {}
+
+    for room, result in checks(request).items():
+        if result.get("appeal"):
+            errors[room] = (
+                "You can ask our team to check up to 3 refused photos per listing. Please choose another photo for this room."
+            )
+
+    return errors
+
+
+def appealPhoto(request, room):
+    token = draft(request)
+    data = request.session[DRAFTS_KEY][token]
+    photo = data.get("refused", {}).get(room)
+
+    if not photo:
+        return "Please choose a refused room photo before asking our team to check it.", None
+
+    if appealNum(request, room) >= MAX_APPEALS:
+        return (
+            "You can ask our team to check up to 3 refused photos per listing. Please choose another photo for this room.",
+            None,
+        )
+
+    try:
+        with default_storage.open(photo["path"]) as image:
+            picData = image.read()
+    except (OSError, ValueError):
+        forget_bad(request, room)
+
+        return "This photo is no longer available. Please choose the photo again.", None
+
+    error = keepPhoto(request, room, picData, photo["result"], appeal=True)
+
+    return error, checks(request).get(room)
+
+
+def appealAll(request):
+    errors = {}
+
+    for room in dict.fromkeys(request.POST.getlist("appealPhoto")):
+        if room not in ROOM_LABELS or request.FILES.get(f"photo_{room}"):
+            continue
+
+        error, result = appealPhoto(request, room)
+
+        if error:
+            errors[room] = error
+
+    errors.update(badAppeal(request))
+
+    return errors
 
 
 def clearHeld(request, token=None):
@@ -82,6 +283,98 @@ def clearHeld(request, token=None):
 
     dropPaths(paths)
     request.session[DRAFTS_KEY] = drafts
+
+
+def readPhoto(upload):
+    if upload.content_type not in ("image/jpeg", "image/png", "image/webp"):
+        return None, "This file is not a photo. Choose a JPG, PNG or WebP."
+
+    if upload.size > MAX_MB * 1024 * 1024:
+        return None, f"This photo is too big (over {MAX_MB} MB). Please choose a smaller one."
+
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            photo = forms.ImageField().clean(upload)
+
+            if photo.image.format not in ("JPEG", "PNG", "WEBP"):
+                raise forms.ValidationError("Unsupported photo type")
+
+            return shrink(upload).read(), ""
+    except (
+        forms.ValidationError,
+        OSError,
+        Image.DecompressionBombError,
+        Image.DecompressionBombWarning,
+        ValueError,
+    ):
+        return None, "This file is not a photo. Choose a JPG or PNG."
+
+
+def keepPhoto(request, room, data, result, appeal=False, pendingPath=None):
+    result = dict(result) if result else result
+
+    if (
+        result
+        and result.get("irrelevant") is not None
+        and result["irrelevant"] >= result.get("blockAt", BLOCK_AT)
+        and not appeal
+    ):
+        forget_bad(request, room)
+        token = draft(request)
+
+        request.session[DRAFTS_KEY][token].setdefault("refused", {})[room] = {
+            "path": pendingPath
+            or default_storage.save(f"pending/{uuid.uuid4().hex}.jpg", ContentFile(data)),
+            "result": result,
+        }
+
+        oldPath = request.session[DRAFTS_KEY][token]["photos"].pop(room, None)
+        request.session[DRAFTS_KEY][token]["checks"].pop(room, None)
+
+        if oldPath and oldPath != pendingPath:
+            dropPaths([oldPath])
+
+        request.session.modified = True
+
+        return (
+            blockNote(result["label"], ROOM_LABELS[room].lower())
+            + " Please choose a photo of that room instead."
+        )
+
+    if result:
+        if appeal:
+            result["appeal"] = True
+            result["reviewReasons"] = list(
+                dict.fromkeys([*result.get("reviewReasons", []), appealWhy(room)])
+            )
+
+        warning = slotWarn(result, room)
+
+        if warning:
+            result["reviewReasons"] = list(
+                dict.fromkeys([*result.get("reviewReasons", []), warning])
+            )
+
+    token = draft(request)
+    drafts = request.session[DRAFTS_KEY]
+    kept = drafts[token]["photos"]
+    path = pendingPath or default_storage.save(f"pending/{uuid.uuid4().hex}.jpg", ContentFile(data))
+
+    if room in kept and kept[room] != path:
+        dropPaths([kept[room]])
+
+    kept[room] = path
+
+    if result:
+        drafts[token]["checks"][room] = {**result, "unchecked": result.get("unchecked", False)}
+    else:
+        drafts[token]["checks"][room] = {"unchecked": True}
+
+    request.session[DRAFTS_KEY] = drafts
+    forget_bad(request, room)
+
+    return ""
 
 
 def reviewNote(result, room):
@@ -132,6 +425,40 @@ def roomState(request, room):
         "verdict": "accept",
         "message": sortNote(result) or "This looks like a photo of the flat.",
     }
+
+
+def scanUpload(request, room, upload):
+    data, error = readPhoto(upload)
+
+    if error:
+        return error, None
+
+    queueFiles(request, {room: data})
+    errors = syncChecks(request)
+    result = refused(request)[room]["result"] if room in errors else checks(request).get(room)
+
+    return errors.get(room, ""), result
+
+
+def dropFiles(request):
+    token = draft(request)
+    drafts = request.session[DRAFTS_KEY]
+
+    for room in request.POST.getlist("removePhoto"):
+        if not request.FILES.get(f"photo_{room}"):
+            forget_bad(request, room)
+
+        if room in drafts[token]["photos"] and not request.FILES.get(f"photo_{room}"):
+            path = drafts[token]["photos"].pop(room)
+
+            PhotoCheckJob.objects.filter(
+                owner=request.user, pendingPath=path, status__in=("queued", "running")
+            ).update(status="failed", finishedAt=timezone.now(), error="Photo removed.")
+
+            dropPaths([path])
+            drafts[token]["checks"].pop(room, None)
+
+    request.session[DRAFTS_KEY] = drafts
 
 
 def keepFiles(request, syncResults=True):
@@ -187,6 +514,19 @@ def doubtfulPhotos(request, rooms):
     return unsure
 
 
+@contextmanager
+def fileGuard():
+    newPics = []
+
+    try:
+        yield newPics
+    except Exception:
+        for photo in newPics:
+            photo.storage.delete(photo.name)
+
+        raise
+
+
 def attachPics(request, listing, rooms, savedPhotos):
     kept, results = pending(request), checks(request)
 
@@ -219,6 +559,127 @@ def attachPics(request, listing, rooms, savedPhotos):
 
             savedPhotos.append(photo.image)
             photo.save()
+
+
+def niceLabel(label):
+    names = {
+        "other_place": "an office or shop, not a home",
+        "phone": "a phone",
+        "food": "food or a drink",
+        "floor_plan": "a floor plan",
+        "outdoor": "an outdoor scene",
+    }
+
+    if label in names:
+        return names[label]
+
+    words = label.replace("_", " ")
+
+    if words[:1] in ("a", "e", "i", "o", "u"):
+        return "an " + words
+
+    return "a " + words
+
+
+def blockNote(label, room):
+    if label == "other_place":
+        return "This looks like an office or shop, not a home."
+
+    article = "" if room[-1:].isdigit() else "the "
+
+    return f"This looks like {niceLabel(label)}, not {article}{room}."
+
+
+def dropPhoto(listing, photo):
+    name = photo.image.name
+    photo.delete()
+
+    if name.startswith(f"listings/{listing.publicId}/"):
+        transaction.on_commit(lambda: default_storage.delete(name))
+
+
+def photoStamp(listing):
+    return list(
+        listing.photos.order_by("pk").values_list(
+            "pk",
+            "image",
+            "modelVersion",
+            "staffChecked",
+            "updatedAt",
+            "staffReviewedBy_id",
+            "staffReviewedAt",
+            "staffReviewedRevision",
+        )
+    )
+
+
+def planRedo(listing):
+    stamp = photoStamp(listing)
+    stale = list(listing.photos.filter(missingQ()).order_by("pk"))
+
+    if not stale:
+        return stamp, []
+
+    ready = []
+
+    for photo in stale:
+        try:
+            with photo.image.open("rb") as image:
+                ready.append((photo, image.read()))
+        except (OSError, ValueError):
+            pass
+
+    results = checkPics([data for photo, data in ready])
+    checked = {photo.pk: result for (photo, data), result in zip(ready, results)}
+
+    return stamp, [(photo, checked.get(photo.pk) or {}) for photo in stale]
+
+
+def redoStale(listing, prepared):
+    stamp, checked = prepared
+
+    if photoStamp(listing) != stamp:
+        return False
+
+    allDone = True
+
+    for photo, result in checked:
+        if result.get("modelVersion") != MODEL_VERSION:
+            result = {}
+            allDone = False
+
+        photo.aiLabel = result.get("label", "unchecked")
+        photo.aiIrrelevant = result.get("irrelevant")
+        photo.aiGenerated = result.get("aiGenerated")
+        photo.tags = result.get("tags", [])
+        photo.embedding = result.get("embedding")
+        photo.modelVersion = result.get("modelVersion")
+        warning = slotWarn(result, photo.room)
+        appealReasons = [reason for reason in photo.photoReview if reason == appealWhy(photo.room)]
+        photo.photoReview = list(
+            dict.fromkeys(
+                appealReasons + result.get("reviewReasons", []) + ([warning] if warning else [])
+            )
+        )
+
+        if result.get("identityStatus") == "identity mismatch":
+            photo.photoReview.append("Photo model identity mismatch; staff must review it")
+
+        photo.staffChecked = False
+        photo.save(
+            update_fields=[
+                "aiLabel",
+                "aiIrrelevant",
+                "aiGenerated",
+                "tags",
+                "embedding",
+                "modelVersion",
+                "staffChecked",
+                "photoReview",
+            ]
+        )
+
+    return allDone
 
 
 def slot_type(room):
