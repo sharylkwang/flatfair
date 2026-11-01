@@ -1,0 +1,81 @@
+{% extends "storefront/base.html" %}
+{% load estate_tags humanize %}
+{% block title %}Search by photo · FlatFair{% endblock %}
+{% block content %}
+<div class="lens-page">
+  {% if searched %}
+  <h1 class="visually-hidden">Search by photo</h1>
+  <div class="lens-search" id="results" tabindex="-1" data-lens-results>
+    <aside class="lens-yours" aria-labelledby="lens-yours-title">
+      <h2 id="lens-yours-title">Your photo</h2>
+      {% if submittedPhoto or source %}<figure class="lens-query"><img src="{% if submittedPhoto %}{{ submittedPhoto }}{% else %}{{ source.publicUrl }}{% endif %}" alt="{% if submittedPhoto %}Your submitted room photo{% else %}Room photo used for this search{% endif %}" width="320" height="240"><figcaption>{% if source %}{{ source.get_room_display }}, {% if source.listing.block %}Blk {{ source.listing.block }} {% endif %}{{ source.listing.town|title }}{% else %}Your upload{% endif %}</figcaption></figure>{% endif %}
+      {% if tags %}<p class="lens-label" id="lens-features-title">Seen in {% if source %}this{% else %}your{% endif %} photo</p><ul class="lens-pills lens-features" aria-labelledby="lens-features-title">{% for tag in tags %}<li class="chip">{{ tag }}</li>{% endfor %}</ul>{% endif %}
+      <details class="lens-again">
+        <summary class="btn btn-ghost">Use another photo</summary>
+        {% include "storefront/lens_upload.html" %}
+      </details>
+      {% include "storefront/lens_looks.html" %}
+    </aside>
+    <section class="lens-results" aria-labelledby="lens-results-title">
+      <div class="lens-results-head">
+        <h2 id="lens-results-title">Similar rooms</h2>
+        {% if matches %}<p class="result-count">{{ matches|length }} flat{{ matches|length|pluralize }}</p>{% endif %}
+      </div>
+      {% if matches %}
+        <div class="browse-grid">{% for match in matches|slice:":9" %}{% include "storefront/lens_match.html" %}{% endfor %}</div>
+        {% if matches|length > 9 %}
+          <details class="fold lens-more">
+            <summary>Show {{ matches|length|add:"-9" }} more</summary>
+            <div class="fold-body"><div class="browse-grid">{% for match in matches|slice:"9:" %}{% include "storefront/lens_match.html" %}{% endfor %}</div></div>
+          </details>
+        {% endif %}
+      {% else %}
+        <div class="lens-empty">
+          <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="search" %}</span>
+          <h3>No similar rooms yet</h3>
+          <a class="btn btn-brand" href="{% url "lens" %}">Use another photo</a>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+  {% else %}
+  <section class="lens-yours lens-start">
+    <header class="lens-head">
+      <h1>Search by photo</h1>
+      <p>Upload a room photo to find similar flats.</p>
+    </header>
+    {% include "storefront/lens_upload.html" %}
+    {% if error %}<p class="err lens-error" role="alert">{{ error }}</p>{% endif %}
+    {% include "storefront/lens_looks.html" %}
+  </section>
+  {% endif %}
+  {% if lensSamples %}
+<section class="lens-samples" aria-labelledby="lens-samples-title">
+  <div class="lens-band">
+    <h2 id="lens-samples-title">{% if searched %}Try another sample photo{% else %}Try a sample photo{% endif %}</h2>
+    <div class="lens-sample-grid">
+      {% for photo in lensSamples %}
+        <a class="lens-sample" href="{% url "lens" %}?photo={{ photo.pk }}#results"{% if source.pk == photo.pk %} aria-current="true"{% endif %}>
+          <figure>
+            <img src="{{ photo.publicUrl }}" alt="{{ photo.get_room_display }} in a flat in {{ photo.listing.town|title }}" width="320" height="240" loading="lazy" decoding="async">
+            <figcaption>{{ photo.get_room_display }}{% if source.pk == photo.pk %}<span class="lens-current">Current</span>{% endif %}</figcaption>
+          </figure>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+  <details class="fold lens-how">
+    <summary>How it works</summary>
+    <div class="fold-body">
+      <ol>
+        <li><span class="lens-step-icon">{% include "storefront/ui_icon.html" with name="plus" %}</span><span>Upload a room photo</span></li>
+        <li><span class="lens-step-icon">{% include "storefront/ui_icon.html" with name="search" %}</span><span>We look for similar rooms in flats for sale</span></li>
+        <li><span class="lens-step-icon">{% include "storefront/ui_icon.html" with name="home" %}</span><span>Open the flats you like to see more photos</span></li>
+      </ol>
+    </div>
+  </details>
+  {% include "storefront/recommended_flats.html" %}
+</div>
+{% endblock %}
