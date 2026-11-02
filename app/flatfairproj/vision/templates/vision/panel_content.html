@@ -1,0 +1,51 @@
+    <div class="vision-content">
+      {% if picking %}<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">{% endif %}
+      <p class="muted" title="Links help you find similar pieces.">Furniture we spotted in the photos. It isn’t part of the sale.</p>
+      {% if pending %}
+        <p data-vision-pending role="status">Checking the photos… <a href="">Refresh to see items</a></p>
+      {% elif not total %}
+        <p data-vision-empty role="status">{% if failed %}We couldn’t check these photos. Try again later.{% else %}We didn’t spot any furniture in these photos.{% endif %}</p>
+      {% endif %}
+      {% if panels %}
+        <div class="vision-tabs" role="tablist" aria-label="Choose a photo">
+          {% for panel in panels %}<button class="vision-tab" type="button" role="tab" id="vision-tab-{{ panel.analysis.pk }}" aria-controls="vision-photo-{{ panel.analysis.pk }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" tabindex="{% if forloop.first %}0{% else %}-1{% endif %}"><img src="{{ panel.analysis.photo.publicUrl }}" alt="" loading="lazy"><span>{{ panel.analysis.photo.get_room_display }}</span></button>{% endfor %}
+        </div>
+      {% endif %}
+      {% for panel in panels %}
+        <div class="vision-photo" id="vision-photo-{{ panel.analysis.pk }}" role="tabpanel" aria-labelledby="vision-tab-{{ panel.analysis.pk }}"{% if not forloop.first %} hidden{% endif %}>
+          {% if panel.analysis.status == 'done' %}
+            <div class="vision-workspace">
+              <div class="vision-look">
+                <div class="vision-stage"{% if picking %} data-pick-url="{% url 'vision_pick' panel.analysis.pk %}"{% endif %}>
+                  <img src="{{ panel.analysis.photo.publicUrl }}" alt="{{ panel.analysis.photo.get_room_display }} with the items we spotted" loading="lazy">
+                  <svg viewBox="0 0 {{ panel.width }} {{ panel.height }}" aria-label="Items we spotted">{% for card in panel.cards %}<polygon points="{{ card.points }}" data-select="vision-item-{{ card.item.pk }}" tabindex="0" role="button" aria-label="Select {{ card.item.label }}"><title>{{ card.item.label }}</title></polygon>{% endfor %}</svg>
+                </div>
+                {% if picking %}<p class="vision-hint" data-pick-status role="status">Tap anything in the photo to look it up.</p>{% endif %}
+              </div>
+              <div>
+                {% if panel.floor %}<p class="vision-floor">Floor: {{ panel.floor }}</p>{% endif %}
+                <div class="vision-cards">
+                  {% for card in panel.cards %}
+                    <article id="vision-item-{{ card.item.pk }}" class="vision-card" tabindex="-1">
+                      <img src="{% url 'vision_crop' card.item.pk %}" alt="{{ card.item.label|capfirst }}" loading="lazy">
+                      <div>
+                        <p class="vision-card-name">{{ card.item.label|capfirst }}</p>
+                        {% if card.attributes %}<p>{{ card.attributes|join:' · ' }}</p>{% endif %}
+                        <a class="vision-lens" href="{{ card.lens|default:card.search }}" data-lens-crop="{% url 'vision_crop' card.item.pk %}" data-lens-words="{{ card.words }}" target="_blank" rel="noopener noreferrer">Search with Google Lens<span class="visually-hidden"> (opens in new tab)</span></a>
+                        {% if card.similar %}<details class="vision-similar"><summary>Similar in other flats ({{ card.similar|length }})</summary>{% for other in card.similar %}<a href="{% url 'listing_detail' other.analysis.photo.listing.publicId %}">{{ other.label|capfirst }} · {{ other.analysis.photo.listing.town|title }}</a>{% endfor %}</details>{% endif %}
+                      </div>
+                    </article>
+                  {% empty %}
+                    <p>We didn’t spot any furniture in this photo.</p>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          {% elif panel.analysis.status == 'failed' %}
+            <p>We couldn’t check this photo.</p>
+          {% else %}
+            <p data-vision-pending>Checking this photo…</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>

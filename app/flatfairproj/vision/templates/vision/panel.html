@@ -1,0 +1,8 @@
+{% load static %}
+{% if enabled %}
+  <details class="panel calm-details vision-panel" id="shop-the-look" data-vision-state="{% if pending %}pending{% else %}complete{% endif %}">
+    <summary>{% include "storefront/ui_icon.html" with name="cart" only %}<span>Shop this look · <small class="vision-count">{% if total %}{{ total }} item{{ total|pluralize }}{% elif pending %}Checking photos{% elif failed %}Couldn’t check photos{% else %}No items found{% endif %}</small></span><span class="disclosure-label">Show more</span></summary>
+    {% include "vision/panel_content.html" %}
+  </details>
+  <script src="{% static 'vision/vision.js' %}?v=4" defer></script>
+{% endif %}
