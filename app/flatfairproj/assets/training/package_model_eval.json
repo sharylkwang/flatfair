@@ -1,0 +1,210 @@
+{
+  "evaluatedAt": "2026-11-10T02:23:11.300271+00:00",
+  "version": "package-v1",
+  "artifactSha256": "3c218c2f5ebe199c8dbc9a27ed24ed21c8729edb34578af416ec355ca4d56d44",
+  "seed": 2109,
+  "trainingSeed": 2108,
+  "rows": 18000,
+  "sourceMaxMonth": "2026-10",
+  "classNames": [
+    "none",
+    "boost30",
+    "boost90",
+    "topSpot"
+  ],
+  "competitionThreshold": 1064.0,
+  "sampling": "Fresh synthetic valuation, asking, age and label noise draws from unchanged training generator with a different seed; underlying HDB property rows may overlap training.",
+  "noiseFreePolicy": "Exact generating score and class cutoffs, with Gaussian score noise and random label replacement removed.",
+  "againstPolicy": {
+    "accuracy": 0.9863888888888889,
+    "perClass": {
+      "none": {
+        "precision": 0.985245617080368,
+        "recall": 0.9938714760987568,
+        "f1-score": 0.9895397489539749,
+        "support": 5711.0
+      },
+      "boost30": {
+        "precision": 0.9856854159649714,
+        "recall": 0.9846904441453567,
+        "f1-score": 0.9851876788419458,
+        "support": 5944.0
+      },
+      "boost90": {
+        "precision": 0.9934463276836158,
+        "recall": 0.9786286731967943,
+        "f1-score": 0.9859818324548615,
+        "support": 4492.0
+      },
+      "topSpot": {
+        "precision": 0.9754797441364605,
+        "recall": 0.9875876956287102,
+        "f1-score": 0.9814963797264682,
+        "support": 1853.0
+      },
+      "accuracy": 0.9863888888888889,
+      "macro avg": {
+        "precision": 0.9849642762163539,
+        "recall": 0.9861945722674045,
+        "f1-score": 0.9855514099943126,
+        "support": 18000.0
+      },
+      "weighted avg": {
+        "precision": 0.986432038971191,
+        "recall": 0.9863888888888889,
+        "f1-score": 0.9863866806851699,
+        "support": 18000.0
+      }
+    },
+    "confusionMatrix": [
+      [
+        5676,
+        35,
+        0,
+        0
+      ],
+      [
+        85,
+        5853,
+        6,
+        0
+      ],
+      [
+        0,
+        50,
+        4396,
+        46
+      ],
+      [
+        0,
+        0,
+        23,
+        1830
+      ]
+    ]
+  },
+  "againstNoisyLabels": {
+    "accuracy": 0.8509444444444444,
+    "perClass": {
+      "none": {
+        "precision": 0.8574900190939073,
+        "recall": 0.901624384011681,
+        "f1-score": 0.8790035587188612,
+        "support": 5479.0
+      },
+      "boost30": {
+        "precision": 0.8651060963287303,
+        "recall": 0.7969283276450512,
+        "f1-score": 0.8296188630490956,
+        "support": 6446.0
+      },
+      "boost90": {
+        "precision": 0.8259887005649718,
+        "recall": 0.8692033293697978,
+        "f1-score": 0.847045191193511,
+        "support": 4205.0
+      },
+      "topSpot": {
+        "precision": 0.8448827292110874,
+        "recall": 0.8475935828877005,
+        "f1-score": 0.8462359850507207,
+        "support": 1870.0
+      },
+      "accuracy": 0.8509444444444444,
+      "macro avg": {
+        "precision": 0.848366886299674,
+        "recall": 0.8538374059785576,
+        "f1-score": 0.850475899503047,
+        "support": 18000.0
+      },
+      "weighted avg": {
+        "precision": 0.851548605613942,
+        "recall": 0.8509444444444444,
+        "f1-score": 0.850448333913815,
+        "support": 18000.0
+      }
+    },
+    "confusionMatrix": [
+      [
+        4940,
+        476,
+        44,
+        19
+      ],
+      [
+        729,
+        5137,
+        560,
+        20
+      ],
+      [
+        43,
+        255,
+        3655,
+        252
+      ],
+      [
+        49,
+        70,
+        166,
+        1585
+      ]
+    ]
+  },
+  "policyAgainstNoisyLabelsAccuracy": 0.8541111111111112,
+  "featureImportanceMethod": "Random forest mean decrease in impurity; categorical one-hot importances summed to original feature. Descriptive, not causal, and potentially biased toward high-cardinality inputs.",
+  "featureImportances": {
+    "daysListed": 0.25882733572974903,
+    "townTransactions": 0.24918133611089133,
+    "bandPosition": 0.21969044304394594,
+    "askingRatio": 0.20621228188188848,
+    "leaseRemaining": 0.02954783274872957,
+    "estimatedPrice": 0.015757440577220335,
+    "floorAreaSqm": 0.008244099861977666,
+    "town": 0.005733963526036306,
+    "storey": 0.0046859415404693645,
+    "flatType": 0.0021193249790919556
+  },
+  "encodedFeatureImportances": {
+    "daysListed": 0.25882733572974903,
+    "townTransactions": 0.24918133611089133,
+    "bandPosition": 0.21969044304394594,
+    "askingRatio": 0.20621228188188848,
+    "leaseRemaining": 0.02954783274872957,
+    "estimatedPrice": 0.015757440577220335,
+    "floorAreaSqm": 0.008244099861977666,
+    "storey": 0.0046859415404693645,
+    "flatType=4 ROOM": 0.0011041672614161434,
+    "town=CHOA CHU KANG": 0.0010063648169688403,
+    "town=PUNGGOL": 0.0005519204720886347,
+    "flatType=5 ROOM": 0.00047809728540420415,
+    "town=HOUGANG": 0.0004208967909582499,
+    "town=JURONG WEST": 0.0004198659702084322,
+    "flatType=3 ROOM": 0.0004149310057461143,
+    "town=WOODLANDS": 0.00032613664201202214,
+    "town=BEDOK": 0.0003260434920535821,
+    "town=SEMBAWANG": 0.000292159254058785,
+    "town=ANG MO KIO": 0.0002891879322504754,
+    "town=YISHUN": 0.0002722060925925859,
+    "town=TAMPINES": 0.00026218742954895504,
+    "town=SENGKANG": 0.0002236921451899693,
+    "town=BUKIT PANJANG": 0.0002174346774395242,
+    "town=TOA PAYOH": 0.00020893996482833384,
+    "town=BUKIT MERAH": 0.00015298123017480584,
+    "town=BUKIT BATOK": 0.000145429707780482,
+    "town=CLEMENTI": 0.00012250037076788687,
+    "town=JURONG EAST": 0.00012139499744721404,
+    "flatType=EXECUTIVE": 9.175282641816113e-05,
+    "town=QUEENSTOWN": 9.073196146695143e-05,
+    "town=KALLANG/WHAMPOA": 8.585708753699782e-05,
+    "town=GEYLANG": 6.789340506947346e-05,
+    "town=PASIR RIS": 5.981524644011708e-05,
+    "flatType=2 ROOM": 3.037660010733288e-05,
+    "town=BISHAN": 2.5163424940297464e-05,
+    "town=CENTRAL AREA": 2.061226173347599e-05,
+    "town=MARINE PARADE": 1.8411365333875643e-05,
+    "town=SERANGOON": 6.136787146338387e-06,
+    "town=BUKIT TIMAH": 0.0
+  },
+  "limitations": "Checks learning of the assumed synthetic policy, not real-world package benefit, sales lift or independent future market performance. No model fitting or artifact writes occur."
+}

@@ -1,0 +1,80 @@
+{
+  "version": "package-v1",
+  "syntheticLabels": true,
+  "modelType": "RandomForestClassifier",
+  "seed": 2108,
+  "source": "ResaleflatpricesbasedonregistrationdatefromJan2017onwards.csv",
+  "sourceMaxMonth": "2026-10",
+  "rows": 18000,
+  "trainRows": 13500,
+  "testRows": 4500,
+  "split": "Stratified 75/25 holdout; no tuning or refitting on test rows",
+  "accuracy": 0.8515555555555555,
+  "macroF1": 0.850890164302363,
+  "majorityBaselineAccuracy": 0.35755555555555557,
+  "classNames": [
+    "none",
+    "boost30",
+    "boost90",
+    "topSpot"
+  ],
+  "confusionMatrix": [
+    [
+      1239,
+      117,
+      10,
+      8
+    ],
+    [
+      183,
+      1289,
+      133,
+      4
+    ],
+    [
+      16,
+      62,
+      894,
+      56
+    ],
+    [
+      12,
+      13,
+      54,
+      410
+    ]
+  ],
+  "classBalance": {
+    "all": {
+      "none": 5495,
+      "boost30": 6435,
+      "boost90": 4114,
+      "topSpot": 1956
+    },
+    "train": {
+      "none": 4121,
+      "boost30": 4826,
+      "boost90": 3086,
+      "topSpot": 1467
+    },
+    "test": {
+      "none": 1374,
+      "boost30": 1609,
+      "boost90": 1028,
+      "topSpot": 489
+    }
+  },
+  "competitionThreshold": 1064.0,
+  "features": [
+    "town",
+    "flatType",
+    "floorAreaSqm",
+    "storey",
+    "estimatedPrice",
+    "askingRatio",
+    "bandPosition",
+    "townTransactions",
+    "leaseRemaining",
+    "daysListed"
+  ]
+}

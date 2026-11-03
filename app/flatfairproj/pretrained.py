@@ -36,6 +36,21 @@ PHOTO_LABELS = [
 ]
 
 PIPELINE_VERSION = "7"
+MODEL_VERSION = "package-v1"
+FEATURE_NAMES = [
+    "town",
+    "flatType",
+    "floorAreaSqm",
+    "storey",
+    "estimatedPrice",
+    "askingRatio",
+    "bandPosition",
+    "townTransactions",
+    "leaseRemaining",
+    "daysListed",
+]
+PACKAGE_TIERS = {"none": 0, "boost30": 1, "boost90": 2, "topSpot": 3}
+
 PINNED_REVISIONS = {
     CLIP_NAME: "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
     "IDEA-Research/grounding-dino-tiny": "a2bb814dd30d776dcf7e30523b00659f4f141c71",
@@ -233,3 +248,53 @@ def warnGone(log, message):
     log.warning(message)
 
 
+def packTraits(
+    town,
+    flatType,
+    floorAreaSqm,
+    storey,
+    leaseCommenceYear,
+    askingPrice,
+    estimatedPrice,
+    bandLow,
+    bandHigh,
+    daysListed,
+    asOfYear,
+    townTransactions,
+):
+    values = [
+        float(value)
+        for value in (
+            floorAreaSqm,
+            storey,
+            leaseCommenceYear,
+            askingPrice,
+            estimatedPrice,
+            bandLow,
+            bandHigh,
+            daysListed,
+            asOfYear,
+            townTransactions,
+        )
+    ]
+
+    if not all(math.isfinite(value) for value in values):
+        raise ValueError("Package features must be finite.")
+
+    area, floor, lease, asking, worth, low, high, days, year, rivals = values
+
+    if area <= 0 or asking <= 0 or not 0 < low < worth < high or rivals < 0:
+        raise ValueError("Package features need a valid price band and listing.")
+
+    return {
+        "town": town.strip().upper(),
+        "flatType": flatType.strip().upper(),
+        "floorAreaSqm": area,
+        "storey": floor,
+        "estimatedPrice": worth,
+        "askingRatio": asking / worth,
+        "bandPosition": (asking - low) / (high - low),
+        "townTransactions": rivals,
+        "leaseRemaining": max(0.0, min(99.0, 99 - (year - lease))),
+        "daysListed": max(0.0, days),
+    }
