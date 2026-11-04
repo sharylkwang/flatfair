@@ -1,0 +1,50 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load staff_tags %}
+{% block title %}Ticket #{{ ticket.pk }} · FlatFair{% endblock %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_tickets' %}">{% include "storefront/ui_icon.html" with name="back" %}All tickets</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>Ticket #{{ ticket.pk }} {% staff_state "ticket" ticket.status ticket.get_status_display %}</h1>
+      <p class="staff-head-meta">{{ ticket.get_topic_display }} · From {{ ticket.email }}{% if ticket.customer and user|can_open:'admin_customers' %} · <a href="{% url 'admin_customer' ticket.customer.pk %}">Customer page</a>{% endif %}{% if ticket.assignee and ticket.status == 'resolved' %} · Resolved by {% if ticket.assignee == user %}you{% else %}{{ ticket.assignee.first_name|default:ticket.assignee.email }}{% endif %}{% endif %}</p>
+    </div>
+  </div>
+  <div class="staff-ticket">
+    <section class="panel staff-ticket-reply" aria-labelledby="ticket-reply-title">
+      {% if ticket.status == 'resolved' %}
+        <h2 id="ticket-reply-title">Resolved</h2>
+        <p>Resolved on {{ ticket.resolvedAt|date:'j M Y' }}. The customer can send a new message from the Support page.</p>
+      {% elif ticket.customer %}
+        <h2 id="ticket-reply-title">Reply</h2>
+        {% include 'adminpanel/ticket_reply.html' %}
+      {% else %}
+        <h2 id="ticket-reply-title">Reply by email</h2>
+        <p>This person was not signed in, so they only see email replies.</p>
+        <a class="btn btn-brand" href="{{ replyLink }}">Reply by email</a>
+      {% endif %}
+      {% if ticket.status != 'resolved' %}
+        <form class="btn-pair ticket-actions" method="post" action="{% url 'admin_ticket_action' ticket.pk %}">{% csrf_token %}
+          <input type="hidden" name="next" value="detail">
+          <button class="btn btn-ghost btn-sm" name="action" value="resolve">Mark resolved</button>
+          {% if ticket.customer %}<a class="btn btn-link btn-sm" href="{{ replyLink }}">Reply by email</a>{% endif %}
+        </form>
+      {% endif %}
+    </section>
+    <div class="staff-ticket-thread">
+      <section class="ticket-conversation" aria-labelledby="ticket-thread-title">
+        <h2 id="ticket-thread-title">Conversation</h2>
+        {% include 'adminpanel/ticket_thread.html' with viewer='staff' %}
+      </section>
+      {% if ticket.order %}
+        <section class="ticket-order" aria-labelledby="ticket-order-title">
+          <h2 id="ticket-order-title">Order #{{ ticket.order.pk }} {% staff_state "order" ticket.order.status ticket.order.get_status_display %}</h2>
+          <p class="muted">Paid {{ ticket.order.createdAt|date:'j M Y' }} · Total ${{ ticket.order.total|floatformat:2 }} · {% if ticket.order.canRefund %}Can be refunded: work has not started.{% elif ticket.order.status == 'refunded' %}Already refunded.{% else %}Can't be refunded: packages start once paid, and services once work starts.{% endif %}</p>
+          <ul class="staff-lines">
+            {% for item in ticket.order.items.all %}<li><span><b>{{ item.name }}</b><small>{% if item.kind == 'package' %}Package{% else %}Extra service{% endif %}</small></span><b class="mono">${{ item.price|floatformat:2 }}</b></li>{% endfor %}
+          </ul>
+          <a class="btn btn-ghost btn-sm" href="{% url 'admin_order' ticket.order.pk %}">View order <span class="visually-hidden">{{ ticket.order.pk }}</span></a>
+        </section>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

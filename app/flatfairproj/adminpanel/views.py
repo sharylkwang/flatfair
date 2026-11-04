@@ -47,6 +47,25 @@ REASONS = {
     "flat": "it does not show the flat",
     "quality": "it is too dark or blurry",
 }
+REPLY_CHOICES = [
+    (
+        "checking",
+        "Looking into it",
+        "Thanks for getting in touch. We are looking into this and will reply here when we have an update.",
+    ),
+    (
+        "details",
+        "Ask for details",
+        "Could you share your listing or order number and tell us what happened? Please leave out passwords and payment card details.",
+    ),
+    (
+        "resolved",
+        "Check it worked",
+        "We have made the requested update. Please check again and let us know if you still need help.",
+    ),
+]
+
+
 def page(request, template, context=None, section=None):
     from adminpanel.orders import todoQ
 
@@ -953,6 +972,19 @@ def price_page(request):
 
 
 
+def replyLink(ticket):
+    return mailto(ticket.email, f"Re: your FlatFair message #{ticket.pk}")
+
+
+def add_thread(found):
+    latest = TicketMessage.objects.filter(ticket=OuterRef("pk")).order_by("-createdAt", "-pk")
+
+    return found.annotate(
+        replyCount=Count("replies"),
+        lastFromStaff=Subquery(latest.values("fromStaff")[:1]),
+    )
+
+
 @staffPage("admin_tickets")
 def tickets(request):
     found = add_thread(Ticket.objects.select_related("customer", "assignee", "order"))
@@ -982,3 +1014,117 @@ def tickets(request):
     return page(request, "adminpanel/tickets.html", {"columns": board})
 
 
+@transaction.atomic
+def staffReply(request, pk, body):
+    ticket = Ticket.objects.select_for_update().get(pk=pk)
+
+    if ticket.status == "resolved":
+        return False
+
+    TicketMessage.objects.create(ticket=ticket, author=request.user, body=body, fromStaff=True)
+
+    if ticket.assignee_id is None:
+        ticket.assignee = request.user
+        ticket.save(update_fields=["assignee"])
+
+    audit(request, "ticket replied", f"Ticket #{ticket.pk}", ticket.get_topic_display())
+
+    if ticket.customer_id:
+        url = reverse("my_ticket", args=[ticket.pk])
+
+        notify(
+            ticket.customer_id,
+            "support_reply",
+            f"Our support team replied to your message #{ticket.pk}.",
+            url,
+        )
+
+    return True
+
+
+@staffPage("admin_tickets")
+def see_ticket(request, pk):
+    ticket = get_object_or_404(
+        Ticket.objects.select_related("customer", "assignee", "order").prefetch_related(
+            "order__items"
+        ),
+        pk=pk,
+    )
+
+    replies = {key: body for key, label, body in REPLY_CHOICES}
+
+    form = ReplyForm(
+        request.POST if request.method == "POST" else None,
+        initial={"body": replies.get(request.GET.get("reply"), "")},
+    )
+
+    if request.method == "POST" and not ticket.customer_id:
+        messages.error(
+            request,
+            "This person was not signed in, so they cannot see replies here. Reply by email.",
+        )
+
+        return redirect("admin_ticket", ticket.pk)
+
+    if request.method == "POST" and form.is_valid():
+        if staffReply(request, ticket.pk, form.cleaned_data["body"]):
+            messages.success(request, "Reply sent. The customer sees it in My messages.")
+        else:
+            messages.error(
+                request,
+                f"Ticket #{ticket.pk} is already resolved. Your reply was not sent.",
+            )
+
+        return redirect("admin_ticket", ticket.pk)
+
+    context = {
+        "ticket": ticket,
+        "thread": ticket.replies.select_related("author").order_by("createdAt", "pk"),
+        "form": form,
+        "replyLink": replyLink(ticket),
+        "replyChoices": REPLY_CHOICES,
+    }
+
+    return page(request, "adminpanel/ticket.html", context, section="admin_tickets")
+
+
+@staffPage("admin_tickets")
+@transaction.atomic
+def ticket_do(request, pk):
+    ticket = Ticket.objects.select_for_update().filter(pk=pk).first()
+    action = request.POST.get("action")
+
+    if request.method != "POST" or not ticket or action != "resolve":
+        return redirect("admin_tickets")
+
+    if ticket.status == "resolved":
+        messages.error(request, f"Ticket #{ticket.pk} is already resolved. Nothing changed.")
+    else:
+        ticket.status, ticket.resolvedAt = "resolved", timezone.now()
+        ticket.assignee = request.user
+        ticket.save(update_fields=["status", "resolvedAt", "assignee"])
+
+        audit(
+            request,
+            "ticket resolved",
+            f"Ticket #{ticket.pk}",
+            ticket.get_topic_display(),
+        )
+
+        if ticket.customer_id:
+            notify(
+                ticket.customer_id,
+                "support_reply",
+                f"Our team marked your message #{ticket.pk} as resolved.",
+                reverse("my_ticket", args=[ticket.pk]),
+            )
+
+        messages.success(request, f"Ticket #{ticket.pk} resolved.")
+
+    if request.POST.get("next") == "detail":
+        return redirect("admin_ticket", ticket.pk)
+
+    return redirect("admin_tickets")
+
+
+# Apply a staff action

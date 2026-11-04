@@ -286,6 +286,49 @@ def pic_choice(request, pk, photoId):
 
 
 @staffPage("admin_reviews")
+def reviews(request):
+    rows = Review.objects.select_related(
+        "seller", "orderItem__product", "orderItem__order"
+    ).order_by("-createdAt", "-pk")
+
+    low = request.GET.get("rating") == "low"
+    recent = request.GET.get("days") == "30"
+
+    if recent:
+        rows = rows.filter(createdAt__gte=timezone.now() - timedelta(days=30))
+
+    counts = {
+        "all": rows.count(),
+        "low": rows.filter(rating__lte=LOW_RATING).count(),
+    }
+
+    if low:
+        rows = rows.filter(rating__lte=LOW_RATING)
+
+    if low:
+        if recent:
+            noItems = "No low ratings in the last 30 days."
+        else:
+            noItems = "No low ratings."
+    else:
+        if recent:
+            noItems = "No reviews in the last 30 days."
+        else:
+            noItems = "No reviews yet. Sellers can rate a service once its order is done."
+
+    context = {
+        "emptyText": noItems,
+        "rows": rows,
+        "low": low,
+        "recent": recent,
+        "lowRating": LOW_RATING,
+        "counts": counts,
+    }
+
+    return page(request, "adminpanel/reviews.html", context)
+
+
+@staffPage("admin_reviews")
 def see_review(request, pk):
     review = (
         Review.objects.select_related("seller", "orderItem__product", "orderItem__order")
@@ -308,6 +351,171 @@ def see_review(request, pk):
     return page(request, "adminpanel/review.html", context, section="admin_reviews")
 
 
+@staffPage("admin_reviews")
+@require_POST
+@transaction.atomic
+def flip_review(request, pk):
+    review = Review.objects.select_for_update().select_related("orderItem").filter(pk=pk).first()
+
+    back = reverse("admin_reviews")
+
+    if request.POST.get("rating") == "low":
+        back += "?rating=low"
+
+    if request.POST.get("days") == "30":
+        back += "&days=30" if "?" in back else "?days=30"
+
+    if not review:
+        messages.error(request, "That review no longer exists.")
+
+        return redirect(back)
+
+    wanted = request.POST.get("hide")
+
+    if wanted not in ("0", "1") or (wanted == "1") == review.hidden:
+        return redirect(back)
+
+    reason = request.POST.get("reason", "").strip()
+
+    if wanted == "1" and (not reason or len(reason) > 200):
+        messages.error(request, "Add a reason of 200 characters or fewer to hide this review.")
+
+        return redirect(back)
+
+    review.hidden = wanted == "1"
+    review.save(update_fields=["hidden"])
+
+    audit(
+        request,
+        "review hidden" if review.hidden else "review shown",
+        f"Review #{review.pk}",
+        (reason if review.hidden else f"{review.orderItem.name} · {review.rating} out of 5"),
+    )
+
+    if review.hidden:
+        from storefront.notices import notify
+
+        notify(
+            review.seller_id,
+            "review_hidden",
+            f"Our team hid your review of {review.orderItem.name}. Reason: {reason}",
+            reverse("my_orders"),
+        )
+
+        messages.success(request, f"Review #{review.pk} is hidden from the Packages page.")
+    else:
+        messages.success(request, f"Review #{review.pk} is shown on the Packages page again.")
+
+    return redirect(back)
+
+
+def pricey_q():
+    return (
+        Q(
+            estimatedPrice__isnull=False,
+            bandHigh__isnull=False,
+            askingPrice__gt=F("bandHigh"),
+        )
+        & ~Q(estimatedPrice=0)
+        & ~Q(askingPrice=0)
+    )
+
+
+def add_pack(flats):
+    newest = (
+        goodPacks(timezone.now())
+        .filter(listing_id=OuterRef("pk"))
+        .order_by("-order__createdAt", "-pk")
+        .values("name")[:1]
+    )
+
+    return flats.annotate(packageName=Subquery(newest))
+
+
+def theSeller(request):
+    try:
+        return object_id(request.GET.get("seller"))
+    except Exception as error:
+        return None
+
+
+def findFlats(request):
+    flats = Listing.objects.select_related("seller")
+    status = request.GET.get("status", "")
+
+    if status in dict(Listing.STATUS_CHOICES):
+        flats = flats.filter(status=status)
+
+    town = request.GET.get("town", "")
+
+    if town:
+        flats = flats.filter(town=town)
+
+    if request.GET.get("above") == "1":
+        flats = flats.filter(pricey_q())
+
+    term = request.GET.get("q", "").strip()
+
+    if term.lower().startswith("blk"):
+        term = term[3:].strip()
+
+    if term:
+        flats = flats.filter(Q(block__iexact=term) | Q(postalCode__startswith=term))
+
+    seller = theSeller(request)
+
+    if seller:
+        flats = flats.filter(seller_id=seller)
+
+    return add_pack(flats).order_by("-createdAt", "-pk")
+
+
+def priceCheck(flat):
+    flag_labels = {
+        "above": "Above range",
+        "typo": "Below range",
+        None: "Fair price",
+    }
+    flag_tones = {"above": "amber", "typo": "bad", None: "good"}
+
+    if not (flat.estimatedPrice and flat.bandLow and flat.bandHigh):
+        return {"key": "none", "label": "Not checked", "tone": "brand"}
+
+    key = flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+
+    return {"key": key or "fair", "label": flag_labels[key], "tone": flag_tones[key]}
+
+
+@staffPage("admin_listings")
+def listings(request):
+    rows = Paginator(findFlats(request), 25).get_page(request.GET.get("page"))
+
+    for flat in rows:
+        flat.priceCheck = priceCheck(flat)
+
+    readyPics(list(rows))
+    ownerId = theSeller(request)
+    status = request.GET.get("status", "")
+    query = request.GET.copy()
+    query.pop("page", None)
+
+    context = {
+        "rows": rows,
+        "statuses": Listing.STATUS_CHOICES,
+        "status": status,
+        "statusLabel": dict(Listing.STATUS_CHOICES).get(status, ""),
+        "towns": Listing.objects.order_by("town").values_list("town", flat=True).distinct(),
+        "town": request.GET.get("town", ""),
+        "above": request.GET.get("above") == "1",
+        "q": request.GET.get("q", ""),
+        "seller": User.objects.filter(pk=ownerId).first() if ownerId else None,
+        "filtered": any(request.GET.get(key) for key in ("status", "town", "above", "q", "seller")),
+        "returnQuery": query.urlencode(),
+    }
+
+    return page(request, "adminpanel/listings.html", context)
+
+
 @staffPage("admin_listings")
 def flat_view(request, pk):
     flat = add_pack(Listing.objects.select_related("seller").filter(pk=pk)).first()
@@ -324,3 +532,268 @@ def flat_view(request, pk):
     return page(request, "adminpanel/listing.html", context, section="admin_listings")
 
 
+def backToList(request, pk):
+    if request.POST.get("next") == "page":
+        return redirect("admin_listing", pk=pk)
+
+    query = QueryDict(request.POST.get("returnQuery", "")).urlencode()
+
+    return redirect(f"{reverse('admin_listings')}{'?' + query if query else ''}#listing-{pk}")
+
+
+@staffPage("admin_listings")
+def flat_do(request, pk):
+    from adminpanel.orders import flatName
+
+    actions = {
+        "takedown": ("live",),
+        "relist": ("hidden",),
+        "review": ("live", "hidden", "rejected"),
+    }
+
+    if request.method != "POST":
+        return redirect("admin_listings")
+
+    action = request.POST.get("action")
+    reason = request.POST.get("reason", "").strip()[:200]
+    ownerId = Listing.objects.filter(pk=pk).values_list("seller_id", flat=True).first()
+    checked = Listing.objects.filter(pk=pk, seller_id=ownerId).first()
+
+    if checked and action == "relist":
+        ready = planRedo(checked)
+    else:
+        ready = None
+
+    with transaction.atomic():
+        if ownerId:
+            seller = lock_user(ownerId)
+        else:
+            seller = None
+
+        flat = Listing.objects.select_for_update().filter(pk=pk, seller_id=ownerId).first()
+
+        if not flat or action not in actions:
+            messages.error(request, "That listing could not be found. Nothing changed.")
+
+            return redirect("admin_listings")
+
+        name = flatName(flat)
+
+        if flat.revision != checked.revision or flat.status != checked.status:
+            messages.error(
+                request,
+                "This listing changed during photo checks. Reload the page and try again. Nothing changed.",
+            )
+
+            return backToList(request, pk)
+
+        if flat.status == "sold":
+            messages.error(request, f"{name} is sold, so it cannot be changed.")
+
+            return backToList(request, pk)
+
+        if flat.status not in actions[action]:
+            messages.error(
+                request,
+                f"{name} has already changed. Nothing changed, check its status and try again.",
+            )
+
+            return backToList(request, pk)
+
+        if action == "takedown" and not reason:
+            messages.error(request, f"Add a reason the seller will see, then take down {name}.")
+
+            return backToList(request, pk)
+
+        if action == "relist" and (seller is None or not seller.is_active):
+            messages.error(
+                request,
+                f"The seller of {name} is suspended. Reactivate them before putting it back live.",
+            )
+
+            return backToList(request, pk)
+
+        if action in ("relist", "review") and seller and otherOpen(seller, flat):
+            messages.error(request, STAFF_ONE_FLAT_MESSAGE)
+
+            return backToList(request, pk)
+
+        target = f"Listing #{flat.pk} ({name})"
+
+        if action == "takedown":
+            flat.status = "hidden"
+            logChoice(request.user, flat, "takendown", reason)
+
+            notify(
+                flat.seller_id,
+                "listing_taken_down",
+                f"Our team took down {name}: {reason}",
+                reverse("my_listings") + f"#listing-{flat.publicId}",
+            )
+
+            audit(request, "listing taken down", target, reason)
+
+            messages.success(request, f"{name} is taken down. Buyers can no longer see it.")
+        elif action == "relist":
+            problem = liveIssue(flat, checked.revision, checked.status, staffAccepted=True)
+
+            picIssue = ""
+
+            if not problem or problem == PHOTO_REVIEW_MESSAGE:
+                picIssue = reviewPics(request, flat, ready)
+
+            if picIssue:
+                flat.status = "review"
+                flat.save(update_fields=["status"])
+                messages.error(request, picIssue)
+
+                return backToList(request, pk)
+
+            problem = liveIssue(flat, checked.revision, checked.status, staffAccepted=True)
+
+            if problem:
+                messages.error(request, problem)
+
+                return backToList(request, pk)
+
+            flat.status = "live"
+            flat.photos.update(staffChecked=True)
+            logChoice(request.user, flat, "approved", reason)
+
+            notify(
+                flat.seller_id,
+                "listing_relisted",
+                f"Our team put {name} back live. Buyers can see it again.",
+                reverse("my_listings") + f"#listing-{flat.publicId}",
+            )
+
+            audit(request, "listing put back live", target, reason)
+            messages.success(request, f"{name} is live again. Buyers can see it.")
+        else:
+            old = flat.get_status_display()
+            flat.status = "review"
+
+            audit(
+                request,
+                "listing sent to review",
+                target,
+                reason or f"Was {old.lower()}",
+            )
+
+            messages.success(request, f"{name} is in the review queue.")
+
+        flat.save(update_fields=["status"])
+
+    return backToList(request, pk)
+
+
+@staffPage("admin_listings")
+@transaction.atomic
+def flat_edit(request, pk):
+    from adminpanel.orders import flatName
+
+    flat = (
+        Listing.objects.select_for_update()
+        .filter(pk=pk)
+        .exclude(status__in=("sold", "withdrawn"))
+        .first()
+    )
+
+    if not flat:
+        messages.error(request, "That listing could not be found or is sold. Nothing changed.")
+
+        return redirect("admin_listings")
+
+    size = flat.floorAreaSqm
+
+    if size == int(size):
+        size = int(size)
+
+    form = ListingDetailsForm(request.POST or None, instance=flat, initial={"floorAreaSqm": size})
+
+    valid = request.method == "POST" and form.is_valid()
+
+    if valid and form.cleaned_data["revision"] != flat.revision:
+        form.add_error(
+            None,
+            "This listing changed in another tab or by the seller. Reload the page, check the latest details, then save again.",
+        )
+
+        valid = False
+
+    if valid:
+        changed = [name for name in form.changed_data if name != "revision"]
+        flat = form.save(commit=False)
+
+        if [name for name in changed if name != "askingPrice"]:
+            try:
+                flat.bandLow, flat.estimatedPrice, flat.bandHigh = band(
+                    flat.town,
+                    flat.flatType,
+                    flat.flatModel,
+                    flat.floorAreaSqm,
+                    flat.storey,
+                    flat.leaseCommenceYear,
+                    postal=flat.postalCode,
+                    block=flat.block,
+                )
+
+                flat.modelVersion = VERSION
+            except ValueError:
+                form.add_error(
+                    None,
+                    "The valuation service is unavailable. Nothing was saved. Try again later.",
+                )
+
+                flat.refresh_from_db()
+
+                return page(
+                    request,
+                    "adminpanel/listing_form.html",
+                    {
+                        "form": form,
+                        "flat": flat,
+                        "returnQuery": request.POST.get("returnQuery", ""),
+                    },
+                    section="admin_listings",
+                )
+
+        flat.save(
+            update_fields=[
+                *ListingDetailsForm.Meta.fields,
+                "bandLow",
+                "estimatedPrice",
+                "bandHigh",
+                "modelVersion",
+            ]
+        )
+
+        name = flatName(flat)
+
+        if changed:
+            labels = [form.fields[field].label.lower() for field in changed]
+
+            audit(
+                request,
+                "listing edited",
+                f"Listing #{flat.pk} ({name})",
+                "Changed " + joinWords(labels),
+            )
+
+            if flat.seller_id:
+                from storefront.notices import notify
+
+                notify(
+                    flat.seller_id,
+                    "listing_edited",
+                    f"Our team changed the {joinWords(labels)} on your listing for {name}. Please check it",
+                    reverse("seller_listing", args=[flat.publicId]),
+                )
+
+            messages.success(request, f"{name} saved.")
+
+        return backToList(request, pk)
+
+    context = {"form": form, "flat": flat, "returnQuery": request.GET.get("back", "")}
+
+    return page(request, "adminpanel/listing_form.html", context, section="admin_listings")

@@ -1,0 +1,24 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load staff_tags %}
+{% block title %}Reviews · FlatFair{% endblock %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Reviews</h1>
+      <p class="staff-head-meta">Newest first{% if recent %} · last 30 days · <a href="?{% if low %}rating=low{% endif %}">Show all dates</a>{% endif %}</p>
+    </div>
+  </div>
+  <nav class="activity-tabs" aria-label="Review filters"><a href="?{% if recent %}days=30{% endif %}" {% if not low %}aria-current="page"{% endif %}>All <span>{{ counts.all }}</span></a><a href="?rating=low{% if recent %}&amp;days=30{% endif %}" {% if low %}aria-current="page"{% endif %}>{{ lowRating }} stars or fewer <span>{{ counts.low }}</span></a></nav>
+  <section class="staff-rows" aria-label="Reviews from sellers">
+  {% for r in rows %}{% load staff_tags %}
+<article class="staff-row review-line" id="review-{{ r.pk }}">
+  <div class="staff-row-main">
+    <h3>{{ r.orderItem.name|default:r.orderItem.product.name }}</h3>
+    <p><span class="staff-review-stars{% if r.rating <= lowRating %} is-low{% endif %}">{{ r.rating }} out of 5</span> · {{ r.comment|default:"No comment"|truncatechars:90 }} · {{ r.firstName }} · {{ r.createdAt|date:'j M Y' }}</p>
+  </div>
+  {% if r.hidden %}{% staff_state "shop" False %}{% endif %}
+  <a class="btn btn-ghost btn-sm" href="{% url 'admin_review' r.pk %}{% if low or recent %}?{% if low %}rating=low{% endif %}{% if low and recent %}&amp;{% endif %}{% if recent %}days=30{% endif %}{% endif %}">View review <span class="visually-hidden">{{ r.pk }}</span></a>
+</article>
+{% empty %}{% url "admin_reviews" as reviewsUrl %}{% include "adminpanel/empty.html" with text=emptyText action_url=reviewsUrl action_label="See all reviews" %}{% endfor %}
+  </section>
+{% endblock %}

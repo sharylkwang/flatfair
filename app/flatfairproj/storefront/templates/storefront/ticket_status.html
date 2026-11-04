@@ -1,0 +1,1 @@
+{% if status == 'resolved' %}{% include "sellerpanel/status_badge.html" with tone="grey" icon="check" label="Resolved" %}{% elif fromStaff %}{% include "sellerpanel/status_badge.html" with tone="good" icon="check" label="We replied" %}{% else %}{% include "sellerpanel/status_badge.html" with tone="warn" icon="clock" label="Waiting for our team" %}{% endif %}

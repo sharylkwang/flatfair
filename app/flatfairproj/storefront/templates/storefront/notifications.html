@@ -1,0 +1,23 @@
+{% extends 'storefront/base.html' %}
+{% load humanize %}
+{% block title %}Notifications · FlatFair{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with tier="task" title='Notifications' lead=lead hide_default_action=True photo="storefront/photos/community-notifications.jpg" photo_width=1600 photo_height=1067 photo_small="storefront/photos/community-notifications-960.jpg" %}
+{% endblock %}
+{% block content %}
+  {% if not user.is_staff %}<nav class="activity-tabs" aria-label="Notification filters"><a href="?"{% if not community %} aria-current="page"{% endif %}>All</a><a href="?show=community"{% if community %} aria-current="page"{% endif %}>Community</a></nav>{% endif %}
+  {% if items %}
+    <section class="notice-list" aria-label="Notifications, newest first">
+      {% for item in items %}
+        <a class="notice-row{% if item.new %} is-unread{% endif %}" href="{{ item.url }}"><span class="notice-dot" aria-hidden="true"></span><span class="notice-main">{% if item.new %}<span class="visually-hidden">Unread: </span>{% endif %}<b>{{ item.title }}</b><span class="notice-text">{{ item.text }}</span></span>{% if item.when %}<small>{{ item.when|naturaltime }}</small>{% endif %}</a>
+      {% endfor %}
+    </section>
+    {% include 'storefront/activity_pagination.html' with page=items param='page' label='Notifications' %}
+  {% else %}
+    <div class="empty notice-empty">
+      <span class="empty-icon" aria-hidden="true">{% if community %}{% include "storefront/ui_icon.html" with name="chat" %}{% else %}{% include "storefront/ui_icon.html" with name="mail" %}{% endif %}</span>
+      <h2>{% if community %}No community replies yet{% else %}Nothing new{% endif %}</h2>
+      {% if community %}<a class="btn btn-brand" href="{% url 'community' %}">Open the community</a>{% elif user.is_staff %}<a class="btn btn-brand" href="{% url 'admin_overview' %}">Open staff overview</a>{% elif canSell and currentMode == 'seller' %}<a class="btn btn-brand" href="{% url 'dashboard' %}">Go to dashboard</a>{% else %}<a class="btn btn-brand" href="{% url 'listings' %}">Browse flats</a>{% endif %}
+    </div>
+  {% endif %}
+{% endblock %}

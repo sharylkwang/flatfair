@@ -1,0 +1,24 @@
+{% extends 'storefront/base.html' %}
+{% block title %}My messages · FlatFair{% endblock %}
+{% block page_header %}
+  {% url 'support' as hero_action_url %}
+  {% include 'storefront/page_hero.html' with tier="task" title='My messages' lead='Your messages to our team, and our replies.' action_url=hero_action_url action_label='New message' %}
+{% endblock %}
+{% block content %}
+  <section class="ticket-list" aria-label="Your messages, newest first">
+    {% for t in rows %}
+      <a class="ticket-row{% if t.unseen %} is-unread{% endif %}" href="{% url 'my_ticket' t.pk %}">
+        <span class="ticket-row-head">{% if t.unseen %}<span class="visually-hidden">Unread: </span>{% endif %}<b>{{ t.get_topic_display }}</b>{% if t.order %} <span class="ticket-row-order">Order #{{ t.order.pk }}</span>{% endif %}{% include 'storefront/ticket_status.html' with status=t.status fromStaff=t.lastFromStaff %}</span>
+        <span class="ticket-row-last">{% if t.lastBody %}{% if t.lastFromStaff %}FlatFair support: {% else %}You: {% endif %}{{ t.lastBody|truncatechars:140 }}{% else %}You: {{ t.message|truncatechars:140 }}{% endif %}</span>
+        <small>#{{ t.pk }} · {{ t.lastAt|date:'j M, g:i' }}{{ t.lastAt|date:'A'|lower }}</small>
+      </a>
+    {% empty %}
+      <div class="buyer-empty">
+        <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="mail" %}</span>
+        <h2>No messages yet</h2>
+        <a class="btn btn-ghost btn-sm" href="{% url 'support' %}">Send a message</a>
+      </div>
+    {% endfor %}
+    {% include 'storefront/activity_pagination.html' with page=rows param='page' label='Messages' %}
+  </section>
+{% endblock %}

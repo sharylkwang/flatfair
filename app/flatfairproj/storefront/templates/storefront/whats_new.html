@@ -1,0 +1,17 @@
+{% load estate_tags humanize %}{% latest_notices user as notices %}{% if notices %}
+{% if collapsible %}
+<details class="fold whats-new" aria-labelledby="whats-new-heading">
+  <summary id="whats-new-heading">What’s new <span class="fold-hint">{{ notices|length }} update{{ notices|length|pluralize }}</span></summary>
+  <div class="fold-body">
+  <a href="{% url 'notifications' %}">All notifications</a>
+{% else %}
+<section class="whats-new" aria-labelledby="whats-new-heading">
+  <div class="panel-head"><h2 id="whats-new-heading">What’s new</h2><a class="btn btn-link" href="{% url 'notifications' %}">All notifications</a></div>
+{% endif %}
+  <div class="notice-list">
+    {% for notice in notices %}
+      <a class="notice-row is-unread" href="{{ notice.url }}"><span class="notice-dot" aria-hidden="true"></span><span class="notice-main"><b>{{ notice.get_kind_display }}</b><span class="notice-text">{{ notice.text }}</span></span><small>{{ notice.createdAt|naturaltime }}</small></a>
+    {% endfor %}
+  </div>
+{% if collapsible %}</div></details>{% else %}</section>{% endif %}
+{% endif %}

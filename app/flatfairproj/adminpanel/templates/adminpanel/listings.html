@@ -1,0 +1,50 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Listings · FlatFair{% endblock %}
+{% load humanize estate_tags staff_tags %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Listings</h1>
+      <p class="staff-head-meta">{{ rows.paginator.count|intcomma }} flat{{ rows.paginator.count|pluralize }}, newest first{% if seller %} · from <a href="{% url 'admin_customer' seller.pk %}">{{ seller.first_name|default:seller.email }}</a>{% endif %}</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{% url 'admin_export_listings' %}?{{ returnQuery }}">Export listings (CSV)</a>
+  </div>
+  <form class="panel filter-bar staff-filters staff-filters--listings" method="get">
+    <label class="mini-field staff-search">Search<input enterkeyhint="search" name="q" value="{{ q }}" placeholder="Search listings" aria-describedby="listings-search-help"><small id="listings-search-help">Block or postal code</small></label>
+    <label class="mini-field">Status
+      <select name="status">
+        <option value="">All statuses</option>
+        {% for value, label in statuses %}<option value="{{ value }}" {% if value == status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="mini-field">Town
+      <select name="town">
+        <option value="">All towns</option>
+        {% for t in towns %}<option value="{{ t }}" {% if t == town %}selected{% endif %}>{{ t|title }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="check-field"><input type="checkbox" name="above" value="1" {% if above %}checked{% endif %}> Above range only</label>
+    {% if seller %}<input type="hidden" name="seller" value="{{ seller.pk }}">{% endif %}
+    <div class="btn-pair">
+      <button class="btn btn-brand btn-sm">Filter</button>
+      {% if filtered %}<a class="btn btn-link" href="{% url 'admin_listings' %}">Clear</a>{% endif %}
+    </div>
+  </form>
+  <section class="staff-rows" aria-label="Listings">
+    {% for l in rows %}
+      <article class="flat-line" id="listing-{{ l.pk }}">
+        <div class="flat-line-main">
+          <h3>{% if l.block %}Blk {{ l.block }} {% endif %}{{ l.town|title }}</h3>
+          <p>{% load humanize estate_tags %}<span class="mono">${{ l.askingPrice|intcomma }}</span> · {{ l.flatType|flat_label }}{% if l.postalCode %} · {{ l.postalCode }}{% endif %} · {{ l.viewCount }} view{{ l.viewCount|pluralize }}{% if l.seller %} · {{ l.seller.first_name|default:l.seller.email }}{% endif %}</p>
+        </div>
+        <div class="flat-line-thumb">{% include "storefront/ui/thumbnail.html" with flat=l %}</div>
+        {% staff_state "listing" l.status l.get_status_display %}
+        <div class="flat-line-acts">
+          <a class="btn btn-ghost btn-sm" href="{% url 'admin_listing' l.pk %}{% if returnQuery %}?{{ returnQuery }}{% endif %}">View listing <span class="visually-hidden">{% if l.block %}Blk {{ l.block }} {% endif %}{{ l.town|title }}</span></a>
+        </div>
+      </article>
+    {% empty %}
+      {% url "admin_listings" as allUrl %}{% include "adminpanel/empty.html" with text="No flats match." action_url=allUrl action_label="See all listings" %}
+    {% endfor %}
+  </section>
+{% endblock %}

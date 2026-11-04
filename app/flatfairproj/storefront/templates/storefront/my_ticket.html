@@ -1,0 +1,27 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Message #{{ ticket.pk }} · FlatFair{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with tier="task" title=ticket.get_topic_display lead='Your message and our replies, newest at the bottom.' hide_default_action=True %}
+{% endblock %}
+{% block content %}
+  <div class="hero-followup ticket-top">
+    <a class="btn btn-link" href="{% url 'my_messages' %}">{% include 'storefront/ui_icon.html' with name='back' %}All my messages</a>
+    <p class="muted">{% include 'storefront/ticket_status.html' with status=ticket.status fromStaff=lastFromStaff %} · #{{ ticket.pk }}{% if ticket.order %} · <a href="{% url 'receipt' ticket.order.pk %}">Order #{{ ticket.order.pk }}</a>{% endif %}</p>
+  </div>
+  <div class="ticket-layout">
+    <section class="ticket-conversation" aria-label="Conversation">
+      {% include 'adminpanel/ticket_thread.html' with viewer='customer' %}
+    </section>
+    <section class="ticket-side" aria-labelledby="ticket-reply-title">
+      {% if ticket.status == 'resolved' %}
+        <h2 id="ticket-reply-title">Resolved</h2>
+        <p>Still need help? Send a new message.</p>
+        <a class="btn btn-brand" href="{% url 'support' %}">New message</a>
+      {% else %}
+        <h2 id="ticket-reply-title">Reply</h2>
+        {% include 'adminpanel/ticket_reply.html' %}
+        <p class="hint">Never send your password or card details.</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

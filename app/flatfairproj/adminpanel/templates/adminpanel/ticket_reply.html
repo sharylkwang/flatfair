@@ -1,0 +1,5 @@
+{% if replyChoices %}<nav class="staff-reply-choices" aria-label="Common replies"><span>Start with a reply:</span>{% for key, label, body in replyChoices %}<a class="btn btn-ghost btn-sm" href="?reply={{ key }}#ticket-reply-title">{{ label }}</a>{% endfor %}</nav>{% endif %}
+<form method="post" class="ticket-reply" novalidate>{% csrf_token %}
+  <label class="mini-field">{{ form.body.label }}{{ form.body }}{% if form.body.errors %}<span class="err" id="id_body_error" role="alert">{{ form.body.errors|join:' ' }}</span>{% endif %}</label>
+  <button class="btn btn-brand" type="submit">Send reply</button>
+</form>

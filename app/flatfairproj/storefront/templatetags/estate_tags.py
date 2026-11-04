@@ -28,6 +28,30 @@ def mrt_badges(badges):
     return {"badges": badges}
 
 
+@register.simple_tag
+def notice_unread(user):
+    if user.is_authenticated:
+        return count_new(user)
+
+    return 0
+
+
+@register.simple_tag
+def latest_notices(user):
+    if user.is_authenticated:
+        return list(new_notes(user))
+
+    return []
+
+
+@register.simple_tag
+def support_unread(user):
+    if not getattr(user, "is_authenticated", False) or user.is_staff:
+        return 0
+
+    return TicketMessage.objects.unseen().filter(ticket__customer=user).count()
+
+
 @register.filter
 def flat_label(flat_type):
     kind = str(flat_type).upper().strip()

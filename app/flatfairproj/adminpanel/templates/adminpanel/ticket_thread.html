@@ -1,0 +1,12 @@
+<ol class="ticket-thread" aria-label="Conversation">
+  <li class="ticket-msg">
+    <p class="ticket-msg-head"><b>{% if viewer == 'staff' %}{{ ticket.customer.first_name|default:ticket.email }}{% else %}You{% endif %}</b><time datetime="{{ ticket.createdAt|date:'c' }}">{{ ticket.createdAt|date:'j M, g:i' }}{{ ticket.createdAt|date:'A'|lower }}</time></p>
+    <p class="ticket-msg-body">{{ ticket.message }}</p>
+  </li>
+  {% for reply in thread %}
+    <li class="ticket-msg{% if reply.fromStaff %} ticket-msg--staff{% endif %}">
+      <p class="ticket-msg-head"><b>{% if reply.fromStaff %}{% if viewer == 'staff' and reply.author == user %}You{% else %}FlatFair support{% if reply.author.first_name %} · {{ reply.author.first_name }}{% endif %}{% endif %}{% elif viewer == 'staff' %}{{ ticket.customer.first_name|default:ticket.email }}{% else %}You{% endif %}</b><time datetime="{{ reply.createdAt|date:'c' }}">{{ reply.createdAt|date:'j M, g:i' }}{{ reply.createdAt|date:'A'|lower }}</time></p>
+      <p class="ticket-msg-body">{{ reply.body }}</p>
+    </li>
+  {% endfor %}
+</ol>
