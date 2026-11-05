@@ -1,0 +1,28 @@
+<article class="community-post{% if post.pk == topAnswerId %} community-post--top{% endif %}{% if not post.question_id %} community-post--question{% endif %}" id="post-{{ post.pk }}">
+  {% if post.pk == topAnswerId %}<p class="community-answer-label" title="The reply with the most votes. Ties show the earliest reply first.">Top answer</p>{% endif %}
+  {% if not post.question_id %}<h2 class="visually-hidden community-section-label">Question</h2>{% endif %}
+  <header class="community-post-header">
+    <div class="community-meta">
+      <a class="community-person" href="{% url 'community_member' post.author_id %}"><span class="community-avatar community-avatar--{{ post.member.tone }}" aria-hidden="true">{{ post.member.initial|default:'A' }}</span><span>{{ post.author.first_name|default:'A member' }}</span></a>
+      {% include 'forum/badges.html' with badges=post.member.badges %}
+      {% if post.question_id and post.author_id == item.author_id %}<span class="community-badge" title="This member asked the question.">Asker</span>{% endif %}
+    </div>
+    <p class="community-post-date"><time datetime="{{ post.createdAt|date:'c' }}" title="{{ post.createdAt|date:'j M Y, g:i a' }}">{{ post.relativeDate }}</time>{% if post.editedAt %} · <span title="Edited {{ post.editedAt|date:'j M Y, g:i a' }}">Edited</span>{% endif %}</p>
+  </header>
+  <p class="ticket-msg-body community-body">{{ post.body }}</p>
+  <div class="btn-pair community-actions">
+    {% if canPost and post.author_id != user.pk and not post.hidden %}
+      <form method="post" action="{% url 'community_vote' post.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm community-vote" type="submit" aria-pressed="{% if post.myVote %}true{% else %}false{% endif %}" aria-label="{% if post.myVote %}Remove your vote{% else %}Vote up{% endif %}, {{ post.voteCount }} vote{{ post.voteCount|pluralize }}">{% if post.myVote %}Voted{% else %}Vote up{% endif %} · {{ post.voteCount }}</button></form>
+      <details class="community-report">
+        <summary>Report</summary>
+        <form class="filter-bar" method="post" action="{% url 'community_report' post.pk %}">{% csrf_token %}
+          <label class="mini-field">What’s wrong with this post?<select name="reason" required>{% for value, label in reasons %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+          <button class="btn btn-ghost btn-sm" type="submit">Send report</button>
+        </form>
+      </details>
+    {% else %}
+      <span class="community-vote">{{ post.voteCount }} vote{{ post.voteCount|pluralize }}</span>
+      {% if canPost and post.author_id == user.pk and not post.hidden %}<a class="btn btn-ghost btn-sm" href="{% url 'community_edit' post.pk %}">Edit</a>{% endif %}
+    {% endif %}
+  </div>
+</article>

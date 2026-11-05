@@ -1,0 +1,27 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load staff_tags %}
+{% block title %}{{ p.title|default:"Community reply" }} · Community · FlatFair{% endblock %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_community' %}{% if p.hidden %}?show=hidden{% endif %}">{% include "storefront/ui_icon.html" with name="back" %}Community</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>{{ p.title|default:"Community reply" }} {% if p.hidden %}{% staff_state "post" "hidden" %}{% else %}{% staff_state "post" "reported" %}{% endif %}</h1>
+      <p class="staff-head-meta">{{ p.author.first_name|default:p.author.email }} · {{ p.createdAt|date:'j M Y' }}{% if p.question %} · reply to “{{ p.question.title }}”{% endif %}{% if p.hidden %} · hidden: {{ p.hiddenReason }}{% endif %}</p>
+    </div>
+    <a class="btn btn-link btn-sm" href="{% url 'community_question' p.question_id|default:p.pk %}">See it in the thread</a>
+  </div>
+  <p class="staff-item-text">{{ p.body }}</p>
+  <section class="staff-acts" aria-labelledby="post-reports">
+    <h2 id="post-reports">Reports</h2>
+    <p>{% for r in p.openReports %}<span class="chip">{{ r.get_reason_display }}</span> {% empty %}None open{% endfor %}</p>
+  </section>
+  <section class="staff-acts" aria-labelledby="post-action">
+    <h2 id="post-action">{% if p.hidden %}Show it again{% else %}Decision{% endif %}</h2>
+    <form method="post" action="{% url 'admin_community_action' p.pk %}">{% csrf_token %}
+      <label class="mini-field">Reason<input name="reason" maxlength="200" required></label>
+      <div class="btn-pair">
+        {% if p.hidden %}<button class="btn btn-brand btn-sm" name="action" value="show">Show post</button>{% else %}<button class="btn btn-danger btn-sm" name="action" value="hide" data-ask="Hide this post from the community?" data-yes="Hide post" data-no="Keep it up">Hide post</button><button class="btn btn-ghost btn-sm" name="action" value="keep" formnovalidate>Keep post</button>{% endif %}
+      </div>
+    </form>
+  </section>
+{% endblock %}

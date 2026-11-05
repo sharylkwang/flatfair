@@ -1,0 +1,48 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Community · FlatFair{% endblock %}
+{% block body_class %} community-page{% endblock %}
+{% block page_header %}
+  {% url 'community_ask' as ask_url %}
+  {% include 'storefront/page_hero.html' with plain=True tier="task" title='Community' lead='Ask buyers and sellers about HDB resale.' action_url=ask_url action_label='Ask a question' %}
+{% endblock %}
+{% block content %}
+  <div class="community-layout">
+  <aside class="community-side">
+    <form class="community-search" method="get" role="search">
+      {% if topic %}<input type="hidden" name="topic" value="{{ topic }}">{% endif %}
+      <label class="community-search-field"><span class="visually-hidden">Search by title</span><input type="search" name="q" value="{{ query }}" maxlength="100" placeholder="Search questions"></label>
+      <label class="community-sort"><span class="visually-hidden">Sort by</span><select name="sort" data-auto-submit>{% for value, label in sorts %}<option value="{{ value }}"{% if sort == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+      <button class="btn btn-ghost" type="submit">Search</button>
+    </form>
+    <nav class="community-topics" aria-label="Topics">{% for chip in chips %}<a href="{{ chip.url }}"{% if chip.on %} aria-current="page"{% endif %}>{{ chip.label }}</a>{% endfor %}</nav>
+  </aside>
+  <section class="community-questions" aria-label="Questions">
+    {% for q in rows %}
+      <article class="community-row">
+        <div class="community-row-title">
+          <h2><a href="{% url 'community_question' q.pk %}">{{ q.title }}</a></h2>
+          {% if q.answered %}<span class="community-tag" title="A reply has received at least one vote. This is not an accepted answer.">Answered</span>{% elif q.replyCount >= 3 %}<span class="community-tag community-tag--active" title="At least 3 visible replies.">Active</span>{% endif %}
+        </div>
+        <p class="community-excerpt">{{ q.body|truncatechars:240 }}</p>
+        <div class="community-meta">
+          <a class="community-person" href="{% url 'community_member' q.author_id %}"><span class="community-avatar community-avatar--{{ q.member.tone }}" aria-hidden="true">{{ q.member.initial }}</span><span>{{ q.member.name }}</span></a>
+          {% include 'forum/badges.html' with badges=q.member.badges|slice:':1' %}
+          <span class="chip">{{ q.get_topic_display }}</span>
+          <time datetime="{{ q.createdAt|date:'c' }}" title="{{ q.createdAt|date:'j M Y, g:i a' }}">{{ q.relativeDate }}</time>
+          <dl class="community-stats" aria-label="Question activity">
+            <div><dd>{{ q.voteCount }}</dd><dt>vote{{ q.voteCount|pluralize }}</dt></div>
+            <div{% if q.answered %} class="community-stats--answered"{% endif %}><dd>{{ q.replyCount }}</dd><dt>repl{{ q.replyCount|pluralize:'y,ies' }}</dt></div>
+          </dl>
+        </div>
+      </article>
+    {% empty %}
+      <div class="empty">
+        <h3>No questions found</h3>
+        <p>Try another topic or a shorter search.</p>
+        <a class="btn btn-brand" href="{% url 'community_ask' %}">Ask a question</a>
+      </div>
+    {% endfor %}
+    {% include 'storefront/activity_pagination.html' with page=rows param='page' %}
+  </section>
+  </div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'storefront/base.html' %}
+{% block title %}{{ person.first_name|default:'A member' }} · Community · FlatFair{% endblock %}
+{% block body_class %} community-page{% endblock %}
+{% block page_header %}
+  {% with joined=person.date_joined|date:'M Y' %}{% with lead='Member since '|add:joined %}
+    {% include 'storefront/page_hero.html' with plain=True tier="task" title=person.first_name|default:'A member' lead=lead hide_default_action=True %}
+  {% endwith %}{% endwith %}
+{% endblock %}
+{% block content %}
+  <div class="community-profile">
+    <div class="hero-followup"><a class="btn btn-link" href="{% url 'community' %}">{% include 'storefront/ui_icon.html' with name='back' %}All questions</a></div>
+    <section class="community-profile-header" aria-label="Member reputation">
+      <div class="community-meta"><span class="community-avatar community-avatar--large community-avatar--{{ memberStats.tone }}" aria-hidden="true">{{ memberStats.initial }}</span>{% include 'forum/badges.html' with badges=memberStats.badges %}</div>
+      <dl class="community-profile-stats">
+        <div><dt>Points</dt><dd>{{ memberStats.points }}</dd></div>
+        <div><dt>Questions</dt><dd>{{ questionCount }}</dd></div>
+        <div><dt>Replies</dt><dd>{{ replyCount }}</dd></div>
+        <div><dt>Votes received</dt><dd>{{ voteCount }}</dd></div>
+      </dl>
+      <p class="community-sidebar-note">Each vote received earns 1 point, and each reply earns 2.</p>
+    </section>
+    <section aria-labelledby="member-recent">
+      <h2 id="member-recent">Recent posts</h2>
+      <div class="community-recent-posts">
+        {% for post in recentPosts %}
+          <article class="community-recent">
+            <h3><a href="{{ post.url }}">{% if post.question_id %}{{ post.question.title }}{% else %}{{ post.title }}{% endif %}</a></h3>
+            <p class="community-excerpt">{{ post.body|truncatechars:240 }}</p>
+            <div class="community-meta"><span class="chip">{% if post.question_id %}Reply{% else %}Question{% endif %}</span>{% if not post.question_id %}<span class="chip">{{ post.get_topic_display }}</span>{% endif %}<time datetime="{{ post.createdAt|date:'c' }}" title="{{ post.createdAt|date:'j M Y, g:i a' }}">{{ post.relativeDate }}</time>{% if post.editedAt %}<span>Edited</span>{% endif %}</div>
+          </article>
+        {% empty %}<p class="empty">No posts yet.</p>{% endfor %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

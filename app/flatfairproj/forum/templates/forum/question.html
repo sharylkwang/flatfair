@@ -1,0 +1,38 @@
+{% extends 'storefront/base.html' %}
+{% block title %}{{ item.title }} · Community · FlatFair{% endblock %}
+{% block body_class %} community-page{% endblock %}
+{% block page_header %}
+  {% with lead=item.get_topic_display|add:' · Asked by '|add:item.author.first_name %}
+    {% include 'storefront/page_hero.html' with plain=True tier="task" title=item.title lead=lead hide_default_action=True %}
+  {% endwith %}
+{% endblock %}
+{% block content %}
+  <div class="community-discussion">
+    <div class="hero-followup"><a class="btn btn-link" href="{% url 'community' %}">{% include 'storefront/ui_icon.html' with name='back' %}All questions</a>{% if canPost %}<a class="btn btn-ghost btn-sm" href="#reply">Reply</a>{% endif %}</div>
+    {% if item.hidden %}<p class="st st-refunded">Hidden by our team: {{ item.hiddenReason }}</p>{% endif %}
+    {% include 'forum/post.html' with post=item %}
+    <div class="community-replies-heading"><h2>{{ replies.paginator.count }} repl{{ replies.paginator.count|pluralize:'y,ies' }}</h2><p>Most votes first</p></div>
+    {% for post in replies %}
+      {% include 'forum/post.html' %}
+    {% empty %}
+      <p class="empty">No replies yet.{% if canPost %} Be the first.{% endif %}</p>
+    {% endfor %}
+    {% include 'storefront/activity_pagination.html' with page=replies param='page' %}
+    {% if canPost %}
+      <section class="community-reply" id="reply">
+        <h2>Your reply</h2>
+        <form method="post" class="ticket-reply" novalidate>{% csrf_token %}
+          <label class="mini-field"><span class="visually-hidden">{{ form.body.label }}</span>{{ form.body }}{% if form.body.errors %}<span class="err" id="id_body_error" role="alert">{{ form.body.errors|join:' ' }}</span>{% endif %}</label>
+          <p class="hint">Please keep phone numbers and payments off the forum.</p>
+          <button class="btn btn-brand" type="submit">Post reply</button>
+        </form>
+      </section>
+    {% elif not user.is_authenticated %}
+      <section class="community-reply" id="reply">
+        <h2>Join the conversation</h2>
+        <p>Sign in to reply, vote or report a post.</p>
+        <a class="btn btn-brand" href="{% url 'signin' %}?next={{ request.path|urlencode }}">Sign in</a>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

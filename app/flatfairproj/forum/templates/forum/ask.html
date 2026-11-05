@@ -1,0 +1,17 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Ask a question · Community · FlatFair{% endblock %}
+{% block body_class %} community-page{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with plain=True tier="task" title='Ask a question' lead='Buyers and sellers reply here. We’ll let you know when they do.' hide_default_action=True %}
+{% endblock %}
+{% block content %}
+  <section class="community-compose">
+    <div class="hero-followup"><a class="btn btn-link" href="{% url 'community' %}">{% include 'storefront/ui_icon.html' with name='back' %}All questions</a></div>
+    <h2 class="visually-hidden">Your question</h2>
+    <form method="post" class="support-form" novalidate>{% csrf_token %}
+      {% for field in form %}<label class="mini-field">{{ field.label }}{{ field }}{% if field.errors %}<span class="err" id="{{ field.auto_id }}_error" role="alert">{{ field.errors|join:' ' }}</span>{% endif %}</label>{% endfor %}
+      <p class="hint">Please keep phone numbers and payments off the forum.</p>
+      <button class="btn btn-brand" type="submit">Post question</button>
+    </form>
+  </section>
+{% endblock %}

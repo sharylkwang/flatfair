@@ -1,0 +1,17 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Edit your post · Community · FlatFair{% endblock %}
+{% block body_class %} community-page{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with plain=True tier="task" title='Edit your post' lead='Your post will show an Edited mark after you save.' hide_default_action=True %}
+{% endblock %}
+{% block content %}
+  <section class="community-compose">
+    <div class="hero-followup"><a class="btn btn-link" href="{{ post.url }}">{% include 'storefront/ui_icon.html' with name='back' %}Back to the question</a></div>
+    <h2 class="visually-hidden">{% if post.question_id %}Your reply{% else %}Your question{% endif %}</h2>
+    <form method="post" class="support-form" novalidate>{% csrf_token %}
+      {% for field in form %}<label class="mini-field">{{ field.label }}{{ field }}{% if field.errors %}<span class="err" id="{{ field.auto_id }}_error" role="alert">{{ field.errors|join:' ' }}</span>{% endif %}</label>{% endfor %}
+      <p class="hint">Please keep phone numbers and payments off the forum.</p>
+      <button class="btn btn-brand" type="submit">Save changes</button>
+    </form>
+  </section>
+{% endblock %}
