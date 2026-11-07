@@ -1,0 +1,9 @@
+{% load humanize %}
+<header class="s-flat-head">
+  <div>
+    <h2>{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</h2>
+    {% if flat.status != 'live' %}{% include "sellerpanel/flat_badge.html" %}{% elif flat.underOffer %}{% include "sellerpanel/status_badge.html" with tone="warn" icon="clock" label="Under offer" %}{% endif %}
+    <p class="s-meta">Asking ${{ flat.askingPrice|floatformat:0|intcomma }}</p>
+  </div>
+  <div class="s-thumb">{% include "storefront/ui/flat_thumb.html" with size="small" %}</div>
+</header>

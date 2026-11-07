@@ -1,0 +1,10 @@
+{% load humanize estate_tags %}
+<article class="s-row s-row--photo{% if flat.status == 'sold' %} is-muted{% endif %}" id="listing-{{ flat.publicId }}" tabindex="-1">
+  <div class="s-row-main">
+    <h3>{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</h3>
+    {% include "sellerpanel/flat_badge.html" %}
+    <p class="s-meta">${{ flat.askingPrice|floatformat:0|intcomma }} · {{ flat.flatType|flat_label }} · {{ flat.floorAreaSqm|floatformat:'-1' }} sqm{% if flat.status == 'review' and r.documentRequest and r.documentRequest.status != 'approved' %}<span class="seller-hold">{{ r.documentRequest.get_status_display }}{% if r.documentRequest.status == 'submitted' %}, being checked{% else %}. Open the listing to upload them.{% endif %}</span>{% elif flat.status == 'review' and r.holdMessage %}<span class="seller-hold">{{ r.holdMessage }}</span>{% elif flat.status == 'paused' %}<span class="seller-hold">Paused, so buyers can’t find it. Open the listing to resume it.</span>{% elif flat.status == 'rejected' or flat.status == 'hidden' %}{% if r.staffNote %}<span class="seller-hold">{{ r.staffNote }}</span>{% endif %}{% endif %}</p>
+  </div>
+  <div class="s-thumb">{% include "storefront/ui/flat_thumb.html" with size="small" %}</div>
+  <div class="s-row-end"><a class="btn btn-ghost btn-sm" href="{% url 'seller_listing' flat.publicId %}{% if listingPage.number > 1 %}?listings_page={{ listingPage.number }}{% endif %}">View listing <span class="visually-hidden">for {% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</span></a></div>
+</article>

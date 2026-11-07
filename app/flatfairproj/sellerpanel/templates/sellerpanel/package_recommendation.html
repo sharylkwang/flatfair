@@ -1,0 +1,11 @@
+{% if packageRecommendation %}
+  <section class="panel package-recommendation" aria-label="Package recommendation">
+    <p><strong>Recommended for your flat: {{ packageRecommendation.product.name }}.</strong> {{ packageRecommendation.reason }}</p>
+    <form method="post" action="{% url 'cart_add' packageRecommendation.product.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="listing" value="{{ packageRecommendation.listing.publicId }}">
+      <input type="hidden" name="next" value="cart">
+      <button class="btn btn-brand">Add to cart</button>
+    </form>
+  </section>
+{% endif %}

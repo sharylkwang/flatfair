@@ -1,0 +1,119 @@
+{% extends 'sellerpanel/seller_base.html' %}
+{% load humanize estate_tags offer_tags %}
+{% block title %}Blk {{ flat.block }} {{ flat.town|title }} · FlatFair{% endblock %}
+{% block seller %}
+  {% url 'my_listings' as back_url %}
+  {% include 'storefront/nav_back.html' with fallback=back_url return_url=back_url label="My listings" %}
+  <article class="listing-sum" id="listing-{{ flat.publicId }}">
+    <header class="listing-sum-head">
+      <div class="s-row-main">
+        <h1>{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</h1>
+        {% include "sellerpanel/flat_badge.html" %}
+        {% if flat.underOffer and flat.status == 'live' %}{% include "sellerpanel/status_badge.html" with tone="warn" icon="clock" label="Under offer" %}{% endif %}
+        <p class="s-meta">{% if flat.status == 'review' and flat.underOffer %}We’re checking your latest changes. Your buyer’s agreed price still stands and they can still see the flat. Other buyers will see it again once we’re done, usually within 1 working day.{% elif flat.status == 'review' %}{{ r.holdMessage }}{% elif flat.status == 'rejected' %}This listing wasn’t approved, so buyers can’t see it.{% elif flat.status == 'hidden' %}Our team took this listing down, so buyers can’t see it.{% elif flat.status == 'sold' %}Sold flats can’t be edited.{% elif flat.status == 'paused' %}Your listing is paused, so buyers can’t find it. Your offers and viewings stay as they are.{% else %}Buyers can see this flat.{% endif %}</p>
+      </div>
+      {% if flat.status != 'sold' and flat.status != 'paused' %}<a class="btn btn-ghost btn-sm edit-btn" href="{% url 'edit_listing' flat.publicId %}" aria-label="Edit listing"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.800" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/></svg>Edit</a>{% endif %}
+    </header>
+    {% if flat.status == 'review' or flat.status == 'rejected' or flat.status == 'hidden' %}
+      {% if r.staffNote and not r.documentRequest or r.lowerTo %}
+        <div class="review-note">
+          {% if r.staffNote and not r.documentRequest %}<p><b>{% if flat.status == 'review' %}Our team asked:{% else %}Why:{% endif %}</b> {{ r.staffNote }}</p>{% endif %}
+          {% if r.lowerTo %}<p><b>Want it live sooner?</b> Lower your price to ${{ r.lowerTo|intcomma }} or less.</p>{% endif %}
+        </div>
+      {% endif %}
+    {% endif %}
+    {% if r.documentRequest %}
+  {% with documents=r.documentRequest %}
+  <section class="review-note" aria-labelledby="documents-{{ documents.pk }}">
+    <h4 id="documents-{{ documents.pk }}">{{ documents.get_status_display }}</h4>
+    <p>{{ documents.message }}</p>
+    {% if documents.staffReason %}<p><b>Our team’s reason:</b> {{ documents.staffReason }}</p>{% endif %}
+    {% if documents.files.all %}
+      <ul class="mini-list">{% for document in documents.files.all %}<li><a href="{% url 'document_file' document.pk %}">{{ document.originalName }}</a> <small>{{ document.size|filesizeformat }}</small></li>{% endfor %}</ul>
+    {% endif %}
+    {% if flat.status == "review" and documents.status == "requested" or flat.status == "review" and documents.status == "rejected" %}
+      <form method="post" enctype="multipart/form-data" action="{% url 'submit_documents' documents.pk %}">
+        {% csrf_token %}
+        <label class="mini-field">Documents
+          <input type="file" name="documents" multiple required accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" aria-describedby="documents-{{ documents.pk }}-help">
+        </label>
+        <p class="hint" id="documents-{{ documents.pk }}-help">Choose up to 5 PDF, JPG or PNG files, up to 10 MB each. Uploading again replaces the previous files.</p>
+        <button class="btn btn-brand btn-sm">Submit documents</button>
+      </form>
+    {% endif %}
+  </section>
+  {% endwith %}
+{% endif %}
+
+    <div class="listing-sum-photos">{% for photo in flat.photos.all %}<img src="{{ photo.publicUrl }}" alt="{{ photo.get_room_display }}" width="1536" height="1024" loading="lazy" decoding="async">{% empty %}{% include "storefront/ui/flat_thumb.html" with size="small" %}{% endfor %}</div>
+    <dl class="listing-sum-facts">
+      <div><dt>{% if flat.status == 'sold' %}Asking price was{% else %}Asking price{% endif %}</dt><dd>${{ flat.askingPrice|floatformat:0|intcomma }}</dd></div>
+      <div><dt>Flat type</dt><dd>{{ flat.flatType|flat_label }}</dd></div>
+      <div><dt>Size</dt><dd>{{ flat.floorAreaSqm|floatformat:'-1' }} sqm</dd></div>
+      <div><dt>Floor</dt><dd>{{ flat.storey }}</dd></div>
+      <div><dt>Rooms</dt><dd>{{ flat.bedrooms }} bed · {{ flat.bathrooms }} bath</dd></div>
+      <div><dt>Lease from</dt><dd>{{ flat.leaseCommenceYear }}</dd></div>
+    </dl>
+    <div class="lean-chips">{% if flat.offerCount %}<a class="info-chip" href="{% url 'seller_viewings' %}#offers-tab">{% include "storefront/ui_icon.html" with name="offer" %}{{ flat.offerCount }} offer{{ flat.offerCount|pluralize }}{% if flat.openOfferCount %} · {{ flat.openOfferCount }} open{% endif %}{% if flat.bestOffer %} · best ${{ flat.bestOffer|floatformat:0|intcomma }}{% endif %}</a>{% elif flat.status != 'sold' %}<span class="info-chip">{% include "storefront/ui_icon.html" with name="offer" %}No offers yet</span>{% endif %}{% if flat.status != 'sold' %}<span class="info-chip">{% include "storefront/ui_icon.html" with name="heart" %}{% if flat.savedCount %}{{ flat.savedCount }} buyer{{ flat.savedCount|pluralize }} saved this flat{% else %}No buyers have saved this flat yet{% endif %}</span>{% endif %}<span class="info-chip">{% include "storefront/ui_icon.html" with name="people" %}{{ flat.viewCount }} view{{ flat.viewCount|pluralize }} in total</span></div>
+    <p class="plan-line">
+      {% if r.plan %}
+        <span>{{ r.plan.name }} · {{ r.plan.status }}{% if r.plan.startedAt %} · Started on {{ r.plan.startedAt|date:'j M Y' }}{% endif %}</span>
+        {% if r.plan.name != 'Top spot' %}{% if flat.status == 'live' or flat.status == 'review' %}<a class="btn btn-link" href="{% url 'packages' %}?listing={{ flat.publicId }}">Upgrade</a>{% endif %}{% endif %}
+      {% elif flat.status == 'sold' or flat.status == 'rejected' or flat.status == 'hidden' or flat.status == 'paused' %}
+        <span>Free listing</span>
+      {% else %}
+        <span>Free listing</span><a class="btn btn-link" href="{% url 'packages' %}?listing={{ flat.publicId }}">Choose a package</a>
+      {% endif %}
+    </p>
+    <div class="listing-actions">
+      <a class="btn btn-link btn-sm" href="{% url 'listing_detail' flat.publicId %}">See what buyers see</a>
+      {% if flat.status == 'live' or flat.status == 'paused' %}
+        <form method="post" action="{% url 'toggle_sold' flat.publicId %}" data-ask="Mark {% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} as sold? We’ll close the open offers and viewings on it." data-yes="Mark as sold" data-no="Keep it for sale">{% csrf_token %}<input type="hidden" name="sold" value="1"><button class="btn btn-ghost btn-sm">Mark as sold</button></form>
+      {% endif %}
+      {% if flat.status == 'sold' and canListAnother %}
+        <form method="post" action="{% url 'toggle_sold' flat.publicId %}">{% csrf_token %}<input type="hidden" name="sold" value="0"><button class="btn btn-ghost btn-sm">Relist</button></form>
+      {% endif %}
+      {% if flat.status == 'live' %}<a class="btn btn-ghost btn-sm" href="{% url 'pause_listing' flat.publicId %}">Pause listing</a>{% endif %}
+      {% if flat.status == 'paused' %}
+        <form method="post" action="{% url 'resume_listing' flat.publicId %}">{% csrf_token %}<button class="btn btn-brand btn-sm">Resume listing</button></form>
+      {% endif %}
+      {% if flat.status != 'sold' %}<a class="btn btn-link btn-sm" href="{% url 'delete_listing' flat.publicId %}">Delete listing</a>{% endif %}
+    </div>
+  </article>
+  {% if flat.status != 'sold' and flat.estimatedPrice and flat.bandLow and flat.bandHigh %}
+    {% photo_upsell flat as upsell %}{% if upsell %}{% include "sellerpanel/photo_upsell.html" %}{% endif %}
+    {% price_coach flat as coach %}
+    {% if coach %}
+      <section class="price-coach" id="price-coach">
+        <h2>Few buyers are showing interest</h2>
+        <p>In the last 14 days your flat had {{ coach.views }} buyer view{{ coach.views|pluralize }}, {{ coach.saves }} save{{ coach.saves|pluralize }} and no offers. Our price model estimates similar flats sell for about <b>${{ coach.estimate|intcomma }}</b>, so we suggest <b>${{ coach.price|intcomma }}</b> instead of ${{ coach.oldPrice|intcomma }}.</p>
+        <div class="btn-pair">
+          <form method="post" action="{% url 'update_price' flat.publicId %}">{% csrf_token %}<input type="hidden" name="back" value="flat"><input type="hidden" name="askingPrice" value="{{ coach.price }}"><button class="btn btn-brand btn-sm">Lower my price to ${{ coach.price|intcomma }}</button></form>
+          <form method="post" action="{% url 'keep_price' coach.pk %}">{% csrf_token %}<button class="btn btn-ghost btn-sm">Keep my price</button></form>
+        </div>
+      </section>
+    {% endif %}
+    {% try_price request.GET.try as tried %}
+    <section class="listing-sum-price">{% include 'sellerpanel/price_bar.html' with lo=flat.bandLow est=flat.estimatedPrice hi=flat.bandHigh asking=tried|default:flat.askingPrice level=2 %}</section>
+    {% if flat.status == 'live' or flat.status == 'review' %}
+      <section class="change-price" id="change-price">
+        <h2>Change your price</h2>
+        <p>{% if tried and tried != flat.askingPrice %}Above is how ${{ tried|intcomma }} compares with similar flats. Save it, or try another price.{% else %}Try a new price to see how it compares, then save it. A price above the fair range may need a quick check by our team.{% endif %}</p>
+        <form method="post" action="{% url 'update_price' flat.publicId %}" class="change-price-form">
+          {% csrf_token %}<input type="hidden" name="back" value="flat">
+          <label class="mini-field">Asking price ($)<input name="askingPrice" type="number" inputmode="numeric" min="50000" max="3000000" step="1000" required value="{{ tried|default:flat.askingPrice }}"></label>
+          <button class="btn btn-ghost btn-sm" name="preview" value="1">Check this price</button>
+          <button class="btn btn-brand btn-sm">Save new price</button>
+        </form>
+      </section>
+    {% endif %}
+    {% if flat.status == 'live' or flat.status == 'review' %}
+      <section class="offer-floor-box" id="offer-minimum">
+        <h2>Offer minimum</h2>
+        <p>{% if flat.autoDeclineLow %}On. Offers below <b>{{ flat.bandLow|range_money }}</b>, the low end of what similar flats sold for, are declined for you, and the buyer is told why.{% else %}Turn this on and we’ll decline offers below <b>{{ flat.bandLow|range_money }}</b>, the low end of what similar flats sold for. Buyers see the minimum before they offer.{% endif %}</p>
+        <form method="post" action="{% url 'offer_floor' flat.publicId %}">{% csrf_token %}<input type="hidden" name="on" value="{% if flat.autoDeclineLow %}0{% else %}1{% endif %}"><button class="btn btn-ghost btn-sm">{% if flat.autoDeclineLow %}Turn off{% else %}Turn on{% endif %}</button></form>
+      </section>
+    {% endif %}
+  {% endif %}
+  {% if r.history %}<details class="fold listing-history"><summary>Listing history</summary><div class="fold-body"><ol>{% for change in r.history %}<li>{{ change.get_decision_display }} · {{ change.createdAt|date:"j M, g:i A" }} · {{ change.staff.first_name|default:"Automatic check" }}{% if change.reason %}: {{ change.reason }}{% endif %}</li>{% endfor %}</ol></div></details>{% endif %}
+{% endblock %}

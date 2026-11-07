@@ -1,0 +1,20 @@
+{% load humanize estate_tags %}
+{% evidence_scale lo est hi asking as scale %}
+{% if est and scale %}
+  <div class="fair-evidence seller-price-bar" data-fair-evidence>
+    <p class="evidence-title" role="heading" aria-level="{{ level|default:3 }}">{% if not asking %}Is your price fair?{% elif asking < lo %}Your price is on the low side{% elif asking > hi %}Your price is on the high side{% else %}Your price is fair{% endif %}</p>
+    <p class="evidence-answer">Similar flats may sell between {{ lo|range_money }} and {{ hi|range_money }}.</p>
+    <div class="evidence-chart">
+      <div class="band fair-band" style="--lo:{{ scale.lo }}%;--hi:{{ scale.hi }}%;--est:{{ scale.est }}%;{% if asking %}--asking:{{ scale.asking }}%;{% endif %}" role="img" aria-label="Fair range {{ lo|range_money }}–{{ hi|range_money }}. Estimated price {{ est|typical_price }}.{% if asking %} Your price ${{ asking|intcomma }}.{% endif %}">
+        <span class="evidence-pin evidence-pin--est" aria-hidden="true">Our estimate <b>{{ est|typical_price }}</b></span>
+        <div class="fair-track"><span class="fair-segment"></span><i class="fair-marker"></i>{% if asking %}<i class="asking-marker"></i>{% endif %}</div>
+        {% if asking %}<span class="evidence-pin evidence-pin--ask" aria-hidden="true">Your price <b>${{ asking|intcomma }}</b></span>{% endif %}
+      </div>
+    </div>
+    {% include "storefront/fair_boundaries.html" %}
+    <details class="evidence-method"><summary>How did we get this price?</summary>{% include "storefront/price_explanation.html" with current_model=next version=flat.modelVersion %}</details>
+    {% if next %}
+      <p class="price-next">{% if not asking %}Type your asking price below to see how it compares.{% elif smallPriceGap %}Your price is above the fair range. With clear photos and no documents to check, your listing can go live at this price.{% elif flag == 'above' %}Our team checks prices this high before buyers see them. To go live straight away, ask ${{ hi|intcomma }} or less.{% elif flag == 'typo' %}This is far below similar flats. Please check for a missing digit. If it’s right, our team will check it first.{% elif asking < lo %}Your price is lower than similar flats. With clear photos, buyers can see your flat straight away.{% else %}Your price is close to recent sales. With clear photos, buyers can see your flat straight away.{% endif %}</p>
+    {% endif %}
+  </div>
+{% endif %}

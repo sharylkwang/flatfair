@@ -1,0 +1,6 @@
+<div class="hero-task-details">
+  <div class="hero-task-actions">
+    <form method="post" action="{% url 'start_selling' %}">{% csrf_token %}<button class="btn btn-brand">Start selling</button></form>
+    <a class="btn btn-ghost" href="{% url 'home' %}">Back to home</a>
+  </div>
+</div>

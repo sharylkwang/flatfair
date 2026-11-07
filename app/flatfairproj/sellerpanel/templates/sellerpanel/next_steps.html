@@ -1,0 +1,37 @@
+{% load offer_tags %}{% seller_next_steps as next %}{% if next %}
+<dialog class="next-steps" data-open-on-load aria-labelledby="next-steps-title">
+  <p class="next-steps-tag">Your flat is live</p>
+  <h2 id="next-steps-title" tabindex="-1" autofocus>{{ next.place }} is on FlatFair</h2>
+  <p class="next-steps-lead">Buyers can find it now. Do these next, right from here.</p>
+  <ol class="next-steps-list">
+    {% for step in next.steps %}
+      <li class="next-step{% if step.done %} is-done{% elif step.next %} is-next{% endif %}">
+        <span class="next-steps-mark" aria-hidden="true">{% if step.done %}✓{% else %}{{ forloop.counter }}{% endif %}</span>
+        <div class="next-steps-text">
+          <b>{{ step.title }}{% if step.optional %} <small>optional</small>{% endif %}{% if step.done %} <small class="done">done</small>{% elif step.next %} <small class="up">next</small>{% endif %}</b>
+          <span>{{ step.text }}</span>
+          {% if step.key == "viewings" %}
+            {% if step.done %}<a class="next-steps-link" href="{{ next.viewingsUrl }}">{{ next.times }} time{{ next.times|pluralize }} added · Add more</a>{% else %}
+            <form class="next-steps-slot" method="post" action="{% url 'activity_action' %}">
+              {% csrf_token %}
+              <input type="hidden" name="id" value="{{ next.flat.publicId }}">
+              <input type="hidden" name="capacity" value="2">
+              <label class="mini-field">Date and time<input type="datetime-local" name="startsAt" min="{{ next.slotMin }}" max="{{ next.slotMax }}" required></label>
+              <button class="btn {% if step.next %}btn-brand{% else %}btn-ghost{% endif %} btn-sm" name="action" value="slot">Add time</button>
+            </form>{% endif %}
+          {% elif step.key == "share" %}
+            <div class="next-steps-buttons"><a class="btn {% if step.next %}btn-brand{% else %}btn-ghost{% endif %} btn-sm" href="{{ next.share.whatsapp }}" target="_blank" rel="noopener noreferrer">Share on WhatsApp<span class="visually-hidden"> (opens in new tab)</span></a><a class="btn btn-ghost btn-sm" href="{{ next.share.email }}">Email the link</a></div>
+          {% elif not step.done %}
+            <div class="next-steps-buttons"><a class="btn {% if step.next %}btn-brand{% else %}btn-ghost{% endif %} btn-sm" href="{{ step.url }}">{{ step.button }}</a></div>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ol>
+  <form class="next-steps-actions" method="post" action="{{ next.dismiss }}" data-dismiss>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button class="btn btn-ghost">Got it, I’ll do the rest later</button>
+  </form>
+</dialog>
+{% endif %}

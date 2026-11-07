@@ -1,0 +1,25 @@
+{% extends 'storefront/base.html' %}
+{% load humanize %}
+{% block title %}Pause listing · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form cancel-form" method="post" action="{% url 'pause_listing' flat.publicId %}">
+      {% csrf_token %}
+      <h1>Pause your listing?</h1>
+      <p class="hint">{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} · ${{ flat.askingPrice|intcomma }}</p>
+      <p class="cancel-count">Buyers won’t find your flat in search, and no one can make a new offer or book a viewing until you resume it. Your offers, viewings, photos and any package you bought stay as they are.{% if toldCount %} We’ll let the {{ toldCount }} buyer{{ toldCount|pluralize }} following your flat know.{% endif %}</p>
+      <fieldset class="cancel-reasons">
+        <legend>Why are you pausing? (optional)</legend>
+        {% for value, label in reasons %}
+          <label class="cancel-reason"><input type="radio" name="reason" value="{{ value }}"><span>{{ label }}</span></label>
+        {% endfor %}
+      </fieldset>
+      <p class="field-hint">Only you and our team can see your reason.</p>
+      <div class="btn-pair">
+        <button class="btn btn-brand">Pause listing</button>
+        <a class="btn btn-ghost" href="{% url 'seller_listing' flat.publicId %}">Keep it live</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

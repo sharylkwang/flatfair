@@ -1,0 +1,89 @@
+{% load humanize estate_tags offer_tags %}
+{% with who=offer.buyer|buyer_name %}
+{% if offer.status == 'pending' or offer.status == 'countered' or offer.status == 'accepted' or offer.message or offer.reply %}
+<details class="s-item" id="offer-{{ offer.pk }}"{% if offer.status == 'pending' %} open{% endif %}>
+  <summary class="s-row s-cols">
+    <span class="s-name">{{ who }}</span>
+    <span class="s-amount"><b>${{ offer.amount|floatformat:0|intcomma }}</b> <span class="s-meta">{{ offer.askingPercent|floatformat:0 }}% of asking</span>{% offer_steps offer 'seller' as steps %}{% if steps %}<span class="s-meta s-note">{{ steps }}</span>{% elif offer.status == 'countered' %}<span class="s-meta s-note">You countered at ${{ offer.counterAmount|floatformat:0|intcomma }}{% if offer.respondedAt %} on {{ offer.respondedAt|date:'j M' }}{% endif %}</span>{% endif %}</span>
+    <span class="s-date"><time datetime="{{ offer.createdAt|date:'c' }}">{{ offer.createdAt|date:'j M' }}</time></span>
+    <span class="s-tag">{% include "sellerpanel/offer_status.html" %}</span>
+    <span class="s-toggle">{% if offer.status == 'pending' %}Reply{% else %}View{% endif %} <span class="visually-hidden">{% if offer.status == 'pending' %}to{% endif %} offer from {{ who }}</span></span>
+  </summary>
+  <div class="s-panel" id="offer-review-{{ offer.pk }}">
+    <p class="s-meta">Asking ${{ offer.listing.askingPrice|intcomma }} · {% if offer.listing.bandLow and offer.listing.bandHigh %}Fair range {{ offer.listing.bandLow|range_money }}–{{ offer.listing.bandHigh|range_money }}{% else %}No fair range for this flat{% endif %} · HFE letter: {% if offer.hasHfe %}ready{% else %}not yet{% endif %}</p>
+    {% if offer.message %}<p class="offer-note">“{{ offer.message }}”</p>{% endif %}
+    {% include "storefront/offer_thread.html" with viewer='seller' %}
+    {% if offer.status == 'pending' or offer.status == 'countered' %}
+      {% offer_advice offer as advice %}
+      {% if advice %}
+        <div class="offer-advice offer-advice--{{ advice.tone }}">
+          <p class="offer-advice-head">{{ advice.headline }}</p>
+          <p>{{ advice.detail }}{% if advice.counter and offer.listing.status == 'live' and not offer.flatTaken %} We’ve put ${{ advice.counter|intcomma }} in the counter box below.{% endif %}</p>
+          {% nearby_sales offer.listing as sales %}
+          {% if sales %}
+            <p class="offer-sales-head">Recent sales nearby</p>
+            <ul class="offer-sales">{% for sale in sales %}<li>Blk {{ sale.block }} {{ sale.street|title }} · {{ sale.floorAreaSqm|floatformat:0 }} sqm · floors {{ sale.storeyRange|lower }} · {{ sale.month|date:'M Y' }} · <b>${{ sale.price|intcomma }}</b></li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endif %}
+    {% if offer.status == 'pending' or offer.status == 'countered' %}
+      <div class="offer-actions" role="group" aria-label="Respond to {{ who }}">
+        {% if offer.listing.status != 'live' %}
+          {% include 'sellerpanel/reply_form.html' with id=offer.pk action='decline' label='Decline' about="offer from "|add:who ask=offer.declineAsk yes="Decline offer" no="Keep offer" %}
+          <p class="s-meta offer-hold">You can accept or counter once this listing is live again.</p>
+        {% elif offer.flatTaken %}
+          {% include 'sellerpanel/reply_form.html' with id=offer.pk action='decline' label='Decline' about="offer from "|add:who ask=offer.declineAsk yes="Decline offer" no="Keep offer" %}
+          <p class="s-meta offer-hold">You’ve already accepted another offer on this flat.</p>
+        {% else %}
+          {% if offer.status == 'pending' and not offer.buyerAgreedElsewhere %}{% include 'sellerpanel/reply_form.html' with id=offer.pk action='accept' label='Accept' tone='btn-brand' about="offer from "|add:who ask=offer.acceptAsk yes="Accept offer" no="Go back" %}{% endif %}
+          {% include 'sellerpanel/reply_form.html' with id=offer.pk action='decline' label='Decline' about="offer from "|add:who ask=offer.declineAsk yes="Decline offer" no="Keep offer" %}
+          {% seller_round offer as round %}
+          {% if round.open %}
+            <form method="post" action="{% url 'activity_action' %}" class="offer-counter">
+              {% csrf_token %}<input name="id" type="hidden" value="{{ offer.pk }}">
+              <label class="mini-field">{% if offer.status == 'countered' %}Change your price ($){% else %}Counter price ($){% endif %}<input inputmode="numeric" autocomplete="off" enterkeyhint="done" name="amount" type="number" step="1" min="{{ offer.counterLow|floatformat:0 }}" max="{{ round.high }}"{% if advice.counter and advice.counter <= round.high %} value="{{ advice.counter }}"{% endif %} required aria-describedby="offer-{{ offer.pk }}-range"></label>
+              <button class="btn btn-ghost btn-sm" name="action" value="counter">Counter <span class="visually-hidden">offer from {{ who }}</span></button>
+              <p class="s-meta offer-range" id="offer-{{ offer.pk }}-range">Enter a price between ${{ offer.counterLow|floatformat:0|intcomma }} and ${{ round.high|intcomma }}.{% if round.lastRound %} This was the buyer’s last suggestion, so if you counter they can only agree or close their offer.{% endif %}</p>
+            </form>
+          {% endif %}
+          {% if offer.buyerAgreedElsewhere %}<p class="s-meta offer-hold">This buyer has already agreed a price on another flat, so you can’t accept yet.</p>{% endif %}
+        {% endif %}
+      </div>
+    {% elif offer.status == 'accepted' %}
+      <p class="offer-contact"><b>Buyer:</b> {{ offer.buyer.get_full_name|default:offer.buyer.email }} · <a href="mailto:{{ offer.buyer.email }}">{{ offer.buyer.email }}</a></p>
+      {% deal_progress offer as dp %}
+      {% if dp %}
+        <p class="offer-next">{% if dp.deal.status == 'complete' %}The sale is complete.{% else %}Deal: {{ dp.done }} of {{ dp.total }} steps done{% if dp.next %} · Next: {{ dp.next }} ({{ dp.nextWho|lower }}){% if dp.dueOn %}, by {{ dp.dueOn|date:'j M' }}{% endif %}{% endif %}{% endif %}</p>
+        <a class="btn btn-brand btn-sm" href="{% url 'deal_page' dp.deal.pk %}">Open the deal</a>
+      {% endif %}
+      {% if offer.listing.status != 'sold' %}
+        {% if not dp %}<p class="offer-next">Email the buyer to arrange HDB’s Option to Purchase, then file the resale with HDB.</p>{% endif %}
+        <div class="offer-actions">{% include 'sellerpanel/reply_form.html' with id=offer.pk action='reopen' label='Undo acceptance' about="of offer from "|add:who ask=offer.undoAsk yes="Undo acceptance" no="Keep accepted" %}</div>
+      {% endif %}
+    {% endif %}
+    {% if offer.status == 'pending' or offer.status == 'countered' or offer.status == 'accepted' %}
+      <form method="post" action="{% url 'activity_action' %}" class="offer-message">
+        {% csrf_token %}<input name="id" type="hidden" value="{{ offer.pk }}">
+        <label class="mini-field">{% if offer.reply %}Change your message{% else %}Message to the buyer{% endif %}<textarea name="reply" rows="2" maxlength="300" required data-error="Please write a message before sending.">{{ offer.reply }}</textarea></label>
+        <button class="btn btn-ghost btn-sm" name="action" value="reply">Send message <span class="visually-hidden">to {{ who }}</span></button>
+      </form>
+      {% if offer.listing.bandLow and offer.listing.bandHigh %}
+        {% evidence_scale offer.listing.bandLow offer.listing.estimatedPrice offer.listing.bandHigh offer.amount as scale %}
+        {% include 'storefront/position_bar.html' with scale=scale label='Buyer’s offer compared with similar sales' marker_label='Buyer’s offer' low=offer.listing.bandLow|range_money high=offer.listing.bandHigh|range_money %}
+      {% endif %}
+    {% endif %}
+  </div>
+</details>
+{% else %}
+<div class="s-item" id="offer-{{ offer.pk }}">
+  <div class="s-row s-cols">
+    <span class="s-name">{{ who }}</span>
+    <span class="s-amount"><b>${{ offer.amount|floatformat:0|intcomma }}</b> <span class="s-meta">{{ offer.askingPercent|floatformat:0 }}% of asking</span></span>
+    <span class="s-date"><time datetime="{{ offer.createdAt|date:'c' }}">{{ offer.createdAt|date:'j M' }}</time></span>
+    <span class="s-tag">{% include "sellerpanel/offer_status.html" %}</span>
+    <span class="s-toggle"></span>
+  </div>
+</div>
+{% endif %}
+{% endwith %}

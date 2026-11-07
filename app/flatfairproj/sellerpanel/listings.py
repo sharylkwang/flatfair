@@ -43,6 +43,58 @@ from .photoqueue import warmWorker
 from sellerpanel.views import sell_only
 
 
+def hold_note(flat, photosFlagged=None):
+    reasons = []
+
+    if flat.bandLow and flat.estimatedPrice and flat.bandHigh:
+        flag = flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+
+        if flag == "above":
+            reasons.append("the price is higher than similar flats sold for")
+        elif flag == "typo":
+            reasons.append("the price is much lower than similar flats, please check for a typo")
+
+    if photosFlagged is None:
+        photosFlagged = flat.photos.filter(doubtQ()).exists()
+
+    if photosFlagged:
+        if flat.photos.exclude(modelVersion=MODEL_VERSION).exists():
+            reasons.append("some photo checks are out of date, so our team needs to look at them")
+        else:
+            reasons.append("some photos need a closer look")
+
+    message = "We're checking this listing before buyers see it"
+
+    if len(reasons) == 2:
+        message += ": " + reasons[0] + ", and " + reasons[1]
+    elif reasons:
+        message += ": " + reasons[0]
+
+    return message + ". This usually takes 1 working day."
+
+
+def sellSlots(slots):
+    booked = ViewingBooking.objects.filter(status__in=("requested", "confirmed")).select_related(
+        "buyer"
+    )
+
+    booked = booked.order_by(
+        Case(When(status="requested", then=Value(0)), default=Value(1)), "createdAt", "pk"
+    )
+
+    slots = slots.annotate(
+        usedCount=Count("bookings", filter=Q(bookings__status__in=("requested", "confirmed"))),
+        waitingCount=Count("bookings", filter=Q(bookings__status="requested")),
+        confirmedCount=Count("bookings", filter=Q(bookings__status="confirmed")),
+    )
+
+    slots = slots.annotate(
+        replyOrder=Case(When(waitingCount__gt=0, then=Value(0)), default=Value(1))
+    )
+
+    return slots.prefetch_related(Prefetch("bookings", queryset=booked, to_attr="sellerBookings"))
+
+
 def photoSlots(photoErrors, kept, existing=None, flaggedRooms=(), refusedPhotos=None, results=None):
     existing = existing or {}
     slots = []
@@ -86,6 +138,30 @@ def photoSlots(photoErrors, kept, existing=None, flaggedRooms=(), refusedPhotos=
     return slots
 
 
+def flatBand(flat):
+    return band(
+        flat.town,
+        flat.flatType,
+        flat.flatModel,
+        flat.floorAreaSqm,
+        flat.storey,
+        flat.leaseCommenceYear,
+        postal=flat.postalCode,
+        block=flat.block,
+    )
+
+
+def addPrices(context, flat, lo, est, hi):
+    context["lo"] = lo
+    context["est"] = est
+    context["hi"] = hi
+    context["verdict"] = verdict(flat.askingPrice, lo, est, hi)
+    context["flag"] = flagReason(flat.askingPrice, lo, est, hi)
+    context["smallPriceGap"] = smallPriceGap(
+        SimpleNamespace(askingPrice=flat.askingPrice, bandLow=lo, estimatedPrice=est, bandHigh=hi)
+    )
+
+
 def warningKey(form):
     lines = "|".join(f"{name}:{form.warnings[name]}" for name in sorted(form.warnings))
 
@@ -94,6 +170,35 @@ def warningKey(form):
 
 def toConfirm(request, form):
     return bool(form.warnings) and request.POST.get("warningsSeen") != warningKey(form)
+
+
+def sellForm(request, form, photoErrors, context):
+    if request.method != "POST":
+        warmWorker()
+
+    for room, error in syncChecks(request).items():
+        photoErrors.setdefault(room, error)
+
+    token = draft(request)
+
+    if request.method == "POST":
+        request.session[DRAFTS_KEY][token]["formData"] = {
+            name: request.POST.get(name, "") for name in ListingForm.base_fields
+        }
+        request.session.modified = True
+
+    context["refreshUrl"] = f"{request.path}?draftToken={token}#sell-photos"
+    context["draftToken"] = draft(request)
+    context["form"] = form
+    context["photoSlots"] = photoSlots(
+        photoErrors, pending(request), refusedPhotos=refused(request), results=checks(request)
+    )
+    context["photosMissing"] = bool(photoErrors)
+    context["sizeHints"] = sizeHints()
+    minutes = (TIMEOUT + 59) // 60
+    context["photoWait"] = f"up to {minutes} minute{'s' if minutes != 1 else ''}"
+
+    return render(request, "sellerpanel/sell.html", context)
 
 
 def oldAnswers(query):
@@ -332,6 +437,388 @@ def sell(request):
     return redirect("my_listings")
 
 
+def editForm(request, flat, form, photoErrors, existing, context):
+    if request.method != "POST":
+        warmWorker()
+
+    for room, error in syncChecks(request).items():
+        photoErrors.setdefault(room, error)
+
+    token = draft(request)
+
+    if request.method == "POST":
+        request.session[DRAFTS_KEY][token]["formData"] = {
+            name: request.POST.get(name, "") for name in ListingForm.base_fields
+        }
+        request.session.modified = True
+
+    context["refreshUrl"] = f"{request.path}?draftToken={token}#sell-photos"
+    flagRooms = set()
+
+    if flat.status != "live":
+        flagRooms = set(flat.photos.filter(doubtQ()).values_list("room", flat=True))
+        choice, reason = staffNotes([flat]).get(flat.pk, (None, ""))
+
+        if flat.status == "review":
+            context["holdNote"] = hold_note(flat, bool(flagRooms))
+
+        if reason and (flat.status, choice) in (
+            ("review", "documents"),
+            ("rejected", "rejected"),
+            ("hidden", "rejected"),
+        ):
+            context["staffNote"] = reason
+
+    context["editing"] = flat
+    context["form"] = form
+    context["photoSlots"] = photoSlots(
+        photoErrors, pending(request), existing, flagRooms, refused(request), checks(request)
+    )
+    context["photosMissing"] = bool(photoErrors)
+    context["draftToken"] = draft(request)
+    context["sizeHints"] = sizeHints()
+    minutes = (TIMEOUT + 59) // 60
+    context["photoWait"] = f"up to {minutes} minute{'s' if minutes != 1 else ''}"
+
+    return render(request, "sellerpanel/sell.html", context)
+
+
+@login_required
+@needEmail
+def edit_listing(request, publicId):
+    statuses = ("live", "review", "rejected", "hidden")
+
+    if not hasRole(request.user, "seller"):
+        return sell_only(request)
+
+    flat = get_object_or_404(Listing, publicId=publicId, seller=request.user, status__in=statuses)
+
+    token = draft(request)
+    request.session[DRAFTS_KEY][token]["listingId"] = flat.pk
+    request.session.modified = True
+    before = flat.status
+    existing = {photo.room: photo for photo in flat.photos.all()}
+    context = {}
+    picErrors = {}
+
+    if request.method != "POST":
+        initial = {
+            "hasBalcony": "yes" if flat.hasBalcony else "no",
+            "floorAreaSqm": f"{flat.floorAreaSqm:g}",
+        }
+
+        token = draft(request)
+        initial.update(request.session[DRAFTS_KEY][token].get("formData", {}))
+        form = ListingForm(instance=flat, initial=initial)
+
+        return editForm(request, flat, form, picErrors, existing, context)
+
+    if before in ("rejected", "hidden") and otherOpen(request.user, flat):
+        messages.info(request, ONE_FLAT_MESSAGE)
+
+        return redirect("my_listings")
+
+    form = ListingForm(request.POST, instance=flat)
+    picErrors = keepFiles(request)
+
+    if form.is_valid():
+        for room, error in waitChecks(request).items():
+            picErrors.setdefault(room, error)
+
+    if not form.is_valid():
+        return editForm(request, flat, form, picErrors, existing, context)
+
+    if toConfirm(request, form):
+        return editForm(
+            request, flat, form, picErrors, existing, {**context, "warningKey": warningKey(form)}
+        )
+
+    try:
+        low_cost, fair_cost, top_cost = flatBand(flat)
+    except ValueError as error:
+        form.add_error(None, str(error))
+
+        return editForm(request, flat, form, picErrors, existing, context)
+
+    addPrices(context, flat, low_cost, fair_cost, top_cost)
+    have = counts(flat.bedrooms, flat.bathrooms, flat.hasBalcony)
+    kept = pending(request)
+
+    for room in needRooms(have):
+        if room not in kept and room not in existing:
+            picErrors.setdefault(room, f"Add a photo of the {ROOM_LABELS[room].lower()}.")
+
+    if picErrors:
+        return editForm(request, flat, form, picErrors, existing, context)
+
+    if context["flag"] and "confirm" not in request.POST:
+        context["needsConfirm"] = True
+
+        return editForm(request, flat, form, picErrors, existing, context)
+
+    rooms = needRooms(have) + extraRooms(have)
+    removed = [room for room in request.POST.getlist("removePhoto") if room in extraRooms(have)]
+    replaced = [room for room in rooms if room in kept]
+    unsure = doubtfulPhotos(request, replaced)
+
+    with fileGuard() as newPics, transaction.atomic():
+        seller = lock_user(request.user.pk)
+
+        if not seller.is_active:
+            return notAllowed(request, "active seller")
+
+        current = (
+            Listing.objects.select_for_update().filter(pk=flat.pk, status__in=statuses).first()
+        )
+
+        if not current:
+            return redirect("my_listings")
+
+        if current.status != before:
+            messages.error(
+                request,
+                "This listing changed while we were checking your photos, so nothing was saved. Please reload the listing and try again.",
+            )
+
+            return redirect("my_listings")
+
+        if current.revision != form.cleaned_data["revision"]:
+            form.add_error(
+                None,
+                "This listing was changed in another tab or by our team. Please reload the page, check the latest details, then save again.",
+            )
+
+            return editForm(request, flat, form, picErrors, existing, context)
+
+        picErrors = badAppeal(request)
+
+        if picErrors:
+            return editForm(request, flat, form, picErrors, existing, context)
+
+        if otherOpen(seller, current):
+            messages.info(request, ONE_FLAT_MESSAGE)
+
+            return redirect("my_listings")
+
+        for room in replaced:
+            if not default_storage.exists(kept[room]):
+                return redirect(f"{reverse('my_listings')}#listing-{flat.publicId}")
+
+        roomsNow = set(current.photos.values_list("room", flat=True))
+
+        for room in needRooms(have):
+            if room not in roomsNow and room not in kept:
+                messages.error(
+                    request, "Your photos changed in another tab. Please check them and save again."
+                )
+
+                return redirect("edit_listing", publicId=flat.publicId)
+
+        dropped = [
+            room for room in roomsNow if room not in rooms or room in replaced or room in removed
+        ]
+
+        flat.estimatedPrice = fair_cost
+        flat.bandLow = low_cost
+        flat.bandHigh = top_cost
+        flat.modelVersion = VERSION
+        keptUnsure = current.photos.exclude(room__in=dropped).filter(doubtQ()).exists()
+
+        priceOk = current.status == "live" or (
+            heldByCost(current)
+            and not dropped
+            and not replaced
+            and all(
+                getattr(flat, field) == getattr(current, field)
+                for field in LISTING_DETAILS - {"askingPrice"}
+            )
+        )
+
+        stayLive = (
+            current.status == "live" and not context["flag"] and not unsure and not keptUnsure
+        )
+        flat.status = "review"
+
+        edited = [
+            field.name for field in Listing._meta.concrete_fields if field.name in form.fields
+        ]
+
+        flat.save(
+            update_fields=[
+                *edited,
+                "estimatedPrice",
+                "bandLow",
+                "bandHigh",
+                "modelVersion",
+                "status",
+            ]
+        )
+
+        for photo in flat.photos.filter(room__in=dropped):
+            dropPhoto(flat, photo)
+
+        attachPics(request, flat, replaced, newPics)
+
+        if stayLive and not liveIssue(flat, flat.revision, "review"):
+            flat.status = "live"
+            flat.save(update_fields=["status"])
+
+        if current.status == "review" and not priceOk:
+            AuditLog.objects.create(
+                actor=seller,
+                action="listing sent to review",
+                target=f"Listing #{flat.pk} ({flat.town.title()})",
+                detail="Listing edited while a fresh review was required.",
+            )
+
+        passPrice(flat, wasHeld=priceOk)
+
+    clearHeld(request)
+
+    if flat.status == "live":
+        messages.success(
+            request,
+            "Your changes are saved. Buyers can see them now."
+            + (" " + ABOVE_RANGE_NOTE if smallPriceGap(flat) else ""),
+        )
+    elif before in ("rejected", "hidden"):
+        messages.success(request, "We’ve sent your listing back to our team. " + hold_note(flat))
+    else:
+        messages.success(request, "Your changes are saved. " + hold_note(flat))
+
+    return redirect(f"{reverse('my_listings')}#listing-{flat.publicId}")
+
+
+@never_cache
+@login_required
+@require_POST
+@needEmail
+def photo_check(request):
+    if not hasRole(request.user, "seller"):
+        return JsonResponse({"error": "Sign in with a seller account to add photos."}, status=403)
+
+    token = request.POST.get("draftToken")
+    room = request.POST.get("room")
+
+    if token not in request.session.get(DRAFTS_KEY, {}) or room not in ROOM_LABELS:
+        return JsonResponse(
+            {"error": "Please reload the page, then add this photo again."}, status=400
+        )
+
+    upload = request.FILES.get("photo")
+    appeal = request.POST.get("appeal") == "1"
+
+    if not upload and not appeal:
+        return JsonResponse({"error": "Please choose a photo."}, status=400)
+
+    busy = f"photo-check:{request.user.pk}"
+
+    if not cache.add(busy, 1, 10):
+        return JsonResponse(
+            {"error": "Please wait for your last photo to finish uploading."}, status=429
+        )
+
+    try:
+        error, result = appealPhoto(request, room) if appeal else scanUpload(request, room, upload)
+    finally:
+        cache.delete(busy)
+
+    if error and result:
+        return JsonResponse({"verdict": "block", "message": error, "appealable": True})
+
+    if error:
+        if appeal:
+            return JsonResponse(
+                {"verdict": "block", "message": error, "appealable": room in refused(request)},
+                status=400,
+            )
+
+        return JsonResponse({"verdict": "invalid", "message": error}, status=400)
+
+    if appeal:
+        return JsonResponse(
+            {
+                "verdict": "review",
+                "message": "Our team will check this photo before your listing can go live.",
+                "url": reverse("draft_photo", kwargs={"path": pending(request)[room]}),
+            }
+        )
+
+    return JsonResponse(photoState(request, room))
+
+
+@login_required
+@needEmail
+def cost_check(request):
+    if not hasRole(request.user, "seller"):
+        return JsonResponse(
+            {"error": "Sign in with a seller account to check a price."}, status=403
+        )
+
+    form = PriceCheckForm(request.GET)
+    context = {}
+
+    if form.is_valid():
+        data = form.cleaned_data
+
+        try:
+            low_cost, fair_cost, top_cost = band(
+                data["town"],
+                data["flatType"],
+                data["flatModel"],
+                data["floorAreaSqm"],
+                data["storey"],
+                data["leaseCommenceYear"],
+                postal=data["postalCode"] or None,
+                block=data["block"].upper() or None,
+            )
+
+            context["lo"] = low_cost
+            context["est"] = fair_cost
+            context["hi"] = top_cost
+            context["asking"] = data["askingPrice"]
+
+            if data["askingPrice"]:
+                context["flag"] = flagReason(data["askingPrice"], low_cost, fair_cost, top_cost)
+                context["smallPriceGap"] = smallPriceGap(
+                    SimpleNamespace(
+                        askingPrice=data["askingPrice"],
+                        bandLow=low_cost,
+                        estimatedPrice=fair_cost,
+                        bandHigh=top_cost,
+                    )
+                )
+        except ValueError:
+            context["failed"] = True
+
+    html = render_to_string("sellerpanel/price_check.html", context)
+
+    return JsonResponse(
+        {
+            "lo": context.get("lo"),
+            "hi": context.get("hi"),
+            "flag": context.get("flag"),
+            "html": html,
+        }
+    )
+
+
+def staffNotes(flats):
+    latest = Decision.objects.filter(listing=OuterRef("pk")).order_by("-createdAt", "-pk")
+
+    rows = Listing.objects.filter(pk__in=[flat.pk for flat in flats]).annotate(
+        staffDecision=Subquery(latest.values("decision")[:1]),
+        staffReason=Subquery(latest.values("reason")[:1]),
+    )
+
+    notes = {}
+
+    for row in rows:
+        notes[row.pk] = (row.staffDecision, row.staffReason)
+
+    return notes
+
+
 @login_required
 def my_listings(request):
     if not hasRole(request.user, "seller"):
@@ -434,5 +921,66 @@ def flatRows(request, flats):
         rows.append(row)
 
     return rows
+
+
+def sellState(flat, action, flagged=False):
+    if flat.status in ("rejected", "hidden"):
+        return
+
+    if action == "sold":
+        if flat.status == "sold":
+            target = flat.statusBeforeSold or "review"
+            problem = liveIssue(flat, flat.revision, "sold") if target == "live" else ""
+            flat.status = "review" if problem else target
+            flat.statusBeforeSold = ""
+        elif flat.status in ("live", "paused"):
+            flat.statusBeforeSold = flat.status
+            flat.status = "sold"
+    elif flagged:
+        if flat.status == "sold":
+            if flat.statusBeforeSold not in ("rejected", "hidden"):
+                flat.statusBeforeSold = "review"
+        else:
+            flat.status = "review"
+
+
+def backToFlat(request, flat, part=""):
+    sent = QueryDict(request.POST.get("returnQuery", ""))
+    keep = QueryDict(mutable=True)
+
+    if sent.get("listings_page", "").isdigit():
+        keep["listings_page"] = sent["listings_page"]
+
+    if sent.get("status") and sent["status"] == flat.status:
+        keep["status"] = sent["status"]
+
+    query = ""
+
+    if keep:
+        query = "?" + keep.urlencode()
+
+    return redirect(f"{reverse('my_listings')}{query}#listing-{flat.publicId}{part}")
+
+
+def lockMyFlat(request, publicId):
+    if not hasRole(request.user, "seller"):
+        return None, None, sell_only(request)
+
+    if request.method != "POST":
+        return None, None, redirect("my_listings")
+
+    seller = lock_user(request.user.pk)
+
+    if not seller.is_active:
+        return None, None, notAllowed(request, "active seller")
+
+    flat = (
+        Listing.objects.select_for_update().filter(publicId=publicId, seller=request.user).first()
+    )
+
+    if not flat:
+        return None, None, redirect("my_listings")
+
+    return seller, flat, None
 
 

@@ -9,6 +9,60 @@ from storefront.presentation import RATING_CHOICES
 from storefront.templatetags.estate_tags import flat_label
 from storefront.valuation import TOWNS, FLAT_MODELS
 
+POSTAL_HELP = "Type your 6-digit postal code, like 560123."
+PRICE_ERROR = "Type a price between $50,000 and $3,000,000."
+FLOOR_ERROR = "Type a floor from 1 to 50."
+SIZE_ERROR = "Type a size from 25 to 300 sqm."
+INTENT_DAYS = 365
+
+
+def pick_field(label, choices, error, coerce=int):
+    return forms.TypedChoiceField(
+        coerce=coerce,
+        label=label,
+        choices=[("", "Choose…")] + choices,
+        error_messages={"required": error, "invalid_choice": error},
+    )
+
+
+class ListingValidationMixin(AddressChecksMixin):
+    address_fields = {
+        "postal": "postalCode",
+        "town": "town",
+        "block": "block",
+        "flatType": "flatType",
+        "area": "floorAreaSqm",
+        "lease": "leaseCommenceYear",
+        "storey": "storey",
+    }
+
+    def clean(self):
+        data = super().clean()
+
+        for field in self.address_fields.values():
+            if field not in self.fields:
+                data[field] = getattr(self.instance, field)
+
+        notSure = not data.get("flatModel") and data.get("flatType") in FLAT_RULES
+
+        if notSure:
+            data["flatModel"] = FLAT_RULES[data["flatType"]]["models"][0]
+
+        if data.get("flatType") and data.get("flatModel") and data.get("floorAreaSqm") is not None:
+            issues = flatIssues(data["flatType"], data["flatModel"], data["floorAreaSqm"])
+
+            for field, message in issues.items():
+                if field == "area":
+                    field = "floorAreaSqm"
+
+                self.add_error(field if field in self.fields else None, message)
+
+        data = self.check_address(data)
+        knownModel(self, data, notSure)
+
+        return data
+
+
 class ListingForm(ListingValidationMixin, forms.ModelForm):
     revision = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
     town = forms.ChoiceField(
@@ -247,3 +301,192 @@ class ListingForm(ListingValidationMixin, forms.ModelForm):
         return year
 
 
+class PriceCheckForm(forms.Form):
+    postalCode = forms.RegexField(regex=r"^\d{6}$", required=False)
+    block = forms.RegexField(regex=r"^\d{1,4}[A-Za-z]?$", required=False)
+    town = forms.ChoiceField(required=False, choices=[(town, town) for town in TOWNS])
+    flatType = forms.ChoiceField(choices=[(flat_type, flat_type) for flat_type in FLAT_TYPES])
+    flatModel = forms.ChoiceField(
+        required=False, choices=[(flat_model, flat_model) for flat_model in FLAT_MODELS]
+    )
+    floorAreaSqm = forms.FloatField(min_value=25, max_value=300)
+    storey = forms.IntegerField(min_value=1, max_value=50)
+    leaseCommenceYear = forms.IntegerField(min_value=LEASE_MIN)
+    askingPrice = forms.IntegerField(required=False, min_value=50000, max_value=3000000)
+
+    def clean(self):
+        data = super().clean()
+
+        if not data.get("town") and data.get("postalCode"):
+            record = get_postal(data["postalCode"])
+
+            if record:
+                data["town"] = record["town"]
+
+        if not data.get("town"):
+            raise forms.ValidationError("Town or postal code needed.")
+
+        rule = FLAT_RULES.get(data.get("flatType"))
+
+        if rule and data.get("flatModel") not in rule["models"]:
+            data["flatModel"] = rule["models"][0]
+
+        return data
+
+
+RATING_ERROR = "Choose from 1 to 5 stars, then press Save rating."
+
+
+class ReviewForm(forms.ModelForm):
+    rating = forms.TypedChoiceField(
+        coerce=int,
+        choices=[(rating, rating) for rating in RATING_CHOICES],
+        error_messages={"required": RATING_ERROR, "invalid_choice": RATING_ERROR},
+    )
+
+    class Meta:
+        model = Review
+        fields = ["rating", "comment"]
+        error_messages = {
+            "comment": {"max_length": "Please keep your comment to 500 characters or fewer."}
+        }
+
+
+DECLINED_CARDS = {
+    "4000000000000002": "Your card was declined. This is a test card that is always declined."
+}
+
+
+def luhnValid(number):
+    total = 0
+
+    for index, digit in enumerate(reversed(number)):
+        value = int(digit)
+
+        if index % 2 == 1:
+            value = value * 2
+
+            if value > 9:
+                value = value - 9
+
+        total = total + value
+
+    return total % 10 == 0
+
+
+def cardBrand(number):
+    card_brands = [
+        ("American Express", r"^3[47]", (15,), 4),
+        ("Visa", r"^4", (13, 16, 19), 3),
+        (
+            "Mastercard",
+            r"^(5[1-5]|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)",
+            (16,),
+            3,
+        ),
+    ]
+
+    for name, pattern, lengths, cvcSize in card_brands:
+        if re.match(pattern, number) and len(number) in lengths:
+            return name, cvcSize
+
+    return None, 0
+
+
+class CardForm(forms.Form):
+    name = forms.CharField(
+        max_length=80,
+        label="Name on card",
+        error_messages={"required": "Enter the name on the card."},
+        widget=forms.TextInput(attrs={"autocomplete": "cc-name"}),
+    )
+    number = forms.CharField(
+        max_length=23,
+        label="Card number",
+        error_messages={"required": "Enter the card number."},
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "cc-number",
+                "inputmode": "numeric",
+                "placeholder": "4242 4242 4242 4242",
+            }
+        ),
+    )
+    expiry = forms.CharField(
+        max_length=7,
+        label="Expiry (MM/YY)",
+        error_messages={"required": "Enter the expiry date."},
+        widget=forms.TextInput(
+            attrs={"autocomplete": "cc-exp", "inputmode": "numeric", "placeholder": "MM/YY"}
+        ),
+    )
+    cvc = forms.CharField(
+        max_length=4,
+        label="CVC",
+        error_messages={"required": "Enter the CVC."},
+        widget=forms.TextInput(
+            attrs={"autocomplete": "cc-csc", "inputmode": "numeric", "placeholder": "123"}
+        ),
+    )
+
+    def clean_number(self):
+        number = re.sub(r"[ -]", "", self.cleaned_data["number"])
+
+        if not re.fullmatch(r"[0-9]+", number):
+            raise forms.ValidationError("Please enter the card number using digits only.")
+
+        brand, cvcSize = cardBrand(number)
+
+        if brand is None:
+            raise forms.ValidationError(
+                "We take Visa, Mastercard and American Express. Please check the number."
+            )
+
+        if not luhnValid(number):
+            raise forms.ValidationError(
+                "This card number doesn’t look right. Please check for a typo."
+            )
+
+        return number
+
+    def clean_expiry(self):
+        found = re.fullmatch(r"([0-9]{2}) ?/ ?([0-9]{2})", self.cleaned_data["expiry"].strip())
+
+        if not found:
+            raise forms.ValidationError("Write the expiry as MM/YY, for example 08/28.")
+
+        month = int(found.group(1))
+        year = 2000 + int(found.group(2))
+
+        if month < 1 or month > 12:
+            raise forms.ValidationError("The month should be from 01 to 12.")
+
+        today = timezone.localdate()
+
+        if (year, month) < (today.year, today.month):
+            raise forms.ValidationError("This card has expired.")
+
+        return f"{month:02d}/{year % 100:02d}"
+
+    def clean(self):
+        data = super().clean()
+        number = data.get("number")
+
+        if not number:
+            return data
+
+        brand, cvcSize = cardBrand(number)
+        cvc = (data.get("cvc") or "").strip()
+
+        if not re.fullmatch(r"[0-9]+", cvc) or len(cvc) != cvcSize:
+            self.add_error("cvc", f"Enter the {cvcSize}-digit code on the card.")
+
+            return data
+
+        if number in DECLINED_CARDS:
+            raise forms.ValidationError(DECLINED_CARDS[number])
+
+        data["brand"] = brand
+        data["last4"] = number[-4:]
+
+        return data

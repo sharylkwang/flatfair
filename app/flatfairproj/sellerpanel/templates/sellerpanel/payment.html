@@ -1,0 +1,34 @@
+{% extends 'sellerpanel/seller_base.html' %}
+{% load humanize %}
+{% block title %}Payment · FlatFair{% endblock %}
+{% block seller %}
+  <header class="seller-head"><div><h1>Payment</h1><p>Check the total, then pay.</p></div></header>
+  <section class="summary pay-panel">
+    <h2>Your order</h2>
+    {% for item in items %}
+      <div class="ex-row"><span>{{ item.name }}{% if listing %} for Blk {{ listing.block }} {{ listing.town|title }}{% endif %}<small class="pay-dates">{% include 'sellerpanel/package_dates.html' %}</small></span><b>${{ item.price|floatformat:2|intcomma }}</b></div>
+    {% endfor %}
+    {% if hasPackage and listing and listing.status != 'live' %}{% include 'sellerpanel/package_warning.html' with flat=listing %}{% endif %}
+    <div class="ex-row total"><span>Total <small>with ${{ gst|floatformat:2|intcomma }} GST</small></span><b>${{ total|floatformat:2|intcomma }}</b></div>
+    <form method="post" action="{% url 'checkout' %}">
+      {% csrf_token %}
+      <input type="hidden" name="checkoutToken" value="{{ checkoutToken }}">
+      {% if listing %}<input type="hidden" name="listing" value="{{ listing.publicId }}">{% endif %}
+      <p class="card-note">{% if stripeOn %}Stripe test mode. No money is taken.{% else %}Demo payment. No money is taken.{% endif %} Packages can’t be refunded, but services can be until work starts. <a href="{% url 'terms' %}#refunds">Refunds</a>{% if splitOrder %} You pay once, and we place two orders.{% endif %}</p>
+      {% if stripeOn %}
+        <p class="card-note">Test card 4242 4242 4242 4242, any future date, any CVC.</p>
+        <button class="btn btn-brand btn-block pay-now" name="pay" value="yes">Pay with Stripe (test)</button>
+      {% else %}
+        <div class="card-fields">
+          {% if card.non_field_errors %}<p class="err" role="alert">{{ card.non_field_errors.0 }}</p>{% endif %}
+          {% for field in card %}
+            <label class="mini-field card-{{ field.name }}">{{ field.label }} {{ field }}{% if field.errors %}<span class="err" role="alert">{{ field.errors.0 }}</span>{% endif %}</label>
+          {% endfor %}
+        </div>
+        <button class="btn btn-brand btn-block pay-now" name="pay" value="yes">Pay ${{ total|floatformat:2|intcomma }} (demo)</button>
+        <details class="fold card-help"><summary>Test cards</summary><p class="card-note">Try 4242 4242 4242 4242 (Visa) or 5555 5555 5555 4444 (Mastercard). 4000 0000 0000 0002 is always declined.</p></details>
+      {% endif %}
+    </form>
+    <a class="view-all" href="{% url 'cart' %}">Back to cart</a>
+  </section>
+{% endblock %}

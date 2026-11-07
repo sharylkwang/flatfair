@@ -1,0 +1,6 @@
+{% if lo %}
+  {% include 'sellerpanel/price_bar.html' with level=3 next=True %}
+{% else %}
+  <h3 class="price-check-title">Is your price fair?</h3>
+  <p class="muted">{% if failed %}We can’t compare this flat yet. Check the address and size, or carry on and our team will take a look.{% else %}Fill in your flat details, floor and price, and we’ll compare it with recent HDB sales.{% endif %}</p>
+{% endif %}

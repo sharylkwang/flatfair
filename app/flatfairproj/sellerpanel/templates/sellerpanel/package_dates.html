@@ -1,0 +1,1 @@
+{% if item.kind == 'package' %}{% if item.durationDays %}Starts when you pay. Ends on {{ item.endsOn|date:'j M Y' }}, {{ item.durationDays }} days later.{% else %}Starts when you pay. Lasts until your flat is sold.{% endif %}{% else %}Our team will schedule this extra service after you pay.{% endif %}

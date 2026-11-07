@@ -36,9 +36,73 @@ from .recommend import showTip
 from .photos import DRAFTS_KEY, waitChecks, listingFor, moveBack
 from .plans import packsNow, myExtras, focus_flat, sell_steps, stepFlats
 
+OPEN_OFFER_STATUSES = ("pending", "countered")
+STRIPE_ERROR = (
+    "Sorry, we couldn’t reach Stripe just now. Your cart is still here, so please try again."
+)
 SKIP_KEY = "nextStepsSkip"
 
 
+def sell_only(request):
+    if hasRole(request.user, "buyer"):
+        return render(request, "sellerpanel/buyer_account.html", status=403)
+
+    return notAllowed(request, "seller")
+
+
+def new_seller_account(request):
+    return startSell(request)
+
+
+def maybeId(value):
+    try:
+        return listing_id(value)
+    except ValidationError:
+        return None
+
+
+def sureVisits(user):
+    return ViewingBooking.objects.filter(
+        slot__listing__seller=user,
+        slot__removed=False,
+        slot__startsAt__gte=timezone.now(),
+        status="confirmed",
+    ).count()
+
+
+def lowerNote(listing, product):
+    wanted = tierOf(product.tier)
+    plans = packsNow([listing])
+
+    for plan in plans:
+        running = tierOf(plan["tier"])
+
+        if running == "Top spot" and wanted == "Top spot":
+            return "This flat already has Top spot running. It lasts until the flat is sold."
+
+        if TIER_RANKS.get(running, 0) > TIER_RANKS.get(wanted, 0):
+            return f'This flat already has the {plan["name"]} running. You can buy a cheaper package after it ends.'
+
+    for plan in plans:
+        if wanted and tierOf(plan["tier"]) == wanted:
+            until = "until it is sold"
+
+            if plan["expiry"]:
+                until = "until " + date_format(timezone.localtime(plan["expiry"]), "j M")
+
+            return f"{product.name} is already active on this flat {until}. You can add it again after it ends."
+
+    return ""
+
+
+def plural(count, word):
+    if count == 1:
+        return f"{count} {word}"
+
+    return f"{count} {word}s"
+
+
+# Show the seller page
 @login_required
 def dashboard(request):
     from sellerpanel.listings import sellSlots
@@ -354,6 +418,43 @@ def toggle_sold(request, publicId):
         )
 
     return redirect("my_listings")
+
+
+def addReply(offers):
+    return offers.select_related("buyer", "listing").annotate(
+        buyerAgreedElsewhere=deal_away(),
+        othersOpen=Count(
+            "listing__offers",
+            filter=Q(listing__offers__status__in=OPEN_OFFER_STATUSES),
+            distinct=True,
+        ),
+        flatTaken=Count(
+            "listing__offers", filter=Q(listing__offers__status="accepted"), distinct=True
+        ),
+        counterLow=F("amount") + Value(Decimal("1")),
+        counterHigh=Least("listing__askingPrice", Value(3000000)),
+    )
+
+
+def offerAsks(offer):
+    name = buyer_name(offer.buyer)
+    amount = f"${offer.amount:,.0f}"
+    offer.acceptAsk = f"Accept {amount} from {name}?"
+    others = offer.othersOpen - 1
+
+    if others > 0:
+        offer.acceptAsk += f" This will decline the other {plural(others, 'offer')} on this flat."
+
+    if offer.status == "countered":
+        offer.declineAsk = f"Decline {name}’s offer and close it?"
+    else:
+        offer.declineAsk = f"Decline {amount} from {name}?"
+
+    offer.undoAsk = (
+        f"Undo accepting {amount} from {name}? It will go back to waiting for your reply."
+    )
+
+    return offer
 
 
 @login_required

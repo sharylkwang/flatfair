@@ -10,6 +10,61 @@ from django.utils import timezone
 from storefront.models import Listing, Order
 
 
+@deconstructible
+class DocumentStorage(FileSystemStorage):
+    @property
+    def base_location(self):
+        return str(
+            getattr(
+                settings,
+                "PRIVATE_DOCUMENT_ROOT",
+                f"{settings.MEDIA_ROOT}-private-documents",
+            )
+        )
+
+    @property
+    def location(self):
+        return str(Path(self.base_location).resolve())
+
+    def url(self, name):
+        raise ValueError("Documents are available only through the checked download view.")
+
+
+def documentPath(document, filename):
+    return f"{document.request_id}/{uuid4().hex}{Path(filename).suffix.lower()}"
+
+
+
+class DocumentRequest(models.Model):
+    STATUSES = [
+        ("requested", "Documents requested"),
+        ("submitted", "Documents submitted"),
+        ("accepted", "Documents accepted"),
+        ("rejected", "Upload again"),
+    ]
+
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="documentRequests")
+    requestedBy = models.ForeignKey(
+        User, on_delete=models.RESTRICT, related_name="documentRequests"
+    )
+    message = models.CharField(max_length=200)
+    status = models.CharField(max_length=10, choices=STATUSES, default="requested")
+    staffReason = models.CharField(max_length=200, blank=True)
+    createdAt = models.DateTimeField(default=timezone.now)
+    updatedAt = models.DateTimeField(default=timezone.now)
+    submittedAt = models.DateTimeField(null=True, blank=True)
+    reviewedAt = models.DateTimeField(null=True, blank=True)
+
+
+class DocumentFile(models.Model):
+    request = models.ForeignKey(DocumentRequest, on_delete=models.CASCADE, related_name="files")
+    file = models.FileField(storage=DocumentStorage(), upload_to=documentPath)
+    originalName = models.CharField(max_length=255)
+    size = models.PositiveIntegerField()
+    contentType = models.CharField(max_length=50)
+    uploadedAt = models.DateTimeField(default=timezone.now)
+
+
 class Decision(models.Model):
     CHOICES = [
         ("approved", "Approved"),

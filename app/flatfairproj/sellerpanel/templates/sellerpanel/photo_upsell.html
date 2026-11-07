@@ -1,0 +1,13 @@
+{% load humanize %}
+<section class="photo-upsell" id="photo-upsell" aria-labelledby="photo-upsell-title">
+  <div class="photo-upsell-text">
+    <h2 id="photo-upsell-title">{{ upsell.count }} photo{{ upsell.count|pluralize }} need{{ upsell.count|pluralize:"s," }} a better shot</h2>
+    <ul class="photo-upsell-rooms" aria-label="Rooms to retake">{% for room in upsell.rooms %}<li>{{ room|capfirst }}</li>{% endfor %}</ul>
+    <p>A photographer can retake them for you. Pro photography is ${{ upsell.product.price|intcomma }} for up to 20 edited photos.</p>
+  </div>
+  {% if upsell.product.pk in cartIds %}
+    <a class="btn btn-ghost btn-sm" href="{% url 'cart' %}">In your cart</a>
+  {% else %}
+    <form method="post" action="{% url 'cart_add' upsell.product.pk %}">{% csrf_token %}<input type="hidden" name="listing" value="{{ upsell.flat.publicId }}"><input type="hidden" name="next" value="cart"><button class="btn btn-brand btn-sm">Add Pro photography</button></form>
+  {% endif %}
+</section>

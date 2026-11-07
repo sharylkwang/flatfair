@@ -1,0 +1,5 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Start selling · FlatFair{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with tier="task" title='Start selling with this account' lead='Keep your saved flats and offers while you list your own flat.' extra_template="sellerpanel/buyer_account_actions.html" hide_default_action=True %}
+{% endblock %}

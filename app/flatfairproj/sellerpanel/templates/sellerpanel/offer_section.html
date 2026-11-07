@@ -1,0 +1,24 @@
+{% with flat=section.flat %}
+<section class="s-flat" aria-label="Offers for Blk {{ flat.block }} {{ flat.town|title }}">
+  {% include "sellerpanel/flat_head.html" %}
+  {% if section.reply or section.waiting %}
+    <div class="s-list">
+      {% for offer in section.reply %}{% include "sellerpanel/offer_item.html" %}{% endfor %}
+      {% for offer in section.waiting %}{% include "sellerpanel/offer_item.html" %}{% endfor %}
+    </div>
+  {% elif not section.closed %}
+    <div class="seller-empty">
+      <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="offer" %}</span>
+      <h3>No offers yet</h3>
+      <p class="s-meta">Buyers can make an offer from your flat’s page.</p>
+      <a class="btn btn-ghost btn-sm" href="{% url 'seller_listing' flat.publicId %}">View my listing</a>
+    </div>
+  {% endif %}
+  {% if section.closed %}
+    <details class="offer-closed">
+      <summary>Closed offers ({{ section.closed|length }})</summary>
+      <div class="s-list">{% for offer in section.closed %}{% include "sellerpanel/offer_item.html" %}{% endfor %}</div>
+    </details>
+  {% endif %}
+</section>
+{% endwith %}

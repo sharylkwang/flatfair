@@ -32,6 +32,8 @@ from storefront.address import get_postal, distance, walk_index
 from .offeradvice import floorCosts, lastSales
 from storefront.templatetags.estate_tags import nearest_mrt
 
+TIER_NAMES = {1: "Boost 30 days", 2: "Boost 90 days", 3: "Top spot"}
+TIER_RANKS = {name: rank for rank, name in TIER_NAMES.items()}
 BUDGET_BANDS = (
     {"label": "Under $500k", "maxPrice": 499999},
     {"label": "$500k to $700k", "minPrice": 500000, "maxPrice": 699999},
@@ -40,6 +42,60 @@ BUDGET_BANDS = (
 )
 RATING_CHOICES = [1, 2, 3, 4, 5]
 LOW_RATING = 2
+
+
+def live_rank():
+    lines = goodPacks(timezone.now()).filter(listing=OuterRef("pk")).order_by("-tier")
+
+    return Coalesce(Subquery(lines.values("tier")[:1]), Value(0))
+
+
+def withTier(listings):
+    listings = listings.annotate(rank=live_rank())
+    tierWhen = []
+
+    for rank, name in TIER_NAMES.items():
+        tierWhen.append(When(rank=rank, then=Value(name)))
+
+    return listings.annotate(tier=Case(*tierWhen, default=Value("")))
+
+
+def hasDeal():
+    return Exists(Offer.objects.filter(listing=OuterRef("pk"), status="accepted"))
+
+
+def rankFlats(listings):
+    listings = withTier(listings).annotate(taken=hasDeal())
+
+    return listings.order_by("-rank", "taken", "-createdAt", "-pk")
+
+
+def starFirst(listings):
+    starred = Case(When(rank=(3), then=Value(1)), default=Value(0))
+    listings = withTier(listings).annotate(taken=hasDeal())
+
+    return listings.order_by(starred.desc(), "taken", "-createdAt", "-pk")
+
+
+def tierOf(rank):
+    return TIER_NAMES.get(rank, "")
+
+
+def decorate(listings):
+    listings = list(listings)
+
+    for flat in listings:
+        flat.adTag = ""
+
+        if flat.status == "live" and flat.tier:
+            flat.adTag = "Sponsored"
+
+        flat.fairPrice = False
+
+        if flat.bandLow is not None and flat.bandHigh is not None:
+            flat.fairPrice = flat.bandLow <= flat.askingPrice <= flat.bandHigh
+
+    return listings
 
 
 def helloFor(user):

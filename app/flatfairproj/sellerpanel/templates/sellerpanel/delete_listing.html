@@ -1,0 +1,26 @@
+{% extends 'storefront/base.html' %}
+{% load humanize %}
+{% block title %}Delete listing · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form cancel-form" method="post" action="{% url 'delete_listing' flat.publicId %}">
+      {% csrf_token %}
+      <h1>Delete your listing?</h1>
+      <p class="hint">{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} · ${{ flat.askingPrice|intcomma }}</p>
+      <p class="cancel-count">Your flat comes off FlatFair for good{% if offerCount or viewingCount %}, and we’ll {% if offerCount %}close {{ offerCount }} open offer{{ offerCount|pluralize }}{% endif %}{% if offerCount and viewingCount %} and {% endif %}{% if viewingCount %}cancel {{ viewingCount }} viewing{{ viewingCount|pluralize }}{% endif %}{% endif %}.{% if toldCount %} We’ll let the {{ toldCount }} buyer{{ toldCount|pluralize }} following your flat know.{% endif %} Packages can’t be refunded. You can list another flat afterwards.</p>
+      {% if error %}<p class="err" id="delete-error" role="alert">{{ error }}</p>{% endif %}
+      <fieldset class="cancel-reasons"{% if error %} aria-describedby="delete-error"{% endif %}>
+        <legend>Why are you deleting it?</legend>
+        {% for value, label in reasons %}
+          <label class="cancel-reason"><input type="radio" name="reason" value="{{ value }}" required{% if chosen == value %} checked{% endif %}><span>{{ label }}</span></label>
+        {% endfor %}
+      </fieldset>
+      <label class="mini-field">Tell us more<textarea name="note" rows="2" maxlength="200" aria-describedby="delete-note-hint">{{ note }}</textarea><span class="field-hint" id="delete-note-hint">Please write a few words if you chose “Something else”. Only our team sees your reason.</span></label>
+      <div class="btn-pair">
+        <button class="btn btn-danger">Delete listing</button>
+        <a class="btn btn-ghost" href="{% url 'seller_listing' flat.publicId %}">Keep my listing</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

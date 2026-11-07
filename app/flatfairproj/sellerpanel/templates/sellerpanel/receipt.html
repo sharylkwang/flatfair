@@ -1,0 +1,92 @@
+{% extends 'sellerpanel/seller_base.html' %}
+{% block title %}Receipt · FlatFair{% endblock %}
+{% load humanize %}
+{% block seller %}
+  <style>@media print{.site-header,.workspace-bar,.page-hero,footer,.no-print{display:none!important}main{padding:0}.wrap{width:100%}.receipt-card{padding:0;border:0}}</style>
+  {% url 'my_orders' as back_url %}
+  {% include 'storefront/nav_back.html' with fallback=back_url label="Orders" %}
+  <article class="receipt-card">
+    <header class="receipt-head">
+      <h1>Order #{{ order.pk }} receipt</h1>
+      {% include "sellerpanel/order_badge.html" %}
+    </header>
+    <dl class="receipt-meta">
+      <div>
+        <dt>Order</dt>
+        <dd>#{{ order.pk }}</dd>
+      </div>
+      <div>
+        <dt>Date</dt>
+        <dd>{{ order.createdAt|date:'j M Y, g:i' }}{{ order.createdAt|date:'A'|lower }}</dd>
+      </div>
+      <div>
+        <dt>Sold by</dt>
+        <dd>FlatFair (IS2108 student project, demo only)</dd>
+      </div>
+      <div>
+        <dt>Billed to</dt>
+        <dd>{% if order.seller.get_full_name %}{{ order.seller.get_full_name }}<br>{% endif %}{{ order.seller.email }}</dd>
+      </div>
+    </dl>
+    <div class="table-scroll">
+      <table class="tbl">
+        <caption class="visually-hidden">Items on this receipt</caption>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Listing</th>
+            <th class="num">Amount</th>
+          </tr>
+        </thead>
+        <tbody>{% for line in order.items.all %}<tr><td data-label="Service">{{ line.name }}{% if line.deliveryFile %}<a class="order-file no-print" href="{% url 'delivery_file' line.pk %}">Download {{ line.deliveryFileName }}</a>{% endif %}{% if line.deliveryNote %}<small class="order-note">{{ line.deliveryNote|urlize }}</small>{% endif %}</td><td data-label="Listing">{% if line.listing %}Blk {{ line.listing.block }} {{ line.listing.town|title }}{% else %}Not linked to a flat{% endif %}</td><td class="num" data-label="Amount">${{ line.price|floatformat:2|intcomma }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+    <dl class="receipt-totals">
+      <div>
+        <dt>Subtotal</dt>
+        <dd>${{ order.subtotal|floatformat:2|intcomma }}</dd>
+      </div>
+      <div>
+        <dt>GST 9%</dt>
+        <dd>${{ order.gst|floatformat:2|intcomma }}</dd>
+      </div>
+      <div class="is-total">
+        <dt>{% if order.status == 'refunded' %}Total refunded{% else %}Total paid{% endif %}</dt>
+        <dd>${{ order.total|floatformat:2|intcomma }}</dd>
+      </div>
+    </dl>
+    {% if order.payment %}
+      <p class="receipt-note">Payment: {{ order.payment.get_method_display }} · {{ order.payment.get_status_display }}{% if order.payment.cardLast4 %} · {{ order.payment.cardBrand }} ending {{ order.payment.cardLast4 }}{% endif %}. No real money was taken.</p>
+    {% else %}
+      <p class="receipt-note">Demo payment. No money was taken.</p>
+    {% endif %}
+    {% if order.canConfirmDelivery %}<form method="post" action="{% url 'confirm_delivery' order.pk %}" class="no-print confirm-delivery">{% csrf_token %}<p>Please confirm once you’ve checked every delivery. If you don’t, the order will complete seven days after delivery.</p><button class="btn btn-brand btn-sm" type="submit">I’ve received the files or delivery notes</button></form>{% endif %}
+    <div class="receipt-actions no-print">
+      <button class="btn btn-brand" type="button" onclick="window.print()">Print receipt</button>
+      <span class="order-help"><a href="{% url 'support' %}?topic=orders&amp;order={{ order.pk }}#contact-support">Ask about this order</a>{% if order.refundTicket %}<a href="{% url 'my_ticket' order.refundTicket %}">Refund requested</a>{% elif order.canRefund %}<a href="{% url 'support' %}?topic=refund&amp;order={{ order.pk }}#contact-support">Request a refund</a>{% endif %}</span>
+    </div>
+  </article>
+  {% if rateable or waiting %}
+    <details class="fold review-panel no-print" id="rate-panel"{% if rateable %} open{% endif %}>
+      <summary id="rate-title">Rate what you bought</summary>
+      <div class="fold-body">
+        <p class="muted">We show your stars, comment, first name and the month.</p>
+        {% for line in rateable %}<form class="review-form" id="rate-{{ line.pk }}" method="post" action="{% url 'rate_item' line.pk %}">
+  {% csrf_token %}
+  <fieldset class="star-rating">
+    <legend><b>{{ line.name }}</b>{% if line.review %} · You gave {{ line.review.rating }} out of 5{% endif %}</legend>
+    <div class="star-rating-row">
+      {% for n in ratingChoices %}<label class="star-rating-star"><input type="radio" name="rating" value="{{ n }}" required{% if line.review.rating == n %} checked{% endif %}><span aria-hidden="true">★</span><span class="visually-hidden">{{ n }} star{{ n|pluralize }}</span></label>{% endfor %}
+    </div>
+  </fieldset>
+  {% if line.review.hidden %}<p class="muted">Our team has hidden this comment from the Packages page.</p>{% endif %}
+  <label class="review-comment" for="review-comment-{{ line.pk }}">Comment (optional)</label>
+  <textarea id="review-comment-{{ line.pk }}" name="comment" rows="3" maxlength="500">{{ line.review.comment }}</textarea>
+  <button class="btn btn-brand">{% if line.review %}Update rating{% else %}Save rating{% endif %} <span class="visually-hidden">for {{ line.name }}</span></button>
+</form>
+{% endfor %}
+        {% for line in waiting %}<p class="muted" id="rate-{{ line.pk }}">You can rate {{ line.name }} once it has run for {{ rateAfterDays }} days.</p>{% endfor %}
+      </div>
+    </details>
+  {% endif %}
+{% endblock %}

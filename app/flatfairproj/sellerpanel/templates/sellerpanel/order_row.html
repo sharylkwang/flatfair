@@ -1,0 +1,10 @@
+{% load humanize %}{% with firstItem=order.items.all|first %}
+<article class="s-row" id="order-{{ order.pk }}" tabindex="-1">
+  <div class="s-row-main">
+    <h3>Order #{{ order.pk }}</h3>
+    {% include "sellerpanel/order_badge.html" %}
+    <p class="s-meta">{{ firstItem.name }}{% if order.items.all|length > 1 %} + {{ order.items.all|length|add:"-1" }} more{% endif %} · ${{ order.total|floatformat:2|intcomma }} · {{ order.createdAt|date:"j M Y" }}</p>
+  </div>
+  <div class="s-row-end">{% if order.canConfirmDelivery and confirmHere %}<form method="post" action="{% url 'confirm_delivery' order.pk %}">{% csrf_token %}<button class="btn btn-brand btn-sm" type="submit">I’ve received the files or delivery notes <span class="visually-hidden">for order #{{ order.pk }}</span></button></form>{% endif %}<a class="btn btn-ghost btn-sm" href="{% url 'receipt' order.pk %}">View receipt <span class="visually-hidden">for order #{{ order.pk }}</span></a></div>
+</article>
+{% endwith %}
