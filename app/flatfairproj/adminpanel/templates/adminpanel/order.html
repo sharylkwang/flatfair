@@ -1,0 +1,88 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Order #{{ order.pk }} · FlatFair{% endblock %}
+{% load humanize estate_tags staff_tags %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_orders' %}">{% include "storefront/ui_icon.html" with name="back" %}All orders</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>Order #{{ order.pk }} {% staff_state "order" order.status order|order_label %}</h1>
+      <p class="staff-head-meta">Paid {{ order.createdAt|date:"j M, g:i" }}{{ order.createdAt|date:"A"|lower }} · {% if canSeeCustomer %}<a href="{% url 'admin_customer' order.seller.pk %}">{{ order.seller.get_full_name|default:order.seller.email }}</a>{% else %}{{ order.seller.get_full_name|default:order.seller.email }}{% endif %} · <a href="{{ sellerMailto }}">{{ order.seller.email }}</a> · {% if order.seller.is_active %}Active{% else %}Suspended{% endif %}</p>
+    </div>
+  </div>
+  <div class="split even order-detail">
+    <section class="order-bought">
+      <h2>What they bought</h2>
+      {% if order.payment %}<p>Payment: {{ order.payment.get_method_display }} · {{ order.payment.get_status_display }}{% if order.payment.cardLast4 %} · {{ order.payment.cardBrand }} ending {{ order.payment.cardLast4 }}{% endif %}</p>{% else %}<p>Legacy demo payment</p>{% endif %}
+      {% for refund in order.refunds.all %}<p>Refund: {{ refund.get_status_display }}{% if refund.providerRefundId %} · {{ refund.providerRefundId }}{% endif %}</p>{% endfor %}
+      <ul class="staff-lines">
+        {% for item in order.items.all %}
+          <li>
+            <span><b>{{ item.name|default:item.product.name }}</b><small>{% if item.kind == 'package' %}Package · {{ item|package_status }}{% else %}Extra service{% endif %}{% if item.listing %} · {% if user|can_view_listing:item.listing %}<a href="{% url 'listing_detail' item.listing.publicId %}">{% if item.listing.block %}Blk {{ item.listing.block }} {% endif %}{{ item.listing.town|title }}</a>{% else %}{% if item.listing.block %}Blk {{ item.listing.block }} {% endif %}{{ item.listing.town|title }}{% endif %}{% endif %}</small>
+            {% if item.deliveryNote or item.deliveryFile %}<small class="order-delivery">{% if item.deliveryFile %}<a href="{% url 'delivery_file' item.pk %}">{{ item.deliveryFileName }}</a> {% endif %}{{ item.deliveryNote }}</small>{% endif %}</span>
+            <b class="mono">${{ item.price|floatformat:2|intcomma }}</b>
+          </li>
+        {% endfor %}
+      </ul>
+      <dl class="facts plain order-sums">
+        <dt>Subtotal</dt>
+        <dd class="mono">${{ order.subtotal|floatformat:2|intcomma }}</dd>
+        <dt>GST</dt>
+        <dd class="mono">${{ order.gst|floatformat:2|intcomma }}</dd>
+        <dt>{% if order.status == 'refunded' %}Total refunded{% else %}Total paid{% endif %}</dt>
+        <dd class="mono"><b>${{ order.total|floatformat:2|intcomma }}</b></dd>
+      </dl>
+    </section>
+    <section class="panel order-next-panel">
+      <h2>{% if order.workActions %}Next step{% else %}Nothing to do{% endif %}</h2>
+      {% if order.guide %}
+        <ul class="order-guide">
+          {% for step in order.guide %}<li><b>{{ step.name }}</b>{{ step.text }}</li>{% endfor %}
+        </ul>
+      {% elif order.status == 'refunded' %}
+        <p class="muted">This order was refunded.</p>
+      {% elif order.hasServices %}
+        <p class="muted">Every service in this order is completed.</p>
+      {% else %}
+        <p class="muted">Packages start as soon as they are paid, so they can't be refunded.</p>
+      {% endif %}
+      {% if order.workActions or order.refundAsk %}
+        <div class="order-acts">
+          {% if order.workActions %}
+            <form method="post" action="{% url 'admin_order_status' order.pk %}" enctype="multipart/form-data" id="delivery" class="delivery-form">
+              {% csrf_token %}
+              <input type="hidden" name="back" value="{{ request.path }}">
+              {% if order.status == 'processing' %}
+                {% if deliveryProblem %}<p class="err" id="delivery-error" role="alert">{{ deliveryProblem }}</p>{% endif %}
+                {% for item in order.items.all %}{% if item.kind == 'addon' %}
+                  <label class="mini-field">Note for the seller: {{ item.name }}<textarea name="note-{{ item.pk }}" rows="3" maxlength="1000"{% if deliveryProblem %} aria-invalid="true" aria-describedby="delivery-error"{% endif %}>{{ item.deliveryNote }}</textarea></label>
+                  <label class="mini-field">File for the seller (PDF, ZIP, JPG or PNG)<input type="file" name="file-{{ item.pk }}" accept=".pdf,.zip,.jpg,.jpeg,.png"></label>
+                {% endif %}{% endfor %}
+              {% endif %}
+              {% if order.status == "processing" %}<p class="hint">Send delivery when the work is ready. The order completes when the seller confirms receipt, or 7 days after delivery.</p><button class="btn btn-brand btn-sm" name="status" value="delivered">Send delivery</button>{% endif %}
+              {% for act in order.workActions %}<button class="btn {% if order.status == "processing" %}btn-ghost{% else %}btn-brand{% endif %} btn-sm" name="status" value="{{ act.status }}">{{ act.label }}</button>{% endfor %}
+            </form>
+            <a class="btn btn-ghost btn-sm" href="{{ sellerMailto }}">Email {{ sellerFirstName }}</a>
+          {% endif %}
+          {% if order.refundAsk %}
+            <form method="post" action="{% url 'admin_order_status' order.pk %}" data-ask="{{ order.refundAsk }}" data-yes="Refund order" data-no="Keep the order">
+              {% csrf_token %}
+              <input type="hidden" name="back" value="{{ request.path }}">
+              <button class="btn btn-danger btn-sm" name="status" value="refunded">Refund</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+  <details class="fold">
+    <summary>Status history <span class="fold-hint">{{ history|length }} step{{ history|length|pluralize }}</span></summary>
+    <div class="fold-body">
+      <ol class="order-history">
+        {% for step in history %}<li><b>{{ step.what }}</b><small>{{ step.when|date:"j M, g:i" }}{{ step.when|date:"A"|lower }} · {{ step.who }}</small></li>{% endfor %}
+      </ol>
+      {% if unlogged %}
+        <p class="muted">It is now {{ order|order_label|lower }}. No earlier changes were recorded.</p>
+      {% endif %}
+    </div>
+  </details>
+{% endblock %}

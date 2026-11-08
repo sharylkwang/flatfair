@@ -1,0 +1,127 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}Review {% if r.flat.block %}Blk {{ r.flat.block }} {% endif %}{{ r.flat.town|title }} · FlatFair{% endblock %}
+{% load humanize estate_tags staff_tags %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_queue' %}{% if backQuery %}?{{ backQuery }}{% endif %}">{% include "storefront/ui_icon.html" with name="back" %}Review queue</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>{% if r.flat.block %}Blk {{ r.flat.block }} {% endif %}{{ r.flat.town|title }} {% if r.documentRequest %}{% staff_state "documents" r.documentRequest.status r.documentRequest.get_status_display %}{% else %}{% staff_state "hold" r.hold %}{% endif %}</h1>
+      <p class="staff-head-meta"><span class="mono">${{ r.flat.askingPrice|intcomma }}</span> · {{ r.flat.flatType|flat_label }} · waiting since {{ r.flat.reviewSince|default:r.flat.createdAt|date:"j M" }} · {% if r.flat.seller %}<a href="{% url 'admin_customer' r.flat.seller_id %}">{{ r.flat.seller.first_name|default:r.flat.seller.email }}</a>{% else %}unknown seller{% endif %}</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{% url 'admin_listing' r.flat.pk %}">View listing</a>
+  </div>
+  <div id="review-{{ r.flat.pk }}" class="staff-review">
+    <div class="staff-evidence">
+      {% if r.flat.risk is not None %}
+        <div class="risk-box risk-box--{{ r.flat.risk|risk_level }}">
+          <b>Risk score {{ r.flat.risk }} of 100 · {{ r.flat.risk|risk_level|capfirst }}</b>
+          {% if r.riskParts %}<ul>{% for words, points in r.riskParts %}<li>{{ words }} <span>+{{ points }}</span></li>{% endfor %}</ul>{% else %}<p>No warning signs from the price, photo or seller checks.</p>{% endif %}
+        </div>
+      {% endif %}
+      {% if r.reasons|length > 1 or r.reasons and r.hold != "price" %}
+        <div class="queue-why">
+          <b>Why it is waiting</b>
+          <ul>{% for reason in r.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+        </div>
+      {% endif %}
+      {% if r.doubtful %}
+        <div class="queue-photos" id="review-photos">
+          <h2>{{ r.doubtful|length }} photo{{ r.doubtful|length|pluralize }} to check</h2>
+          {% if r.stalePhotos %}<p class="photo-note">The photo check is out of date for {{ r.stalePhotos|length }} photo{{ r.stalePhotos|length|pluralize }}: {% for p in r.stalePhotos %}{{ p.get_room_display }}{% if not forloop.last %}, {% endif %}{% endfor %}. Look at {{ r.stalePhotos|length|pluralize:"it,each one" }}, then approve, ask the seller for new photos, or reject.</p>{% endif %}
+          <div class="photo-flags">
+            {% for p in r.doubtful %}
+              <div class="photo-flag">
+                <a href="{{ p.publicUrl }}" title="See the {{ p.get_room_display|lower }} photo larger">
+                  <img src="{{ p.publicUrl }}" alt="{{ p.get_room_display }} photo" loading="lazy">
+                  <small><b>{{ p.get_room_display }}</b>{{ p.staffNotes }}</small>
+                </a>
+                <form method="post" action="{% url 'admin_photo_decide' r.flat.pk p.pk %}" class="photo-decide">{% csrf_token %}<button class="btn btn-ghost btn-sm" name="action" value="keep">Keep <span class="visually-hidden">the {{ p.get_room_display|lower }} photo</span></button></form>
+                <form method="post" action="{% url 'admin_photo_decide' r.flat.pk p.pk %}" class="photo-decide" data-ask="Remove the {{ p.get_room_display|lower }} photo? We’ll tell the seller why." data-yes="Remove photo" data-no="Go back">{% csrf_token %}<input type="hidden" name="action" value="refuse"><label class="visually-hidden" for="why-{{ p.pk }}">Why remove the {{ p.get_room_display|lower }} photo</label><select id="why-{{ p.pk }}" name="reason" required><option value="">Why remove it?</option><option value="room">Shows a different room</option><option value="ai">Looks computer-made</option><option value="flat">Doesn’t show the flat</option><option value="quality">Too dark or blurry</option></select><button class="btn btn-danger-soft btn-sm">Remove</button></form>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      <div class="band-cell">
+        {% if r.est %}
+          <p class="band-cell-title">{% if r.flat.askingPrice > r.hi %}Asking price is higher than similar sales{% elif r.flat.askingPrice < r.lo %}Asking price is lower than similar sales{% else %}Asking price is within the price range{% endif %}{% if r.outsideAmount %} · {{ r.outsideAmount|short_money }} {{ r.outsideSide }} the range{% endif %}</p>
+          <div class="fair-evidence">
+            <div class="evidence-chart">
+              <div
+                class="band fair-band"
+                style="--lo:{{ r.pos.lo }}%;--hi:{{ r.pos.hi }}%;--est:{{ r.pos.est }}%;--asking:{{ r.pos.pos }}%"
+                role="img"
+                aria-label="Price range {{ r.lo|range_money }} to {{ r.hi|range_money }}. Estimated price {{ r.est|typical_price }}. Asking price ${{ r.flat.askingPrice|intcomma }}.">
+                <span class="evidence-pin evidence-pin--est" aria-hidden="true">Our estimate <b>{{ r.est|typical_price }}</b></span>
+                <div class="fair-track"><span class="fair-segment"></span><i class="fair-marker"></i><i class="asking-marker"></i></div>
+                <span class="evidence-pin evidence-pin--ask" aria-hidden="true">Asking price <b>${{ r.flat.askingPrice|intcomma }}</b></span>
+                <div class="fair-ticks" aria-hidden="true"><span>{{ r.lo|range_money }}</span><span>{{ r.hi|range_money }}</span></div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <p class="muted">No price check for this listing yet.</p>
+        {% endif %}
+      </div>
+      {% if r.lastAsk and not r.documentRequest %}
+        <p class="review-note">Documents requested {{ r.lastAsk.createdAt|date:"j M" }}: {{ r.lastAsk.reason }}</p>
+      {% endif %}
+      {% if r.documentRequest %}
+        <section class="review-note" aria-labelledby="documents-{{ r.documentRequest.pk }}">
+          <h2 id="documents-{{ r.documentRequest.pk }}">{{ r.documentRequest.get_status_display }}</h2>
+          <p>{{ r.documentRequest.message }}</p>
+          {% if r.documentRequest.staffReason %}<p>{{ r.documentRequest.staffReason }}</p>{% endif %}
+          <ul class="mini-list">{% for document in r.documentRequest.files.all %}<li><a href="{% url 'document_file' document.pk %}">{{ document.originalName }}</a> <small>{{ document.size|filesizeformat }}</small></li>{% endfor %}</ul>
+        </section>
+      {% endif %}
+    </div>
+    <form class="staff-decide" method="post" action="{% url 'admin_decide' r.flat.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="revision" value="{{ r.flat.revision }}">
+      <input type="hidden" name="status" value="{{ r.flat.status }}">
+      {% if r.documentRequest.status == "submitted" %}<input type="hidden" name="documentRequest" value="{{ r.documentRequest.pk }}"><input type="hidden" name="documentVersion" value="{{ r.documentRequest.updatedAt|date:"c" }}">{% endif %}
+      <input type="hidden" name="back" value="?{{ backQuery }}">
+      <h2>Decision</h2>
+      {% if r.verdict.key == 'typo' %}<span class="chip {{ r.verdict.tone }}"><span class="dot"></span>Price may be a typo</span>{% endif %}
+      {% if not r.flat.seller.is_active %}<span class="chip bad"><span class="dot"></span>Seller suspended. Reinstate them to approve.</span>{% endif %}
+      {% if r.manualPhotos %}
+        <label class="check-field"><input type="checkbox" name="manualPhotos"> I have looked at every photo; approve them manually</label>
+      {% endif %}
+      <label class="mini-field">Reason (the seller will see this)
+        <input name="reason" maxlength="200" required placeholder="Why, in a few words"{% if r.missingReason %} aria-invalid="true" aria-describedby="queue-{{ r.flat.pk }}-error"{% endif %}>
+        {% if r.missingReason %}<span class="err" id="queue-{{ r.flat.pk }}-error" role="alert">Add a reason first, then reject or ask for documents.</span>{% endif %}
+      </label>
+      <div class="actions">
+        <button hidden disabled></button>
+        {% if r.documentRequest.status == "submitted" %}
+          {% if r.flat.seller.is_active %}<button class="btn btn-brand btn-sm" name="decision" value="approved" formnovalidate>Accept documents and approve</button>{% else %}<a class="btn btn-brand btn-sm" href="{% url 'admin_customer' r.flat.seller_id %}">Review seller account</a>{% endif %}
+          <button class="btn btn-danger btn-sm" name="decision" value="rejected" data-ask="Reject these documents and ask the seller to upload again?" data-yes="Reject documents" data-no="Keep reviewing">Reject documents</button>
+        {% else %}
+          {% if not r.flat.seller.is_active %}
+            <a class="btn btn-brand btn-sm" href="{% url 'admin_customer' r.flat.seller_id %}">Review seller account</a>
+          {% elif not r.documentRequest or r.documentRequest.status == "accepted" %}
+            <button class="btn btn-brand btn-sm" name="decision" value="approved" formnovalidate>Approve</button>
+          {% else %}
+            <button class="btn btn-brand btn-sm" name="decision" value="documents">Ask for documents again</button>
+          {% endif %}
+          {% if not r.flat.seller.is_active or not r.documentRequest or r.documentRequest.status == "accepted" %}<button class="btn btn-ghost btn-sm" name="decision" value="documents">Ask for documents</button>{% endif %}
+          <button class="btn btn-danger btn-sm" name="decision" value="rejected" data-ask="Reject this listing? The seller will see your reason." data-yes="Reject listing" data-no="Keep reviewing">Reject listing</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+  <div class="staff-folds">
+    {% if not r.documentRequest %}
+      <details class="fold"><summary>What to ask for</summary><div class="fold-body">
+        <p class="queue-contact">Ask for {{ r.askFor }}. The seller can upload them from My listings.</p>
+        {% if r.mailto %}<p><a href="{{ r.mailto }}">Email the seller</a></p>{% endif %}
+      </div></details>
+    {% endif %}
+    {% if r.doubtful %}
+      <details class="fold"><summary>How to check photos</summary><div class="fold-body">
+        <p class="photo-guide">Look for warped lines, melted objects or text that makes no sense. Approving accepts every photo.</p>
+        {% if r.manualPhotos %}<p class="hint">Required to approve if automatic photo checks remain unavailable. Your review is recorded for this version of the listing.</p>{% endif %}
+      </div></details>
+    {% endif %}
+  </div>
+{% endblock %}

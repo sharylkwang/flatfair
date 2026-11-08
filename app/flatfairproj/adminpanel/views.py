@@ -41,6 +41,12 @@ from .forms import ProductForm, ContactForm, StaffForm, ReplyForm
 from .models import Decision, AuditLog, DocumentRequest, Ticket, TicketMessage
 
 WEEKS_SHOWN = 8
+priceBandEvalPath = TRAINING / "price_band_eval.json"
+
+ORDER_TYPES = [
+    ("service", "Extra services"),
+    ("package", "Packages only"),
+]
 REASONS = {
     "room": "it shows a different room",
     "ai": "it looks computer-made",
@@ -64,6 +70,64 @@ REPLY_CHOICES = [
         "We have made the requested update. Please check again and let us know if you still need help.",
     ),
 ]
+
+
+def plural(n, word):
+    if n == 1:
+        return f"{n} {word}"
+
+    return f"{n} {word}s"
+
+
+def joinWords(words):
+    words = list(words)
+
+    if len(words) <= 2:
+        return " and ".join(words)
+
+    return ", ".join(words[:-1]) + " and " + words[-1]
+
+
+def firstName(user):
+    return (user.first_name or user.email or user.username).split()[0]
+
+
+def mailto(email, subject, body=""):
+    link = f"mailto:{email}?subject={quote(subject)}"
+
+    if body:
+        link += f"&body={quote(body)}"
+
+    return link
+
+
+def dateRange(request):
+    dates = []
+    problem = ""
+
+    for key in ("from", "to"):
+        raw = request.GET.get(key, "")
+
+        try:
+            if raw:
+                value = parse_date(raw)
+            else:
+                value = None
+        except Exception as error:
+            value = None
+
+        if raw and value is None:
+            problem = "Those dates did not work. Pick dates from the calendar and try again."
+
+        dates.append(value)
+
+    start, end = dates
+
+    if start and end and start > end:
+        problem = "The start date must be on or before the end date. Showing every date instead."
+        start = end = None
+
+    return start, end, problem
 
 
 def page(request, template, context=None, section=None):
@@ -137,6 +201,40 @@ def audit(request, action, target, detail=""):
     AuditLog.objects.create(
         actor=request.user, action=action, target=target[:80], detail=detail[:200]
     )
+
+
+def flatWeeks(today):
+    monday = (today - timedelta(days=today.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+    first = monday - timedelta(weeks=WEEKS_SHOWN - 1)
+
+    rows = (
+        Listing.objects.filter(createdAt__gte=first)
+        .annotate(week=TruncWeek("createdAt"))
+        .values("week")
+        .annotate(count=Count("pk"))
+    )
+
+    counts = {}
+
+    for row in rows:
+        counts[row["week"].date()] = row["count"]
+
+    weeks = []
+
+    for number in range(WEEKS_SHOWN):
+        start = first + timedelta(weeks=number)
+
+        weeks.append({"label": start.strftime("%-d %b"), "count": counts.get(start.date(), 0)})
+
+    busiest = max(week["count"] for week in weeks) or 1
+
+    for week in weeks:
+        week["height"] = round(week["count"] / busiest * 100)
+
+    return weeks
 
 
 def nice_top(value):
@@ -253,6 +351,144 @@ def monthNums(now):
     }
 
 
+def itemSales():
+    rows = list(
+        OrderItem.objects.exclude(order__status="refunded")
+        .values("name", "kind")
+        .annotate(total=Sum("price"), sold=Count("id"))
+        .order_by("-total")
+    )
+
+    for row in rows:
+        row["width"] = round(row["total"] / rows[0]["total"] * 100) if rows[0]["total"] else 0
+
+    return rows
+
+
+def idleActions(user):
+    idle = []
+
+    for urlName, label, words in (
+        ("admin_customers", "Find a customer", "look up a customer"),
+        ("admin_orders", "View orders", "look through past orders"),
+        ("admin_catalogue", "Open catalogue", "check the catalogue"),
+    ):
+        if canOpen(user, urlName) and len(idle) < 2:
+            idle.append({"url": reverse(urlName), "label": label, "words": words})
+
+    if len(idle) == 2:
+        return (
+            idle,
+            f"Nothing waiting. You can {idle[0]['words']} or {idle[1]['words']}.",
+        )
+
+    if idle:
+        return idle, f"Nothing waiting. You can {idle[0]['words']}."
+
+    return idle, "Nothing waiting."
+
+
+def hotTasks(waiting):
+    from adminpanel.orders import refundQ, todoQ
+    from storefront.deals import stuckDeals
+
+    now = timezone.now()
+
+    queries = [
+        Listing.objects.filter(status="review"),
+        Order.objects.filter(todoQ()).distinct(),
+        Order.objects.filter(refundQ()).distinct(),
+        Ticket.objects.exclude(status="resolved"),
+        Post.objects.filter(hidden=False, reports__resolved=False).distinct(),
+        Review.objects.filter(createdAt__gte=now - timedelta(days=30)),
+        stuckDeals(),
+    ]
+
+    details = [
+        (
+            "home",
+            "Review queue",
+            "Check the oldest waiting flat first.",
+            "admin_queue",
+            "",
+            "Open review queue",
+        ),
+        (
+            "receipt",
+            "Orders to act on",
+            "Start or finish a seller’s service.",
+            "admin_orders",
+            "?status=needs",
+            "Check orders",
+        ),
+        (
+            "receipt",
+            "Refunds waiting",
+            "Check requests and refund eligible orders.",
+            "admin_orders",
+            "?status=needs&refunds=1",
+            "Check refunds",
+        ),
+        (
+            "support",
+            "Open tickets",
+            "Read the customer’s message and reply.",
+            "admin_tickets",
+            "",
+            "Reply to tickets",
+        ),
+        (
+            "chat",
+            "Reported posts",
+            "Check posts reported by the community.",
+            "admin_community",
+            "",
+            "Check posts",
+        ),
+        (
+            "star",
+            "New reviews",
+            "Read feedback received in the last 30 days.",
+            "admin_reviews",
+            "?days=30",
+            "Read reviews",
+        ),
+        (
+            "offer",
+            "Stuck deals",
+            "A step is more than 3 days late. Check in with the buyer and seller.",
+            "admin_deals",
+            "?tab=stuck",
+            "Check deals",
+        ),
+    ]
+
+    actions = []
+
+    for rank, (query, detail) in enumerate(zip(queries, details)):
+        icon, title, text, urlName, queryString, label = detail
+
+        oldest = query.order_by("createdAt", "pk").values_list("createdAt", flat=True).first()
+
+        actions.append(
+            {
+                "icon": icon,
+                "title": title,
+                "text": text,
+                "count": query.count(),
+                "url": reverse(urlName) + queryString,
+                "label": label,
+                "oldest": oldest or now,
+                "priority": rank,
+                "flat": waiting[0] if rank == 0 and waiting else None,
+            }
+        )
+
+    actions.sort(key=lambda action: (-action["count"], action["oldest"], action["priority"]))
+
+    return {"startActions": actions[:3], "alsoWaiting": actions[3:]}
+
+
 def todoActions(tasks, paymentCount):
     todo = [action for action in tasks["startActions"] + tasks["alsoWaiting"] if action["count"]]
 
@@ -271,6 +507,23 @@ def todoActions(tasks, paymentCount):
     return todo
 
 
+def mainAction(canQueue, canTickets, attention):
+    if canQueue:
+        urlName, label = "admin_queue", "Open review queue"
+    elif canTickets:
+        urlName, label = "admin_tickets", "Open tickets"
+    else:
+        urlName, label = "admin_orders", "View orders"
+
+    url = reverse(urlName)
+
+    if any(row["url"].split("?")[0] == url for row in attention):
+        url = None
+
+    return url, label
+
+
+# Show the admin dashboard
 @staffPage("admin_overview")
 def overview(request):
     from adminpanel.moderation import addHolds, queueSets
@@ -494,6 +747,9 @@ STALE_PHOTO = "This photo check is out of date and must be rerun before publicat
 
 
 # Save a listing decision
+
+
+DELIVERY_TYPES = {**DOCUMENT_TYPES, ".zip": ("application/zip", b"PK", None)}
 
 
 def findUsers(request):
@@ -876,6 +1132,16 @@ def staff(request):
     return page(request, "adminpanel/staff.html", context)
 
 
+def lockStaff(user):
+    if connection.vendor == "sqlite":
+        Group.objects.filter(name="Admin").update(name=F("name"))
+
+    Group.objects.get_or_create(name="Admin")
+    Group.objects.select_for_update().get(name="Admin")
+
+    return User.objects.filter(pk=user.pk, is_staff=True, is_active=True).exists()
+
+
 @staffPage("admin_staff")
 @transaction.atomic
 def staff_drop(request, pk):
@@ -911,6 +1177,103 @@ def staff_drop(request, pk):
         messages.success(request, f"{member.first_name} no longer has staff access.")
 
     return redirect("admin_staff")
+
+
+@staffPage("admin_overview")
+def account(request):
+    from adminpanel.reports import auditRows
+
+    form = ChangePasswordForm(request.user, request.POST or None)
+    form.fields["new_password2"].label = "Type new password again"
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        update_session_auth_hash(request, form.user)
+        audit(request, "password changed", request.user.email)
+        tellChange(request, request.user)
+        messages.success(request, "Password changed.")
+
+        return redirect("admin_account")
+
+    context = {
+        "form": form,
+        "rules": PASSWORD_RULES,
+        "pages": menu(request.user),
+        "recent": auditRows(
+            list(AuditLog.objects.filter(actor=request.user).order_by("-createdAt")[:5])
+        ),
+    }
+
+    return page(request, "adminpanel/account.html", context)
+
+
+def priceFlagQ():
+    return (
+        Q(bandHigh__isnull=False, bandLow__isnull=False)
+        & ~Q(askingPrice=0)
+        & (Q(askingPrice__gt=F("bandHigh")) | Q(askingPrice__lt=F("bandLow") * (0.7)))
+    )
+
+
+def bandCheck():
+    try:
+        report = json.loads(priceBandEvalPath.read_text(encoding="utf-8"))
+
+        if report["schemaVersion"] != 1 or report["evaluationPeriod"] != {
+            "start": "2025-11",
+            "end": "2026-10",
+        }:
+            return None
+
+        overall, towns = report["overall"], report["byTown"]
+
+        if not isinstance(towns, dict) or not towns:
+            return None
+
+        shares = (
+            "servedCoverage",
+            "rawCoverage",
+            "flaggedShare",
+            "aboveShare",
+            "typoShare",
+        )
+
+        amounts = (
+            "meanWidthDollars",
+            "meanWidthPercent",
+            "mapePercent",
+            "medianAbsolutePercentError",
+        )
+
+        for summary in [overall, *towns.values()]:
+            if type(summary["count"]) is not int or summary["count"] <= 0:
+                return None
+
+            for key in (*shares, *amounts):
+                value = summary[key]
+
+                if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+                    return None
+
+                if key in shares and value > 1:
+                    return None
+
+        return {
+            **overall,
+            **{key: overall[key] * 100 for key in shares},
+            "worstTowns": [
+                {
+                    "town": town,
+                    "coverage": summary["servedCoverage"] * 100,
+                    "count": summary["count"],
+                }
+                for town, summary in sorted(
+                    towns.items(), key=lambda item: (item[1]["servedCoverage"], item[0])
+                )[:5]
+            ],
+        }
+    except Exception as error:
+        return None
 
 
 @staffPage("admin_price_model")

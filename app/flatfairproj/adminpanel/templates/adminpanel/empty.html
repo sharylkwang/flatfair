@@ -1,0 +1,5 @@
+<div class="staff-empty">
+  <span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name=icon|default:"check" %}</span>
+  <h2>{{ text }}</h2>
+  {% if action_url %}<a class="btn btn-ghost btn-sm" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+</div>

@@ -1,0 +1,53 @@
+{% extends "adminpanel/admin_base.html" %}
+{% block title %}Payments needing attention · FlatFair{% endblock %}
+{% load staff_tags %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_orders' %}">{% include "storefront/ui_icon.html" with name="back" %}Back to orders</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>Payments needing attention</h1>
+      <p class="staff-head-meta">{{ rows.paginator.count }} payment{{ rows.paginator.count|pluralize }} where the money and the order don’t match, oldest first</p>
+    </div>
+  </div>
+  <div class="staff-rows">
+  {% for payment in rows %}
+    <section class="staff-payment" id="payment-{{ payment.pk }}">
+      <div class="staff-payment-main">
+        <h2>Payment #{{ payment.pk }} {% staff_state "payment" payment.status payment.get_status_display %}</h2>
+        <p><b class="mono">${{ payment.amount|floatformat:2 }} {{ payment.currency|upper }}</b> · {{ payment.seller.get_full_name|default:payment.seller.email }} · {{ payment.seller.email }} · started {{ payment.createdAt|timesince }} ago</p>
+        <ul class="pay-items">{% for group in payment.snapshot.groups %}{% for item in group.items %}<li>{{ item.name }} <span>{% if item.kind == "package" %}Package{% if item.durationDays %}, {{ item.durationDays }} days{% endif %}{% else %}Extra service{% endif %} · ${{ item.price }}</span></li>{% endfor %}{% endfor %}</ul>
+        <div class="pay-guide">
+          {% if payment.status == "pending" %}
+            <p><b>What happened</b> The customer opened the Stripe payment page but hasn’t paid. Stripe last said: {{ payment.snapshot.providerStatus|default:"not checked yet" }}.</p>
+            <p><b>What to do</b> Press <i>Check with Stripe</i> first. If they paid, we create their order. If they still haven’t paid, press <i>Close as unpaid</i> so the checkout can’t be paid later. No money is taken either way.</p>
+          {% elif payment.status == "paid" and not payment.hasOrders %}
+            <p><b>What happened</b> Stripe took the money, but we couldn’t create the order{% if payment.snapshot.attentionReason %}: {{ payment.snapshot.attentionReason }}{% else %}.{% endif %}</p>
+            <p><b>What to do</b> Press <i>Create order</i>. If it still can’t be placed, for example because the flat is no longer live, press <i>Refund payment without an order</i> to give the money back.</p>
+          {% else %}
+            <p><b>What happened</b> {{ payment.snapshot.attentionReason|default:"This payment needs a check." }}</p>
+            <p><b>What to do</b> Press <i>Check with Stripe</i> to bring it up to date.</p>
+          {% endif %}
+        </div>
+        {% for refund in payment.refunds.all %}<p>Refund #{{ refund.pk }}: {{ refund.get_status_display }}{% if refund.providerRefundId %} · {{ refund.providerRefundId }}{% endif %}</p>{% endfor %}
+      </div>
+      <form method="post" action="{% url 'admin_payment_action' payment.pk %}">
+        {% csrf_token %}
+        {% if payment.status == "paid" %}
+          <button class="btn btn-brand btn-sm" name="action" value="place">Create order</button>
+        {% endif %}
+        {% if payment.method == "stripe" %}<button class="btn {% if payment.status == 'pending' %}btn-brand{% else %}btn-ghost{% endif %} btn-sm" name="action" value="check">Check with Stripe</button>{% endif %}
+        {% if payment.status == "pending" %}<button class="btn btn-ghost btn-sm" name="action" value="close" data-ask="Close this checkout as unpaid? The customer won’t be able to finish paying on it." data-yes="Close as unpaid" data-no="Keep it open">Close as unpaid</button>{% endif %}
+        {% if payment.status == "paid" and not payment.hasOrders %}<button class="btn btn-danger btn-sm" name="action" value="refund" data-ask="Refund this payment in full? No order has been created." data-yes="Refund payment" data-no="Keep the payment">Refund payment without an order</button>{% endif %}
+      </form>
+      <details class="fold"><summary>Stripe details</summary><div class="fold-body">
+        <p>Stripe session: {{ payment.providerSessionId|default:"None" }} · Stripe payment reference: {{ payment.paymentIntentId|default:"None" }}</p>
+        <p>Last status from Stripe: {{ payment.snapshot.providerStatus|default:"Not checked by staff" }}{% if payment.snapshot.providerCheckedAt %} · {{ payment.snapshot.providerCheckedAt }}{% endif %}</p>
+        <p>Listing: {{ payment.snapshot.listingPublicId|default:"No listing" }}</p>
+        {% for group in payment.snapshot.groups %}<p>Subtotal ${{ group.subtotal }} · GST ${{ group.gst }} · Total ${{ group.total }}</p>{% endfor %}
+      </div></details>
+    </section>
+  {% empty %}
+    {% url "admin_orders" as emptyUrl %}{% include "adminpanel/empty.html" with text="No payments need attention." action_url=emptyUrl action_label="See orders" %}
+  {% endfor %}
+  </div>
+{% endblock %}

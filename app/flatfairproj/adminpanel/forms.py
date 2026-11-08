@@ -1,3 +1,5 @@
+from storefront.forms import ErrorAttrsMixin
+
 from types import SimpleNamespace
 from django import forms
 from django.contrib.auth.models import User
@@ -15,6 +17,18 @@ from sellerpanel.plans import packIssue
 from storefront.presentation import tierOf
 from storefront.valuation import FLAT_MODELS
 from .models import Ticket
+
+PACKAGE_TYPES = {
+    "Boost 30 days": "Shows above free listings in search, with a Sponsored tag.",
+    "Boost 90 days": "Shows above Boost 30 days flats in search, with a Sponsored tag.",
+    "Top spot": "Shows first in search and on the home page, with a Sponsored tag.",
+}
+EMAIL_ATTRS = {
+    "autocomplete": "email",
+    "autocapitalize": "off",
+    "spellcheck": "false",
+}
+
 
 class ProductForm(forms.ModelForm):
     price = forms.IntegerField(
@@ -128,6 +142,63 @@ class ProductForm(forms.ModelForm):
         return data
 
 
+class ListingDetailsForm(ErrorAttrsMixin, ListingValidationMixin, forms.ModelForm):
+    revision = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initial["revision"] = self.instance.revision
+
+    askingPrice = forms.IntegerField(
+        label="Asking price ($)",
+        min_value=50000,
+        max_value=3000000,
+        error_messages={
+            "required": PRICE_ERROR,
+            "invalid": PRICE_ERROR,
+            "min_value": PRICE_ERROR,
+            "max_value": PRICE_ERROR,
+        },
+        widget=forms.NumberInput(attrs={"inputmode": "numeric", "autocomplete": "off"}),
+    )
+    floorAreaSqm = forms.FloatField(
+        label="Size (sqm)",
+        min_value=25,
+        max_value=300,
+        error_messages={
+            "required": SIZE_ERROR,
+            "invalid": SIZE_ERROR,
+            "min_value": SIZE_ERROR,
+            "max_value": SIZE_ERROR,
+        },
+        widget=forms.NumberInput(attrs={"inputmode": "decimal"}),
+    )
+    storey = forms.IntegerField(
+        label="Floor level",
+        min_value=1,
+        max_value=50,
+        error_messages={
+            "required": FLOOR_ERROR,
+            "invalid": FLOOR_ERROR,
+            "min_value": FLOOR_ERROR,
+            "max_value": FLOOR_ERROR,
+        },
+        widget=forms.NumberInput(attrs={"inputmode": "numeric"}),
+    )
+    flatModel = forms.ChoiceField(
+        label="Flat model",
+        choices=[(flat_model, flat_model) for flat_model in FLAT_MODELS],
+        error_messages={
+            "required": "Choose a flat model.",
+            "invalid_choice": "Choose a flat model from the list.",
+        },
+    )
+
+    class Meta:
+        model = Listing
+        fields = ["askingPrice", "floorAreaSqm", "storey", "flatModel"]
+
+
 class ContactForm(forms.ModelForm):
     email = NormalizedEmailField(
         required=True, max_length=150, widget=forms.EmailInput(attrs=EMAIL_ATTRS)
@@ -206,3 +277,118 @@ class StaffForm(forms.Form):
         return data
 
 
+class TicketForm(ErrorAttrsMixin, forms.ModelForm):
+    order = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    class Meta:
+        model = Ticket
+        fields = ["email", "topic", "message"]
+        labels = {
+            "email": "Your email",
+            "topic": "What it is about",
+            "message": "Your message",
+        }
+        widgets = {
+            "email": forms.EmailInput(attrs=EMAIL_ATTRS),
+            "message": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "maxlength": 2000,
+                    "placeholder": "The flat’s block and town, what you expected, and what you saw",
+                }
+            ),
+        }
+        error_messages = {
+            "email": {
+                "required": "Enter your email so we can reply.",
+                "invalid": EMAIL_INVALID,
+                "max_length": "That email is too long. Please use a shorter one.",
+            },
+            "topic": {
+                "required": "Choose what your message is about.",
+                "invalid_choice": "Choose a topic from the list.",
+            },
+            "message": {
+                "required": "Write your message.",
+                "max_length": "Keep your message to 2,000 characters or fewer.",
+            },
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if "message" in self.data:
+            self.data = self.data.copy()
+            self.data["message"] = self.data["message"].replace("\r\n", "\n")
+
+        self.user = None
+
+        if user is not None and user.is_authenticated:
+            self.user = user
+
+        self.fields["topic"].choices = [("", "Choose a topic")] + Ticket.TOPICS
+
+        if self.user:
+            del self.fields["email"]
+        else:
+            del self.fields["order"]
+
+    def linkedOrder(self):
+        if "order" not in self.fields:
+            return None
+
+        try:
+            orderId = object_id(self["order"].value())
+        except Exception as error:
+            return None
+
+        return Order.objects.filter(pk=orderId, seller=self.user).first()
+
+    def clean_order(self):
+        return self.linkedOrder()
+
+    def clean(self):
+        data = super().clean()
+        order = data.get("order")
+
+        if data.get("topic") == "refund" and order and not order.canRefund():
+            self.add_error(
+                "topic",
+                (
+                    "This order can't be refunded. Packages start as soon as you pay, and a service can only be refunded before our team starts it."
+                ),
+            )
+
+        return data
+
+    def save(self, commit=True):
+        ticket = super().save(commit=False)
+
+        if self.user:
+            ticket.customer = self.user
+            ticket.email = self.user.email or self.user.username
+            ticket.order = self.cleaned_data.get("order")
+
+        if commit:
+            ticket.save()
+
+        return ticket
+
+
+class ReplyForm(ErrorAttrsMixin, forms.Form):
+    body = forms.CharField(
+        label="Your reply",
+        max_length=2000,
+        error_messages={
+            "required": "Write your reply first.",
+            "max_length": "Keep your reply to 2,000 characters or fewer.",
+        },
+        widget=forms.Textarea(attrs={"rows": 4, "maxlength": 2000}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if "body" in self.data:
+            self.data = self.data.copy()
+            self.data["body"] = self.data["body"].replace("\r\n", "\n")

@@ -1,0 +1,29 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load staff_tags %}
+{% block title %}Review #{{ r.pk }} · FlatFair{% endblock %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_reviews' %}{% if low or recent %}?{% if low %}rating=low{% endif %}{% if low and recent %}&amp;{% endif %}{% if recent %}days=30{% endif %}{% endif %}">{% include "storefront/ui_icon.html" with name="back" %}Reviews</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>{{ r.orderItem.name|default:r.orderItem.product.name }} {% if r.hidden %}{% staff_state "shop" False %}{% else %}{% staff_state "shop" True %}{% endif %}</h1>
+      <p class="staff-head-meta"><span class="staff-review-stars{% if r.rating <= lowRating %} is-low{% endif %}">{{ r.rating }} out of 5</span> · {% if user|can_open:'admin_customers' %}<a href="{% url 'admin_customer' r.seller_id %}">{{ r.firstName }}</a>{% else %}{{ r.firstName }}{% endif %} · {{ r.createdAt|date:'j M Y' }} · {% if user|can_open:'admin_orders' %}<a href="{% url 'admin_order' r.orderItem.order_id %}">Order #{{ r.orderItem.order_id }}</a>{% else %}Order #{{ r.orderItem.order_id }}{% endif %}</p>
+    </div>
+  </div>
+  <p class="staff-item-text staff-review-comment">{{ r.comment|default:"No comment." }}</p>
+  <section class="staff-acts" aria-labelledby="review-shop">
+    {% if r.hidden %}
+      <h2 id="review-shop">Hidden from the Packages page</h2>
+      <form method="post" action="{% url 'admin_review_visibility' r.pk %}">
+        {% csrf_token %}<input type="hidden" name="hide" value="0">{% if low %}<input type="hidden" name="rating" value="low">{% endif %}{% if recent %}<input type="hidden" name="days" value="30">{% endif %}
+        <button class="btn btn-brand btn-sm">Show review</button>
+      </form>
+    {% else %}
+      <h2 id="review-shop">Hide from the Packages page</h2>
+      <form method="post" action="{% url 'admin_review_visibility' r.pk %}">
+        {% csrf_token %}<input type="hidden" name="hide" value="1">{% if low %}<input type="hidden" name="rating" value="low">{% endif %}{% if recent %}<input type="hidden" name="days" value="30">{% endif %}
+        <label class="mini-field" for="review-reason-{{ r.pk }}">Reason for hiding<input id="review-reason-{{ r.pk }}" type="text" name="reason" maxlength="200" required></label>
+        <button class="btn btn-danger btn-sm">Hide review</button>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% block title %}My account · FlatFair{% endblock %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>My account</h1>
+      <p class="staff-head-meta">{{ staffRole|default:"Staff" }} · {{ user.get_full_name|default:user.email }} · {{ user.email|default:user.username }}</p>
+    </div>
+  </div>
+  <div class="split even">
+    <section class="panel staff-form">
+      <h2>Change password</h2>
+      <form method="post" class="row3">
+        {% csrf_token %}
+        {% for field in form %}
+        <label class="mini-field span2">{{ field.label }}{{ field }}
+          {% for e in field.errors %}<span class="field-hint staff-field-error">{{ e }}</span>{% endfor %}
+        </label>
+        {% if field.name == 'new_password1' %}<div class="span2">{% include 'accounts/password_rules.html' with input=field.id_for_label %}</div>{% endif %}
+      {% endfor %}
+        <div class="span2"><button class="btn btn-brand btn-sm">Change password</button></div>
+      </form>
+    </section>
+    <section class="staff-account-recent">
+      <h2>Your recent actions, newest first</h2>
+      <ul class="staff-lines">
+      {% for e in recent %}
+        <li><span><b>{{ e.actionLabel }} · {{ e.recordLabel }}</b><small>{{ e.createdAt|date:"j M, g:i" }}{{ e.createdAt|date:"A"|lower }}{% if e.detail %} · {{ e.detail|truncatechars:80 }}{% endif %}</small></span>{% if e.recordUrl %}<a class="btn btn-ghost btn-sm" href="{{ e.recordUrl }}">View record <span class="visually-hidden">{{ e.recordLabel }}</span></a>{% endif %}</li>
+      {% empty %}
+        <li class="staff-none">No account changes yet. <a href="{% url 'admin_overview' %}">See next steps</a></li>
+      {% endfor %}
+      </ul>
+      {% if recent %}<a class="btn btn-ghost btn-sm" href="{% url 'admin_audit' %}?actor={{ user.pk }}">See all in the audit log</a>{% endif %}
+    </section>
+  </div>
+  <details class="fold">
+    <summary>Pages you can open <span class="fold-hint">{{ pages|length }}</span></summary>
+    <div class="fold-body">
+      <p>{% for p in pages %}<a href="{% url p.page %}">{{ p.label }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+      <p class="muted">Every active admin can open all staff pages. Manage access on <a href="{% url 'admin_staff' %}">Admins</a>.</p>
+    </div>
+  </details>
+{% endblock %}

@@ -1,0 +1,1 @@
+{% load estate_tags humanize %}{{ l.flatType|flat_label }} · ${{ l.askingPrice|intcomma }} · since {{ l.reviewSince|default:l.createdAt|date:"j M" }}

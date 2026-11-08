@@ -1,0 +1,31 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load estate_tags %}
+{% block title %}Edit {% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} · FlatFair{% endblock %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_listing' flat.pk %}">{% include "storefront/ui_icon.html" with name="back" %}{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>Edit listing</h1>
+      <p class="staff-head-meta">{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} · {{ flat.flatType|flat_label }}</p>
+    </div>
+  </div>
+  <section class="panel staff-form">
+    <p class="muted">A new size, floor or flat model runs the price check again.</p>
+    <form method="post" class="row3">
+      {% csrf_token %}
+      <input type="hidden" name="returnQuery" value="{{ returnQuery }}">
+      <input type="hidden" name="next" value="page">
+      {{ form.revision }}
+      {% for error in form.non_field_errors %}<p class="span2" role="alert">{{ error }}</p>{% endfor %}
+      {% for field in form.visible_fields %}
+        <label class="mini-field">{{ field.label }}{{ field }}
+          {% for e in field.errors %}<span class="field-hint staff-field-error" id="id_{{ field.name }}_error">{{ e }}</span>{% endfor %}
+        </label>
+      {% endfor %}
+      <div class="span2 btn-pair">
+        <button class="btn btn-brand">Save</button>
+        <a class="btn btn-ghost" href="{% url 'admin_listing' flat.pk %}">Cancel</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

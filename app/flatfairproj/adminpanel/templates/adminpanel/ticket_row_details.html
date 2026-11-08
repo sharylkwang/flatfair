@@ -1,0 +1,8 @@
+{% load staff_tags %}
+<article class="staff-row ticket-line" id="ticket-{{ t.pk }}">
+  <div class="staff-row-main">
+    <h3>{{ t.message|truncatechars:90 }}</h3>
+    <p>#{{ t.pk }} · {{ t.get_topic_display }} · {{ t.createdAt|date:"j M, g:i" }}{{ t.createdAt|date:"A"|lower }} · {{ t.email }}{% if t.order %} · Order #{{ t.order.pk }}{% endif %}{% if t.replyCount %} · {{ t.replyCount }} repl{{ t.replyCount|pluralize:"y,ies" }} · {% if t.lastFromStaff %}waiting for the customer{% else %}customer replied last{% endif %}{% endif %}{% if t.assignee and t.status == 'resolved' %} · resolved by {% if t.assignee == user %}you{% else %}{{ t.assignee.first_name|default:t.assignee.email }}{% endif %}{% if t.resolvedAt %} · {{ t.resolvedAt|date:"j M" }}{% endif %}{% endif %}</p>
+  </div>
+  <a class="btn btn-ghost btn-sm" href="{% url 'admin_ticket' t.pk %}">Open ticket <span class="visually-hidden">{{ t.pk }}</span></a>
+</article>

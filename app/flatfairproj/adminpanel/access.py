@@ -8,6 +8,14 @@ from django.db.models import (
 from django.db.models.functions import Cast, Coalesce, Greatest, Least
 from django.shortcuts import render
 
+MENU_GROUPS = (
+    ("To do", ("admin_overview", "admin_queue", "admin_orders", "admin_tickets")),
+    (
+        "Customers",
+        ("admin_customers", "admin_deals", "admin_reviews", "admin_community"),
+    ),
+    ("Catalogue & settings", ("admin_listings", "admin_catalogue", "admin_staff")),
+)
 PAGES = {
     "admin_overview": ("Overview", "dashboard"),
     "admin_queue": ("Review queue", "check"),
@@ -34,6 +42,28 @@ def staffRole(user):
 
 def canOpen(user, page):
     return staffRole(user) == "Admin"
+
+
+def canSeeFlat(user, flat):
+    from storefront.models import Listing
+
+    if (user.is_authenticated and flat.seller_id == user.pk) or canOpen(user, "admin_queue"):
+        return True
+
+    if (
+        user.is_authenticated
+        and flat.status == "review"
+        and flat.offers.filter(buyer=user, status="accepted").exists()
+    ):
+        return True
+
+    if flat.status == "paused" and flat.seller_id and flat.seller.is_active:
+        return True
+
+    if hasattr(flat, "isPublic"):
+        return flat.isPublic
+
+    return Listing.objects.public().filter(pk=flat.pk).exists()
 
 
 def menu(user):

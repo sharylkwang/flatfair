@@ -12,6 +12,82 @@ from django.utils import timezone
 from adminpanel.views import audit, customerRoles, dateRange, findUsers, page, plural
 
 
+def labelFor(action):
+    if action == "export":
+        return "Downloaded a list"
+
+    return action.capitalize()
+
+
+def auditRows(entries):
+    export_names = {
+        "orders": "Order list (CSV)",
+        "customers": "Customer list (CSV)",
+        "listings": "Listing list (CSV)",
+    }
+
+    teamMail = set(User.objects.filter(is_staff=True).values_list("email", flat=True))
+
+    userIds = []
+    flatIds = []
+
+    for entry in entries:
+        match = re.match(r"(Order|Customer|Listing|Ticket) #(\d+)", entry.target)
+        entry.recordType = match.group(1) if match else ""
+        entry.recordId = int(match.group(2)) if match else None
+
+        if entry.recordType == "Customer":
+            userIds.append(entry.recordId)
+        elif entry.recordType == "Listing":
+            flatIds.append(entry.recordId)
+
+    names = dict(User.objects.filter(pk__in=userIds).values_list("pk", "first_name"))
+
+    linkIds = dict(Listing.objects.filter(pk__in=flatIds).values_list("pk", "publicId"))
+
+    for entry in entries:
+        entry.actionLabel = labelFor(entry.action)
+        entry.recordKind = ""
+        entry.recordLabel = entry.target
+        entry.recordUrl = ""
+        kind = entry.recordType
+        row_id = entry.recordId
+        named = entry.target.split("(", 1)[-1].rstrip(")")
+
+        if kind == "Order":
+            entry.recordKind = "Order"
+            entry.recordLabel = f"#{row_id}"
+            entry.recordUrl = reverse("admin_order", args=[row_id])
+        elif kind == "Customer":
+            entry.recordKind = "Customer"
+            entry.recordLabel = names.get(row_id) or named
+            entry.recordUrl = reverse("admin_customer", args=[row_id])
+        elif kind == "Listing":
+            entry.recordKind = "Listing"
+            entry.recordLabel = named
+
+            if row_id in linkIds:
+                entry.recordUrl = reverse("listing_detail", args=[linkIds[row_id]])
+        elif kind == "Ticket":
+            entry.recordKind = "Support message"
+            entry.recordLabel = f"#{row_id}"
+            entry.recordUrl = reverse("admin_ticket", args=[row_id])
+        elif entry.action == "export":
+            entry.recordLabel = export_names.get(entry.target, entry.target)
+        elif entry.action.startswith("product"):
+            entry.recordKind = "Product"
+            entry.recordUrl = reverse("admin_catalogue")
+        elif (
+            entry.target in teamMail
+            or entry.action.startswith("staff")
+            or entry.action == "password changed"
+        ):
+            entry.recordKind = "Staff"
+            entry.recordUrl = reverse("admin_staff")
+
+    return entries
+
+
 @staffPage("admin_audit")
 def audit_log(request):
     entries = AuditLog.objects.select_related("actor").order_by("-createdAt")
@@ -58,6 +134,25 @@ def audit_log(request):
     return page(request, "adminpanel/audit.html", context)
 
 
+def safeCell(value):
+    if not isinstance(value, str):
+        return value
+
+    start = 0
+
+    while start < len(value) and (value[start].isspace() or ord(value[start]) < 32):
+        start += 1
+
+    if (
+        value[start : start + 1] in ("=", "+", "-", "@")
+        or "\t" in value[:start]
+        or "\r" in value[:start]
+    ):
+        return "'" + value
+
+    return value
+
+
 def csvFile(name, header, rows):
     reply = HttpResponse(content_type="text/csv")
 
@@ -72,6 +167,36 @@ def csvFile(name, header, rows):
         writer.writerow([safeCell(value) for value in row])
 
     return reply
+
+
+def logExport(request, exportType, rowCount):
+    parts = []
+
+    for key in (
+        "status",
+        "role",
+        "state",
+        "type",
+        "from",
+        "to",
+        "town",
+        "above",
+        "seller",
+    ):
+        value = request.GET.get(key, "")
+
+        if value:
+            parts.append(f"{key} {value[:20]}")
+
+    if request.GET.get("q"):
+        parts.append("a search")
+
+    detail = plural(rowCount, "row") + ", no filters"
+
+    if parts:
+        detail = plural(rowCount, "row") + ", filtered by " + ", ".join(parts)
+
+    audit(request, "export", exportType, detail)
 
 
 @staffPage("admin_audit")

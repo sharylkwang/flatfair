@@ -1,0 +1,25 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load humanize %}
+{% block title %}Deals · FlatFair{% endblock %}
+{% block admin %}
+  <div class="staff-page-head">
+    <div>
+      <h1>Deals</h1>
+      <p class="staff-head-meta">Flats with an agreed price, from the Option to Purchase to completion. A deal is stuck when a step is more than {{ stuckDays }} days late.</p>
+    </div>
+  </div>
+  <nav class="activity-tabs" aria-label="Deal filters">{% for key, label, count in tabs %}<a href="?tab={{ key }}"{% if key == tab %} aria-current="page"{% endif %}>{{ label }} <span>{{ count }}</span></a>{% endfor %}</nav>
+  <section class="staff-rows" aria-label="Deals">
+    {% for row in rows %}
+      <article class="staff-row deal-line" id="deal-{{ row.deal.pk }}">
+        <div class="staff-row-main">
+          <h3>{% if row.deal.listing.block %}Blk {{ row.deal.listing.block }} {% endif %}{{ row.deal.listing.town|title }} · ${{ row.deal.price|intcomma }}</h3>
+          <p>{{ row.done }} of {{ row.total }} steps done{% if row.next %} · Next: {{ row.next }} ({{ row.nextWho|lower }}){% if row.dueOn %}, due {{ row.dueOn|date:'j M' }}{% endif %}{% endif %}{% if row.stuck %} · <b class="deal-late">Stuck</b>{% endif %} · Seller {{ row.deal.listing.seller.first_name|default:row.deal.listing.seller.email }} · Buyer {{ row.deal.buyer.first_name|default:row.deal.buyer.email }}</p>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="{% url 'deal_page' row.deal.pk %}">View deal <span class="visually-hidden">{{ row.deal.pk }}</span></a>
+      </article>
+    {% empty %}
+      {% url 'admin_deals' as dealsUrl %}{% include "adminpanel/empty.html" with text="No deals here." action_url=dealsUrl action_label="See deals in progress" %}
+    {% endfor %}
+  </section>
+{% endblock %}

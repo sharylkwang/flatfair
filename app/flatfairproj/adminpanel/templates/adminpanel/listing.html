@@ -1,0 +1,72 @@
+{% extends 'adminpanel/admin_base.html' %}
+{% load humanize estate_tags staff_tags %}
+{% block title %}{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} · Listing · FlatFair{% endblock %}
+{% block admin %}
+  <a class="staff-back" href="{% url 'admin_listings' %}{% if returnQuery %}?{{ returnQuery }}{% endif %}#listing-{{ flat.pk }}">{% include "storefront/ui_icon.html" with name="back" %}Listings</a>
+  <div class="staff-page-head">
+    <div>
+      <h1>{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} {% staff_state "listing" flat.status flat.get_status_display %}</h1>
+      <p class="staff-head-meta">{{ flat.flatType|flat_label }}{% if flat.postalCode %} · {{ flat.postalCode }}{% endif %} · listed {{ flat.createdAt|date:"j M Y" }} · {% if flat.seller %}<a href="{% url 'admin_customer' flat.seller.pk %}">{{ flat.seller.first_name|default:flat.seller.email }}</a>{% else %}no seller{% endif %}</p>
+    </div>
+    <div class="btn-pair">
+      {% if flat.status != 'sold' and flat.status != 'withdrawn' %}<a class="btn btn-ghost btn-sm" href="{% url 'admin_listing_edit' flat.pk %}">{% include "adminpanel/icon.html" with name="pencil" %}Edit</a>{% endif %}
+      {% if user|can_view_listing:flat %}<a class="btn btn-link btn-sm" href="{% url 'listing_detail' flat.publicId %}">See it as a buyer</a>{% endif %}
+    </div>
+  </div>
+  <div class="staff-item">
+    <div class="staff-item-photo">{% include "storefront/ui/thumbnail.html" %}</div>
+    <dl class="staff-figures">
+      <div><dt>Asking price</dt><dd>${{ flat.askingPrice|intcomma }}</dd></div>
+      <div><dt>Price range</dt><dd>{% if flat.bandLow and flat.bandHigh %}{{ flat.bandLow|range_money }} to {{ flat.bandHigh|range_money }}{% else %}—{% endif %} <small>Price check: {{ flat.priceCheck.label }}</small></dd></div>
+      <div><dt>Views</dt><dd>{{ flat.viewCount|intcomma }} <small>Package: {{ flat.packageName|default:"Free listing" }}</small></dd></div>
+    </dl>
+  </div>
+  {% if flat.status == 'sold' %}
+    <p class="muted">Sold. It cannot be changed.</p>
+  {% elif flat.status == 'paused' %}
+    <section class="staff-acts" aria-labelledby="listing-next">
+      <h2 id="listing-next">Paused by the seller</h2>
+      <p class="muted">Since {{ flat.pausedAt|date:"j M Y, g:i A" }} · {% if flat.pauseReason %}Reason: {{ flat.get_pauseReason_display }}{% else %}No reason given{% endif %}. It’s hidden from search, and buyers can’t make offers or book viewings. Existing offers and viewings stay.</p>
+    </section>
+  {% elif flat.status == 'withdrawn' %}
+    <section class="staff-acts" aria-labelledby="listing-next">
+      <h2 id="listing-next">Deleted by the seller</h2>
+      <p class="muted">On {{ flat.withdrawnAt|date:"j M Y, g:i A" }} · Reason: {{ flat.get_withdrawReason_display }}{% if flat.withdrawNote %}: “{{ flat.withdrawNote }}”{% endif %}. Its open offers and viewings were closed, and the buyers were told.</p>
+    </section>
+  {% elif flat.status == 'review' %}
+    <section class="staff-acts" aria-labelledby="listing-next">
+      <h2 id="listing-next">Waiting for review</h2>
+      <a class="btn btn-brand btn-sm" href="{% url 'admin_queue_item' flat.pk %}">Review listing</a>
+    </section>
+  {% else %}
+    <section class="staff-acts" aria-labelledby="listing-next">
+      <h2 id="listing-next">Change its status</h2>
+      {% if flat.status == 'hidden' and not flat.seller.is_active %}<p class="muted">Seller suspended. Reactivate them to put it back live.</p>{% endif %}
+      <div class="btn-pair">
+        {% if flat.status == 'hidden' and flat.seller.is_active %}
+          <form method="post" action="{% url 'admin_listing_action' flat.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="page">
+            <button class="btn btn-brand btn-sm" name="action" value="relist">Put back live</button>
+          </form>
+        {% endif %}
+        <form method="post" action="{% url 'admin_listing_action' flat.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="page">
+          <button class="btn btn-ghost btn-sm" name="action" value="review">Send for review</button>
+        </form>
+      </div>
+    </section>
+    {% if flat.status == 'live' %}
+      <section class="staff-acts staff-listings-down" aria-labelledby="listing-down">
+        <h2 id="listing-down">Take down</h2>
+        <form method="post" action="{% url 'admin_listing_action' flat.pk %}" data-ask="Take down this listing? Buyers can no longer see it." data-yes="Take down listing" data-no="Keep it live">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="page">
+          <label class="mini-field">Reason (the seller will see this)<textarea name="reason" rows="2" maxlength="200" required></textarea></label>
+          <button class="btn btn-danger btn-sm" name="action" value="takedown">Take down listing</button>
+        </form>
+      </section>
+    {% endif %}
+  {% endif %}
+{% endblock %}
