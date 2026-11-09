@@ -1,0 +1,1691 @@
+{
+  "note": "Photos are from Wikimedia Commons and Flickr. They were cropped and lightly colour-corrected and are used under the licences listed. Photos under a CC BY-SA licence remain under that licence.",
+  "photos": [
+    {
+      "file": "storefront/estate/fallback.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: other towns",
+      "town": "Ang Mo Kio",
+      "title": "AngMoKio",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:AngMoKio.JPG",
+      "author": "mailer_diablo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/estate/jurongwest.jpg",
+      "variants": [],
+      "usedOn": "Seller overview",
+      "town": "Jurong West",
+      "title": "HDB flats in Jurong West Central 2025",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_in_Jurong_West_Central_2025.JPG",
+      "author": "Brhb25",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/estate/sinming_card.jpg",
+      "variants": [
+        "storefront/estate/sinming_portrait.jpg",
+        "storefront/estate/sinming_portrait_720.jpg"
+      ],
+      "usedOn": "Home page",
+      "town": "Bishan",
+      "title": "Singapore HDB Apartment Block 506 Bishan (1)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Singapore_HDB_Apartment_Block_506_Bishan_(1).jpg",
+      "author": "MapStaringEnthusiast",
+      "licence": "CC0",
+      "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+    },
+    {
+      "file": "storefront/photos/cart.jpg",
+      "variants": [],
+      "usedOn": "Cart",
+      "town": "Kallang/Whampoa",
+      "title": "Block 461, Crawford Lane 08-11-2023",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_461,_Crawford_Lane_08-11-2023.jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/community-notifications.jpg",
+      "variants": [
+        "storefront/photos/community-notifications-960.jpg"
+      ],
+      "usedOn": "Notifications",
+      "town": "Ang Mo Kio",
+      "title": "Ang mo kio - panoramio",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ang_mo_kio_-_panoramio.jpg",
+      "author": "Qingwu Zhou (周庆武)",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/error-403.jpg",
+      "variants": [
+        "storefront/photos/error-403-960.jpg"
+      ],
+      "usedOn": "Private page (403)",
+      "town": "Woodlands",
+      "title": "SLRP Woodlands",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:SLRP_Woodlands.jpg",
+      "author": "CCL-DTL",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/error-404.jpg",
+      "variants": [
+        "storefront/photos/error-404-960.jpg"
+      ],
+      "usedOn": "Page not found (404)",
+      "town": "Punggol",
+      "title": "View from Pedestrian Bridge looking north on Punggol Way, near Matilda Portico",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:View_from_Pedestrian_Bridge_looking_north_on_Punggol_Way,_near_Matilda_Portico.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/error-500.jpg",
+      "variants": [
+        "storefront/photos/error-500-960.jpg"
+      ],
+      "usedOn": "Server error (500)",
+      "town": "Bukit Merah",
+      "title": "HDB flats along Boon Tiong Road with different colour schemes in August 2025",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_along_Boon_Tiong_Road_with_different_colour_schemes_in_August_2025.jpg",
+      "author": "Justanothersgwikieditor",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/forbidden.jpg",
+      "variants": [
+        "storefront/photos/forbidden-960.jpg"
+      ],
+      "usedOn": "Wrong account type page",
+      "town": "",
+      "title": "Void deck at an HDB flat",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Void_deck_at_an_HDB_flat.jpg",
+      "author": "ProjectManhattan",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/home-closing.jpg",
+      "variants": [
+        "storefront/photos/home-closing-960.jpg"
+      ],
+      "usedOn": "Home page, closing section",
+      "town": "",
+      "title": "Corridor at an HDB flat 1",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Corridor_at_an_HDB_flat_1.jpg",
+      "author": "ProjectManhattan",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/home-price.jpg",
+      "variants": [
+        "storefront/photos/home-price-960.jpg"
+      ],
+      "usedOn": "Home page, price check section",
+      "town": "Tampines",
+      "title": "PM5544HDBTampines 01",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:PM5544HDBTampines_01.jpg",
+      "author": "Mbssbs",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/listings.jpg",
+      "variants": [
+        "storefront/photos/listings-960.jpg"
+      ],
+      "usedOn": "Flats for sale",
+      "town": "Ang Mo Kio",
+      "title": "HDB in Ang Mo Kio",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_in_Ang_Mo_Kio.jpg",
+      "author": "Chuttersnap",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/offers.jpg",
+      "variants": [
+        "storefront/photos/offers-960.jpg"
+      ],
+      "usedOn": "Buyer offers and viewings",
+      "town": "",
+      "title": "Stone table for checkers",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Stone_table_for_checkers.jpg",
+      "author": "ProjectManhattan",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/receipt.jpg",
+      "variants": [
+        "storefront/photos/receipt-960.jpg"
+      ],
+      "usedOn": "Receipt",
+      "town": "Queenstown",
+      "title": "Blocks 48 and 49, Stirling Road, Singapore",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blocks_48_and_49,_Stirling_Road,_Singapore.jpg",
+      "author": "Seloloving",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/register.jpg",
+      "variants": [],
+      "usedOn": "Register",
+      "town": "",
+      "title": "Void deck on the ground floor of a Housing and Development Board flat, Singapore - 20051007",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Void_deck_on_the_ground_floor_of_a_Housing_and_Development_Board_flat,_Singapore_-_20051007.jpg",
+      "author": "mailer_diablo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/saved.jpg",
+      "variants": [],
+      "usedOn": "Saved and compare",
+      "town": "Queenstown",
+      "title": "Public Housing, Queenstown, Singapore (3403753551)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Public_Housing,_Queenstown,_Singapore_(3403753551).jpg",
+      "author": "yeowatzup",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/photos/sell.jpg",
+      "variants": [],
+      "usedOn": "List your flat",
+      "town": "Punggol",
+      "title": "Punggol Regalia HDB Development - 2022-05-08",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Punggol_Regalia_HDB_Development_-_2022-05-08.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/seller-listings.jpg",
+      "variants": [],
+      "usedOn": "My listings",
+      "town": "Bishan",
+      "title": "Bishan HDB apartment block 501",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bishan_HDB_apartment_block_501.jpg",
+      "author": "MapStaringEnthusiast",
+      "licence": "CC0",
+      "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+    },
+    {
+      "file": "storefront/photos/seller-orders.jpg",
+      "variants": [
+        "storefront/photos/seller-orders-960.jpg"
+      ],
+      "usedOn": "Seller orders",
+      "town": "Geylang",
+      "title": "HDB flats on the Sims Avenue, Eunos (2025) - img 01",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_on_the_Sims_Avenue,_Eunos_(2025)_-_img_01.jpg",
+      "author": "Chainwit",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "file": "storefront/photos/seller-viewings.jpg",
+      "variants": [
+        "storefront/photos/seller-viewings-960.jpg"
+      ],
+      "usedOn": "Seller offers and viewings",
+      "town": "Clementi",
+      "title": "HDB flats in West Coast",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_in_West_Coast.jpg",
+      "author": "Brhb25",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/signin.jpg",
+      "variants": [],
+      "usedOn": "Sign in",
+      "town": "",
+      "title": "Corridor at an HDB flat",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Corridor_at_an_HDB_flat.jpg",
+      "author": "ProjectManhattan",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/staff-account.jpg",
+      "variants": [],
+      "usedOn": "Admin account",
+      "town": "Ang Mo Kio",
+      "title": "Ang Mo Kio Court HDB housing project",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ang_Mo_Kio_Court_HDB_housing_project.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/staff-audit.jpg",
+      "variants": [
+        "storefront/photos/staff-audit-960.jpg"
+      ],
+      "usedOn": "Admin audit log",
+      "town": "Jurong West",
+      "title": "HDB flats at Boon Lay Place",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_at_Boon_Lay_Place.jpg",
+      "author": "Brhb25",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/staff-catalogue.jpg",
+      "variants": [
+        "storefront/photos/staff-catalogue-960.jpg"
+      ],
+      "usedOn": "Admin catalogue",
+      "town": "Geylang",
+      "title": "Circuitrd-mp",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Circuitrd-mp.JPG",
+      "author": "mailer_diablo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/staff-customer.jpg",
+      "variants": [],
+      "usedOn": "Admin customer page",
+      "town": "Choa Chu Kang",
+      "title": "Sunshine Gardens project",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sunshine_Gardens_project.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/staff-customers.jpg",
+      "variants": [],
+      "usedOn": "Admin customers",
+      "town": "Choa Chu Kang",
+      "title": "YewTee-Town-SG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:YewTee-Town-SG.JPG",
+      "author": "mailer_diablo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/staff-order.jpg",
+      "variants": [
+        "storefront/photos/staff-order-960.jpg"
+      ],
+      "usedOn": "Admin order page",
+      "town": "Queenstown",
+      "title": "HDBFlats-Queensway-Singapore-20090306",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDBFlats-Queensway-Singapore-20090306.jpg",
+      "author": "Kok Leng Yeo from Singapore",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/photos/staff-orders.jpg",
+      "variants": [
+        "storefront/photos/staff-orders-960.jpg"
+      ],
+      "usedOn": "Admin orders",
+      "town": "Woodlands",
+      "title": "Path leading down from Woodlands Town Park East, towards Marsiling Rise, Singapore",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Path_leading_down_from_Woodlands_Town_Park_East,_towards_Marsiling_Rise,_Singapore.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/staff-overview.jpg",
+      "variants": [],
+      "usedOn": "Admin overview",
+      "town": "Bukit Batok",
+      "title": "BukitBatok",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:BukitBatok.JPG",
+      "author": "mailer_diablo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/staff-price-model.jpg",
+      "variants": [],
+      "usedOn": "Admin price check accuracy",
+      "town": "Punggol",
+      "title": "Waterway Terrace I HDB flats photographed from the rooftop of Waterway Terrace II",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Waterway_Terrace_I_HDB_flats_photographed_from_the_rooftop_of_Waterway_Terrace_II.jpg",
+      "author": "Aatu Dorochenko",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/staff-product-add.jpg",
+      "variants": [
+        "storefront/photos/staff-product-add-960.jpg"
+      ],
+      "usedOn": "Admin add product",
+      "town": "Geylang",
+      "title": "Old Airport Road HDB Block 99",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Old_Airport_Road_HDB_Block_99.jpg",
+      "author": "Orderinchaos",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/staff-product.jpg",
+      "variants": [
+        "storefront/photos/staff-product-960.jpg"
+      ],
+      "usedOn": "Admin edit product",
+      "town": "Choa Chu Kang",
+      "title": "Teck Whye Lane",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Teck_Whye_Lane.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/staff-queue.jpg",
+      "variants": [],
+      "usedOn": "Admin moderation queue",
+      "town": "Bishan",
+      "title": "Bishan-SG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bishan-SG.JPG",
+      "author": "mailer_diablo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/staff-team.jpg",
+      "variants": [
+        "storefront/photos/staff-team-960.jpg"
+      ],
+      "usedOn": "Admin team",
+      "town": "Toa Payoh",
+      "title": "BLK 114 113 117",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:BLK_114_113_117.jpg",
+      "author": "Roy Zuo",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/staff-tickets.jpg",
+      "variants": [
+        "storefront/photos/staff-tickets-960.jpg"
+      ],
+      "usedOn": "Admin support tickets",
+      "town": "Yishun",
+      "title": "KhatibHDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:KhatibHDB.JPG",
+      "author": "mailer_diablo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/photos/support.jpg",
+      "variants": [
+        "storefront/photos/support-960.jpg"
+      ],
+      "usedOn": "Get help",
+      "town": "Ang Mo Kio",
+      "title": "Ang Mo Kio Street 31 - 2022-11-07",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ang_Mo_Kio_Street_31_-_2022-11-07.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/photos/valuation.jpg",
+      "variants": [
+        "storefront/photos/valuation-960.jpg"
+      ],
+      "usedOn": "Price check",
+      "town": "Ang Mo Kio",
+      "title": "Block 222 Ang Mo Kio Avenue 1 - 2022-11-07",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_222_Ang_Mo_Kio_Avenue_1_-_2022-11-07.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/ang-mo-kio-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Ang Mo Kio",
+      "town": "Ang Mo Kio",
+      "title": "Block 201 Ang Mo Kio Avenue 3",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_201_Ang_Mo_Kio_Avenue_3.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/ang-mo-kio-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Ang Mo Kio",
+      "town": "Ang Mo Kio",
+      "title": "Ang Mo Kio National Day - panoramio",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ang_Mo_Kio_National_Day_-_panoramio.jpg",
+      "author": "Qingwu Zhou (周庆武)",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/ang-mo-kio-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Ang Mo Kio",
+      "town": "Ang Mo Kio",
+      "title": "Block 317 Ang Mo Kio Street 31 - 2022-11-07",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_317_Ang_Mo_Kio_Street_31_-_2022-11-07.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/ang-mo-kio.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Ang Mo Kio",
+      "town": "Ang Mo Kio",
+      "title": "Blocks 313 and 314 Ang Mo Kio Street 31 - 2022-11-07",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blocks_313_and_314_Ang_Mo_Kio_Street_31_-_2022-11-07.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/bedok-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bedok",
+      "town": "Bedok",
+      "title": "Chai Chee Ansar",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chai_Chee_Ansar.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/bedok-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bedok",
+      "town": "Bedok",
+      "title": "Bedok HDB 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bedok_HDB_2.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/bedok-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bedok",
+      "town": "Bedok",
+      "title": "Bedok North HDB",
+      "sourceUrl": "https://www.flickr.com/photos/102748040@N03/49514243501",
+      "author": "Jnzl’s Photos",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/towns/bedok.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Bedok",
+      "town": "Bedok",
+      "title": "Bedok HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bedok_HDB.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/bishan-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bishan",
+      "town": "Bishan",
+      "title": "Singapore HDB Apartment Block 506 Bishan (2)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Singapore_HDB_Apartment_Block_506_Bishan_(2).jpg",
+      "author": "MapStaringEnthusiast",
+      "licence": "CC0",
+      "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+    },
+    {
+      "file": "storefront/towns/bishan-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bishan",
+      "town": "Bishan",
+      "title": "Natura Loft DBSS Bishan",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Natura_Loft_DBSS_Bishan.jpg",
+      "author": "CCL-DTL",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/bishan.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Bishan",
+      "town": "Bishan",
+      "title": "Bishan HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bishan_HDB.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/bukit-batok-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Batok",
+      "town": "Bukit Batok",
+      "title": "Housing and Development Board flats, Bukit Batok West Avenue 5, Singapore - 20050528",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Housing_and_Development_Board_flats,_Bukit_Batok_West_Avenue_5,_Singapore_-_20050528.jpg",
+      "author": "Huaiwei",
+      "licence": "CC BY-SA 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.5"
+    },
+    {
+      "file": "storefront/towns/bukit-batok-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Batok",
+      "town": "Bukit Batok",
+      "title": "Bukit Gombak",
+      "sourceUrl": "https://www.flickr.com/photos/83524507@N00/2222921446",
+      "author": "«Gaurav»",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/towns/bukit-batok.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Bukit Batok",
+      "town": "Bukit Batok",
+      "title": "Bukit Batok HDBs",
+      "sourceUrl": "https://www.flickr.com/photos/83524507@N00/2222138833",
+      "author": "«Gaurav»",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/towns/bukit-merah-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Merah",
+      "town": "Bukit Merah",
+      "title": "Redhill HDB new",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Redhill_HDB_new.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/bukit-merah-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Merah",
+      "town": "Bukit Merah",
+      "title": "HDB flats at Spooner Road, Singapore (15232092735)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_at_Spooner_Road,_Singapore_(15232092735).jpg",
+      "author": "Nicolas Lannuzel from Singapore, Singapore",
+      "licence": "CC BY-SA 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0"
+    },
+    {
+      "file": "storefront/towns/bukit-merah-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Merah",
+      "town": "Bukit Merah",
+      "title": "Lägenhetshus, Bukit Merah, Singapore",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:L%C3%A4genhetshus,_Bukit_Merah,_Singapore.jpg",
+      "author": "Johan Jönsson (Julle)",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/bukit-merah-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Merah",
+      "town": "Bukit Merah",
+      "title": "Block 9 at Redhill Close estate in Singapore",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_9_at_Redhill_Close_estate_in_Singapore.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/bukit-merah.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Bukit Merah",
+      "town": "Bukit Merah",
+      "title": "HDB flats at York Hill, Singapore (15030441057)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_at_York_Hill,_Singapore_(15030441057).jpg",
+      "author": "Nicolas Lannuzel from Singapore, Singapore",
+      "licence": "CC BY-SA 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0"
+    },
+    {
+      "file": "storefront/towns/bukit-panjang-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Panjang",
+      "town": "Bukit Panjang",
+      "title": "Bukit Panjang HDB 11",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bukit_Panjang_HDB_11.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/bukit-panjang-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Panjang",
+      "town": "Bukit Panjang",
+      "title": "Bukit Panjang HDB 6",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bukit_Panjang_HDB_6.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/bukit-panjang-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Panjang",
+      "town": "Bukit Panjang",
+      "title": "Bukit Panjang",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bukit_Panjang.jpg",
+      "author": "Img by Calvin Teo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by-sa/3.0/"
+    },
+    {
+      "file": "storefront/towns/bukit-panjang-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Panjang",
+      "town": "Bukit Panjang",
+      "title": "Bukit Panjang HDB 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bukit_Panjang_HDB_2.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/bukit-panjang-6.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Bukit Panjang",
+      "town": "Bukit Panjang",
+      "title": "Apartments - panoramio (6)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Apartments_-_panoramio_(6).jpg",
+      "author": "Nagono",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/bukit-panjang.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Bukit Panjang",
+      "town": "Bukit Panjang",
+      "title": "Apartments - panoramio (5)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Apartments_-_panoramio_(5).jpg",
+      "author": "Nagono",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/bukit-timah.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Bukit Timah",
+      "town": "Bukit Timah",
+      "title": "Blk 5, Farrer Road",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blk_5,_Farrer_Road.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/central-area-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Central Area",
+      "town": "Central Area",
+      "title": "Kreta Ayer HDB block",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kreta_Ayer_HDB_block.JPG",
+      "author": "Terence",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by-sa/3.0/"
+    },
+    {
+      "file": "storefront/towns/central-area-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Central Area",
+      "town": "Central Area",
+      "title": "Covent Garden, Singapore",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Covent_Garden,_Singapore.JPG",
+      "author": "Terence",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/central-area-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Central Area",
+      "town": "Central Area",
+      "title": "Upper Cross Street HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Upper_Cross_Street_HDB.jpg",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/central-area-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Central Area",
+      "town": "Central Area",
+      "title": "The Pinnacle@Duxton (I)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:The_Pinnacle@Duxton_(I).jpg",
+      "author": "Supanut Arunoprayote",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "file": "storefront/towns/central-area-6.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Central Area",
+      "town": "Central Area",
+      "title": "Kelantan Centre",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kelantan_Centre.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/central-area-7.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Central Area",
+      "town": "Central Area",
+      "title": "Kelantan Centre 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Kelantan_Centre_2.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/central-area.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Central Area",
+      "town": "Central Area",
+      "title": "Singapore The Pinnacle@Duxton 03",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Singapore_The_Pinnacle@Duxton_03.jpg",
+      "author": "Zairon",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/choa-chu-kang-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Choa Chu Kang",
+      "town": "Choa Chu Kang",
+      "title": "Block 108 Teck Whye Lane",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_108_Teck_Whye_Lane.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/choa-chu-kang-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Choa Chu Kang",
+      "town": "Choa Chu Kang",
+      "title": "Choa Chu Kang Avenue 4 02-12-2024",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Choa_Chu_Kang_Avenue_4_02-12-2024.jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/choa-chu-kang.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Choa Chu Kang",
+      "town": "Choa Chu Kang",
+      "title": "Choa Chu Kang HDB 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Choa_Chu_Kang_HDB_2.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/clementi-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Clementi",
+      "town": "Clementi",
+      "title": "Block 613 Clementi West Street 1, Singapore - 20070528",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_613_Clementi_West_Street_1,_Singapore_-_20070528.jpg",
+      "author": "Pabix",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "http://creativecommons.org/licenses/by-sa/3.0/"
+    },
+    {
+      "file": "storefront/towns/clementi-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Clementi",
+      "town": "Clementi",
+      "title": "Public Housing, Clementi, Singapore (3389044591)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Public_Housing,_Clementi,_Singapore_(3389044591).jpg",
+      "author": "yeowatzup",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/towns/clementi-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Clementi",
+      "town": "Clementi",
+      "title": "ClementiHDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:ClementiHDB.JPG",
+      "author": "mailer_diablo",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/clementi.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Clementi",
+      "town": "Clementi",
+      "title": "Clementi HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Clementi_HDB.JPG",
+      "author": "Terence",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/geylang-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Geylang",
+      "town": "Geylang",
+      "title": "HDB flats on the Sims Avenue, Eunos (2025) - img 05",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_on_the_Sims_Avenue,_Eunos_(2025)_-_img_05.jpg",
+      "author": "Chainwit",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "file": "storefront/towns/geylang-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Geylang",
+      "town": "Geylang",
+      "title": "HDB flats on the Sims Avenue, Eunos (2025) - img 02",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_on_the_Sims_Avenue,_Eunos_(2025)_-_img_02.jpg",
+      "author": "Chainwit",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "file": "storefront/towns/geylang.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Geylang",
+      "town": "Geylang",
+      "title": "HDB flats on the Sims Avenue, Eunos (2025) - img 09",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_on_the_Sims_Avenue,_Eunos_(2025)_-_img_09.jpg",
+      "author": "Chainwit",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "file": "storefront/towns/hougang-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Hougang",
+      "town": "Hougang",
+      "title": "Hougang HDB 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hougang_HDB_2.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/hougang-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Hougang",
+      "town": "Hougang",
+      "title": "Hougang HDB 4",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hougang_HDB_4.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/hougang-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Hougang",
+      "town": "Hougang",
+      "title": "Hougang HDB 5",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hougang_HDB_5.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/hougang-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Hougang",
+      "town": "Hougang",
+      "title": "HDB flats in Singapore at Lorong Ah Soo",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_in_Singapore_at_Lorong_Ah_Soo.jpg",
+      "author": "© ProjectManhattan / Wikimedia Commons",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/hougang-6.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Hougang",
+      "town": "Hougang",
+      "title": "Housing and Development Board flats along Lorong Ah Soo, Singapore - 20140212",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Housing_and_Development_Board_flats_along_Lorong_Ah_Soo,_Singapore_-_20140212.jpg",
+      "author": "© ProjectManhattan / Wikimedia Commons",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/hougang.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Hougang",
+      "town": "Hougang",
+      "title": "Hougang HDB 3",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hougang_HDB_3.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/jurong-east-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Jurong East",
+      "town": "Jurong East",
+      "title": "2012-07-07 Jurong East 09",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2012-07-07_Jurong_East_09.JPG",
+      "author": "Gareth Wyn Jones",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/jurong-east-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Jurong East",
+      "town": "Jurong East",
+      "title": "Unnamed playground near Block 301 HDB Jurong East - 2022-05-01",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Unnamed_playground_near_Block_301_HDB_Jurong_East_-_2022-05-01.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/jurong-east.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Jurong East",
+      "town": "Jurong East",
+      "title": "Jurong East HDBscape (8407109505)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Jurong_East_HDBscape_(8407109505).jpg",
+      "author": "Erwin Soo from Singapore, Singapore",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/towns/jurong-west-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Jurong West",
+      "town": "Jurong West",
+      "title": "Blocks 711 to 731 colour scheme, Jurong West Street 71, Singapore - 20101014",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blocks_711_to_731_colour_scheme,_Jurong_West_Street_71,_Singapore_-_20101014.jpg",
+      "author": "Allkayloh",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/jurong-west-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Jurong West",
+      "town": "Jurong West",
+      "title": "Blocks 810 to 832 colour scheme, Jurong West Street 81, Singapore - 20101014",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blocks_810_to_832_colour_scheme,_Jurong_West_Street_81,_Singapore_-_20101014.jpg",
+      "author": "Allkayloh",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/jurong-west-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Jurong West",
+      "town": "Jurong West",
+      "title": "Block 864 Jurong West St 81",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_864_Jurong_West_St_81.jpg",
+      "author": "BenTanXiaoMing",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/jurong-west-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Jurong West",
+      "town": "Jurong West",
+      "title": "Block 651A Jurong West Street 61 05-12-2024",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_651A_Jurong_West_Street_61_05-12-2024.jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/jurong-west-6.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Jurong West",
+      "town": "Jurong West",
+      "title": "Block 653C and 655B Jurong West Street 61 05-12-2024",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_653C_and_655B_Jurong_West_Street_61_05-12-2024.jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/jurong-west.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Jurong West",
+      "town": "Jurong West",
+      "title": "Blocks 859 to 866 colour scheme, Jurong West Street 81, Singapore - 20101014",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blocks_859_to_866_colour_scheme,_Jurong_West_Street_81,_Singapore_-_20101014.jpg",
+      "author": "Allkayloh",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/kallang-whampoa-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Kallang/Whampoa",
+      "town": "Kallang/Whampoa",
+      "title": "Block 462 Crawford Lane 11-11-2023",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_462_Crawford_Lane_11-11-2023.jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/kallang-whampoa-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Kallang/Whampoa",
+      "town": "Kallang/Whampoa",
+      "title": "Tronoh Road HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tronoh_Road_HDB.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/kallang-whampoa-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Kallang/Whampoa",
+      "town": "Kallang/Whampoa",
+      "title": "Crawford Court",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Crawford_Court.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/kallang-whampoa.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Kallang/Whampoa",
+      "town": "Kallang/Whampoa",
+      "title": "Block 12 Kampong Arang Road, July 2023",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_12_Kampong_Arang_Road,_July_2023.jpg",
+      "author": "David Chen",
+      "licence": "CC BY-SA 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.0"
+    },
+    {
+      "file": "storefront/towns/marine-parade-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Marine Parade",
+      "town": "Marine Parade",
+      "title": "Marine Parade HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Marine_Parade_HDB.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/marine-parade-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Marine Parade",
+      "town": "Marine Parade",
+      "title": "Block 57 Marine Terrace 01-12-2024",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_57_Marine_Terrace_01-12-2024.jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/marine-parade.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Marine Parade",
+      "town": "Marine Parade",
+      "title": "HDB, Marine Parade",
+      "sourceUrl": "https://www.flickr.com/photos/102748040@N03/28580434310",
+      "author": "Jnzl’s Photos",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/towns/pasir-ris-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Pasir Ris",
+      "town": "Pasir Ris",
+      "title": "Pasir Ris HDB 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pasir_Ris_HDB_2.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/pasir-ris-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Pasir Ris",
+      "town": "Pasir Ris",
+      "title": "Pasir Ris HDB 3",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pasir_Ris_HDB_3.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/pasir-ris-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Pasir Ris",
+      "town": "Pasir Ris",
+      "title": "Pasir Ris HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pasir_Ris_HDB.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/pasir-ris-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Pasir Ris",
+      "town": "Pasir Ris",
+      "title": "Pasir Ris HDB 5",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pasir_Ris_HDB_5.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/pasir-ris.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Pasir Ris",
+      "town": "Pasir Ris",
+      "title": "Pasir Ris HDB 8",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pasir_Ris_HDB_8.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/punggol-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Punggol",
+      "town": "Punggol",
+      "title": "Punggol Way 07-08-2025(2)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Punggol_Way_07-08-2025(2).jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/punggol-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Punggol",
+      "town": "Punggol",
+      "title": "Edgedale 10, Jan 06",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Edgedale_10,_Jan_06.JPG",
+      "author": "Sengkang~commonswiki",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/punggol-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Punggol",
+      "town": "Punggol",
+      "title": "Cove, Punggol Field",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cove,_Punggol_Field.JPG",
+      "author": "Deoma12",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/punggol-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Punggol",
+      "town": "Punggol",
+      "title": "Punggol Way 07-08-2025(4)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Punggol_Way_07-08-2025(4).jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/punggol-6.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Punggol",
+      "town": "Punggol",
+      "title": "Edgefield Plains 07-08-2025(3)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Edgefield_Plains_07-08-2025(3).jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/punggol.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Punggol",
+      "town": "Punggol",
+      "title": "Punggol HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Punggol_HDB.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/queenstown-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Queenstown",
+      "town": "Queenstown",
+      "title": "Blk 89, Commonwealth Drive",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blk_89,_Commonwealth_Drive.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/queenstown-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Queenstown",
+      "town": "Queenstown",
+      "title": "Block 45 Stirling Road, Singapore",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_45_Stirling_Road,_Singapore.jpg",
+      "author": "Seloloving",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/queenstown-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Queenstown",
+      "town": "Queenstown",
+      "title": "Public Housing, Queenstown, Singapore (3280611203)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Public_Housing,_Queenstown,_Singapore_(3280611203).jpg",
+      "author": "yeowatzup",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/towns/queenstown-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Queenstown",
+      "town": "Queenstown",
+      "title": "Ghim Moh Estate",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ghim_Moh_Estate.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/queenstown.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Queenstown",
+      "town": "Queenstown",
+      "title": "Queenstown HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Queenstown_HDB.jpg",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/sembawang-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Sembawang",
+      "town": "Sembawang",
+      "title": "HDB flats in Sembawang, Singapore - 20070516",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_in_Sembawang,_Singapore_-_20070516.jpg",
+      "author": "jimmyweee",
+      "licence": "CC BY 2.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.0"
+    },
+    {
+      "file": "storefront/towns/sembawang-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Sembawang",
+      "town": "Sembawang",
+      "title": "View of Sembawang MRT Station 202411 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:View_of_Sembawang_MRT_Station_202411_2.jpg",
+      "author": "Fanz226",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/sembawang.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Sembawang",
+      "town": "Sembawang",
+      "title": "Sembawang 202406 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sembawang_202406_2.jpg",
+      "author": "Fanz226",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/sengkang-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Sengkang",
+      "town": "Sengkang",
+      "title": "Rivervale 4",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rivervale_4.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/sengkang-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Sengkang",
+      "town": "Sengkang",
+      "title": "Rivervale 3",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rivervale_3.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/sengkang-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Sengkang",
+      "town": "Sengkang",
+      "title": "Compassvale HDB 3",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Compassvale_HDB_3.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/sengkang-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Sengkang",
+      "town": "Sengkang",
+      "title": "Rivervale 2",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rivervale_2.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/sengkang.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Sengkang",
+      "town": "Sengkang",
+      "title": "Compassvale HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Compassvale_HDB.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/serangoon-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Serangoon",
+      "town": "Serangoon",
+      "title": "HDB Flat at Serangoon, Singapore",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_Flat_at_Serangoon,_Singapore.jpg",
+      "author": "© ProjectManhattan / Wikimedia Commons",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/serangoon-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Serangoon",
+      "town": "Serangoon",
+      "title": "Serangoon North HDB",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Serangoon_North_HDB.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/serangoon-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Serangoon",
+      "town": "Serangoon",
+      "title": "HDB flats in Singapore at Lorong Lew Lian 1",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_in_Singapore_at_Lorong_Lew_Lian_1.jpg",
+      "author": "© ProjectManhattan / Wikimedia Commons",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/serangoon.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Serangoon",
+      "town": "Serangoon",
+      "title": "HDB flats in Singapore at Lorong Lew Lian",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_flats_in_Singapore_at_Lorong_Lew_Lian.jpg",
+      "author": "© ProjectManhattan / Wikimedia Commons",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/tampines-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Tampines",
+      "town": "Tampines",
+      "title": "PM5544HDBTampines 02",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:PM5544HDBTampines_02.jpg",
+      "author": "Mbssbs",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/tampines-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Tampines",
+      "town": "Tampines",
+      "title": "Tampines HDB 5",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tampines_HDB_5.jpg",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/tampines-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Tampines",
+      "town": "Tampines",
+      "title": "497A and 497D, Tampines Street 45 (2)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:497A_and_497D,_Tampines_Street_45_(2).jpg",
+      "author": "Whyiseverythingalreadyused",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/tampines-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Tampines",
+      "town": "Tampines",
+      "title": "(SGP-Singapore) Block 717 Tampines 2024-05-17",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:(SGP-Singapore)_Block_717_Tampines_2024-05-17.jpg",
+      "author": "S5A-0043",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "file": "storefront/towns/tampines-6.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Tampines",
+      "town": "Tampines",
+      "title": "Tampines HDB 7",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tampines_HDB_7.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/tampines-7.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Tampines",
+      "town": "Tampines",
+      "title": "Tampines HDB 10",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tampines_HDB_10.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/tampines.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Tampines",
+      "town": "Tampines",
+      "title": "HDB Blocks at 497 Tampines St 45, Singapore 1",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:HDB_Blocks_at_497_Tampines_St_45,_Singapore_1.jpg",
+      "author": "Yuqiao",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "file": "storefront/towns/toa-payoh-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Toa Payoh",
+      "town": "Toa Payoh",
+      "title": "Toa Payoh HDB 30",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Toa_Payoh_HDB_30.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/toa-payoh-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Toa Payoh",
+      "town": "Toa Payoh",
+      "title": "Toa Payoh HDB 10",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Toa_Payoh_HDB_10.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/toa-payoh-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Toa Payoh",
+      "town": "Toa Payoh",
+      "title": "Toa Payoh HDB 47",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Toa_Payoh_HDB_47.JPG",
+      "author": "Terence Ong",
+      "licence": "CC BY 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    {
+      "file": "storefront/towns/toa-payoh.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Toa Payoh",
+      "town": "Toa Payoh",
+      "title": "Block 142 HDB Potong Pasir",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_142_HDB_Potong_Pasir.jpg",
+      "author": "Aatu Dorochenko",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/woodlands-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Woodlands",
+      "town": "Woodlands",
+      "title": "Rumah Pangsa Block 10 HDB - Marsiling, Singapura (15 July '24)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rumah_Pangsa_Block_10_HDB_-_Marsiling,_Singapura_(15_July_%2724).jpg",
+      "author": "Firzafp",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0"
+    },
+    {
+      "file": "storefront/towns/woodlands-3.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Woodlands",
+      "town": "Woodlands",
+      "title": "Block 718 Woodlands Avenue 6 14-05-2024",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_718_Woodlands_Avenue_6_14-05-2024.jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/woodlands-4.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Woodlands",
+      "town": "Woodlands",
+      "title": "Marsiling 15-05-2024(1)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Marsiling_15-05-2024(1).jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/woodlands-5.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Woodlands",
+      "town": "Woodlands",
+      "title": "Marsiling 15-05-2024(2)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Marsiling_15-05-2024(2).jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/woodlands-6.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Woodlands",
+      "town": "Woodlands",
+      "title": "Block 840 Woodlands Street 82, Singapore",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_840_Woodlands_Street_82,_Singapore.jpg",
+      "author": "Slivester",
+      "licence": "CC BY-SA 2.5",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/2.5"
+    },
+    {
+      "file": "storefront/towns/woodlands.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Woodlands",
+      "town": "Woodlands",
+      "title": "Block 206 Marsiling Drive 15-05-2024",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Block_206_Marsiling_Drive_15-05-2024.jpg",
+      "author": "LN9267",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    {
+      "file": "storefront/towns/yishun-2.jpg",
+      "variants": [],
+      "usedOn": "Estate thumbnail: Yishun",
+      "town": "Yishun",
+      "title": "Yishun08",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Yishun08.JPG",
+      "author": "Genleorus",
+      "licence": "CC BY-SA 3.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    {
+      "file": "storefront/towns/yishun.jpg",
+      "variants": [],
+      "usedOn": "Flat page estate photo: Yishun",
+      "town": "Yishun",
+      "title": "Blocks 360, 359, and 398 Yishun Ring Road",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Blocks_360,_359,_and_398_Yishun_Ring_Road.jpg",
+      "author": "Wzhkevin",
+      "licence": "CC BY-SA 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    }
+  ]
+}
