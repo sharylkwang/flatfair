@@ -201,6 +201,20 @@ def hasRole(user, role):
     return bool(profile and {"buyer": profile.canBuy, "seller": profile.canSell}.get(role, False))
 
 
+def currentMode(request):
+    mode = getattr(request, "session", {}).get("marketplaceMode")
+
+    if hasRole(request.user, mode):
+        return mode
+
+    profile = getattr(request.user, "profile", None)
+
+    if profile and hasRole(request.user, profile.role):
+        return profile.role
+
+    return next((role for role in ("buyer", "seller") if hasRole(request.user, role)), None)
+
+
 def modeContext(request):
     mode = currentMode(request)
 

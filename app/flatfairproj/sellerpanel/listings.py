@@ -1091,6 +1091,7 @@ def update_price(request, publicId):
 
             return redirect(reverse("seller_listing", args=[flat.publicId]) + "#change-price")
 
+
         request.session["priceError"] = {
             "pk": flat.pk,
             "value": request.POST.get("askingPrice", "")[:12],
@@ -1098,6 +1099,7 @@ def update_price(request, publicId):
         }
 
         return backToFlat(request, flat, "-price")
+
 
     if request.POST.get("preview") == "1":
         return redirect(
@@ -1115,8 +1117,14 @@ def update_price(request, publicId):
     wasHeld = heldByCost(flat)
     priceOk = flat.status == "live" or wasHeld
     flat.askingPrice = newAsk
+
+
+
     flat.estimatedPrice = fair_cost
     flat.bandLow = low_cost
+
+
+
     flat.bandHigh = top_cost
     flat.modelVersion = VERSION
     sellState(flat, "price", bool(flag))

@@ -223,6 +223,10 @@ def audit(request, action, target, detail=""):
     )
 
 
+def user_tag(person):
+    return f"Customer #{person.pk} ({person.email})"
+
+
 def flatWeeks(today):
     monday = (today - timedelta(days=today.weekday())).replace(
         hour=0, minute=0, second=0, microsecond=0
@@ -833,6 +837,30 @@ STALE_PHOTO = "This photo check is out of date and must be rerun before publicat
 
 
 DELIVERY_TYPES = {**DOCUMENT_TYPES, ".zip": ("application/zip", b"PK", None)}
+
+
+def peopleCan(people):
+    return people.annotate(
+        isSeller=(
+            Exists(Profile.objects.filter(user_id=OuterRef("pk"), canSell=True))
+            | Exists(Listing.objects.filter(seller_id=OuterRef("pk")))
+            | Exists(Order.objects.filter(seller_id=OuterRef("pk")))
+        ),
+        isBuyer=(
+            Exists(Profile.objects.filter(user_id=OuterRef("pk"), canBuy=True))
+            | Exists(Offer.objects.filter(buyer_id=OuterRef("pk")))
+            | Exists(ViewingBooking.objects.filter(buyer_id=OuterRef("pk")))
+            | Exists(SavedListing.objects.filter(collection__user_id=OuterRef("pk")))
+        ),
+    )
+
+
+def customerRoles(person):
+    return ", ".join(
+        label
+        for enabled, label in ((person.isBuyer, "Buyer"), (person.isSeller, "Seller"))
+        if enabled
+    )
 
 
 def findUsers(request):
