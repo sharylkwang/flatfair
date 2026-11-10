@@ -229,6 +229,24 @@ def month_label(month):
         return month
 
 
+@register.simple_tag
+def band_coverage(percent=False, count=False):
+    try:
+        report = json.loads((TRAINING / "price_band_eval.json").read_text(encoding="utf-8"))
+
+        if count:
+            return report["overall"]["count"]
+
+        share = report["overall"]["servedCoverage"] * 100
+
+        if percent:
+            return round(share)
+
+        return round(share / 10)
+    except Exception as error:
+        return None
+
+
 @register.simple_tag(name="price_uncertainty")
 def priceUncertainty(town="", flatType=""):
     report = pastCheck()
@@ -437,6 +455,13 @@ def plan_caption(flat):
     return planTitle(flat)
 
 
+@register.simple_tag
+def townCover(town):
+    from storefront.interiors import townCover as cover
+
+    return cover(town)
+
+
 @register.filter
 def townTone(town):
     tones = ("sky", "mint", "periwinkle", "lilac", "good-soft", "warn-soft")
@@ -445,3 +470,8 @@ def townTone(town):
     return tones[int.from_bytes(digest[:4], "big") % len(tones)]
 
 
+@register.simple_tag
+def estatePhoto(flat):
+    from storefront.interiors import estatePic as photo
+
+    return photo(flat)

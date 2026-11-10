@@ -98,6 +98,27 @@ def decorate(listings):
     return listings
 
 
+def readyPics(flats):
+    flats = [flat for flat in flats if flat is not None]
+    loaded = {}
+
+    for flat in flats:
+        if hasattr(flat, "roomPhotos"):
+            flat_id = flat.pk
+            loaded[flat_id] = flat.roomPhotos
+
+    pending = []
+
+    for flat in flats:
+        if flat.pk in loaded:
+            flat.roomPhotos = loaded[flat.pk]
+        else:
+            pending.append(flat)
+
+    if pending:
+        prefetch_related_objects(pending, picsByRoom())
+
+
 def helloFor(user):
     hour = timezone.localtime().hour
     if hour < 12:
