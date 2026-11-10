@@ -1088,6 +1088,19 @@ details.panel > p {
   text-align: center;
 }
 .empty .btn { margin-top: 12px; }
+.btn-pair, .chips-row, .ticket-row-head, .hero-task-actions, .listing-actions,
+.offer-actions, .booking-row-actions, .lean-chips, .dashboard-flat-chips,
+.selling-steps-flats, .coll-tools, .closing-actions, .quick-actions,
+.card-flags, .card-badges,
+.applied-filters, .result-sort, .offer-meta, .booking-meta,
+.askbox, .past-offer p, .hero-followup, .qrow .actions,
+.receipt-actions, .receipt-actions .order-help, .slot-form, .booking-row,
+.table-actions, .filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
 .mini-field {
   display: grid;
   gap: 6px;
@@ -2067,6 +2080,26 @@ main .page-hero {
   gap: 20px;
 }
 .activity-saved-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.applied-filters > a {
+  align-items: center;
+  padding: 8px 14px;
+}
+.filter-chip {
+  display: inline-flex;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: var(--pill);
+  background: var(--periwinkle);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.filter-chip .ui-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
 .result-sort { font-size: var(--fs-sm); }
 .result-sort select {
   width: auto;

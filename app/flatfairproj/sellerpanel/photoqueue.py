@@ -145,6 +145,8 @@ def watchWork(process, token, gpu=None):
 
 def warmWorker():
     from django.conf import settings
+
+
     from .photocheck import isOn
 
     return settings.PHOTO_WORKER_ON and isOn() and ensureWorker(warm=True)

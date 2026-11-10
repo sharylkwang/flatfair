@@ -1470,6 +1470,7 @@ label:has(> .addr-list) { position: relative; }
 .result-title h1, .saved-head h1 { font-size: var(--fs-2xl); }
 .result-count { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .result-sort { margin: 0; }
+.result-head .applied-filters { flex: 1 1 100%; margin: 0; }
 .save-search { display: inline-flex; align-items: center; min-height: 44px; margin: 0; color: var(--primary-ink); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; }
 .save-search .btn { min-height: 44px; padding-inline: 14px; color: var(--primary-ink); font-weight: 600; }
 .save-search:hover, .save-search .btn:hover { text-decoration: underline; }

@@ -74,9 +74,10 @@ TOWN_CUTOFF = 0.75
 LEASE_CHOICES = [50, 60, 70, 80]
 
 
-def number(value, maximum=3000000, decimal=False):
+def number(value, maximum, decimal=False):
     try:
         value = float(value)
+
 
         if not isfinite(value) or not 0 < value <= maximum:
             return None
@@ -99,6 +100,7 @@ def costRange():
     if prices["lowest"] is None:
         return None, None
 
+
     return (
         prices["lowest"] // 10000 * 10000,
         (prices["highest"] + 9999) // 10000 * 10000,
@@ -110,43 +112,8 @@ def costCap():
 
 
 def roadWords(text):
-    street_words = {
-        "NORTH": "NTH",
-        "SOUTH": "STH",
-        "AVENUE": "AVE",
-        "ROAD": "RD",
-        "STREET": "ST",
-        "DRIVE": "DR",
-        "CENTRAL": "CTRL",
-        "CRESCENT": "CRES",
-        "PLACE": "PL",
-        "LORONG": "LOR",
-        "JALAN": "JLN",
-        "BUKIT": "BT",
-        "UPPER": "UPP",
-        "TANJONG": "TG",
-        "KAMPONG": "KG",
-        "GARDENS": "GDNS",
-        "TERRACE": "TER",
-        "HEIGHTS": "HTS",
-        "PARK": "PK",
-        "CLOSE": "CL",
-        "COMMONWEALTH": "C'WEALTH",
-    }
-    number_words = {
-        "ONE": "1",
-        "TWO": "2",
-        "THREE": "3",
-        "FOUR": "4",
-        "FIVE": "5",
-        "SIX": "6",
-        "SEVEN": "7",
-        "EIGHT": "8",
-        "NINE": "9",
-        "TEN": "10",
-        "ELEVEN": "11",
-        "TWELVE": "12",
-    }
+    street_words = searchData()["street_words"]
+    number_words = searchData()["number_words"]
 
     words = []
 
@@ -159,7 +126,6 @@ def roadWords(text):
     return " ".join(words)
 
 
-@file_cache(lambda: address.BLOCKS_JSON)
 def roadStarts():
     starts = set()
 
@@ -179,7 +145,7 @@ def town_words(text):
 def estate_of(text):
     name = " ".join(str(text or "").upper().split())
 
-    if name in ESTATES:
+    if name in searchData()["areas"]:
         return name
 
     return ""
@@ -191,7 +157,7 @@ def hintEstate(text):
     if len(name) < 3:
         return ""
 
-    for estate in ESTATES:
+    for estate in searchData()["areas"]:
         if estate.startswith(name):
             return estate
 
@@ -204,7 +170,8 @@ def knownTown(text):
     if name in TOWNS:
         return name
 
-    return SHORT_TOWNS.get(name, "")
+
+    return searchData()["towns"].get(name, "")
 
 
 def pullType(text):
@@ -224,7 +191,9 @@ def pullType(text):
 
 
 def money(digits, unit):
-    value = float(digits.replace(",", "")) * {"": 1, "K": 1000, "M": 1000000}[unit.upper()]
+    value = (
+        float(digits.replace(",", "")) * {"": 1, "K": 1000, "M": 1000000}[unit.upper()]
+    )
 
     if value > 99000000 or (not unit and value < 100000):
         return ""
@@ -242,6 +211,8 @@ def pullPrice(text):
 
         if not lowest or not highest:
             found = None
+
+
 
     if not found:
         found = PRICE_LIMIT.search(text)
@@ -269,7 +240,13 @@ def sectorName(text):
         if words.startswith(start):
             words = words[len(start) :]
 
-    return SECTOR_WORDS.get(words, "")
+    for region in REGIONS:
+        label = region.upper().replace("-", " ")
+
+        if words in (label, label.replace(" ", "")):
+            return region
+
+    return ""
 
 
 def hintSector(text):
@@ -278,9 +255,11 @@ def hintSector(text):
     if len(name) < 3:
         return ""
 
-    for words, sector in SECTOR_WORDS.items():
-        if words.startswith(name):
-            return sector
+    for region in REGIONS:
+        label = region.upper().replace("-", " ")
+
+        if label.startswith(name) or label.replace(" ", "").startswith(name):
+            return region
 
     return ""
 
@@ -305,7 +284,10 @@ def pullTown(text):
             if town:
                 return town, " ".join(rest), town_words(" ".join(part)) != town
 
-    close = get_close_matches(town_words(text), TOWNS + list(SHORT_TOWNS), n=1, cutoff=TOWN_CUTOFF)
+    close = get_close_matches(
+        town_words(text), TOWNS + list(searchData()["towns"]), n=1, cutoff=TOWN_CUTOFF
+    )
+
 
     if close:
         return knownTown(close[0]), "", True
@@ -319,6 +301,9 @@ def readSearch(text, withPlace=True):
     text = str(text or "").strip()[:60].strip()
     found["flatType"], text = pullType(text)
     found["minPrice"], found["maxPrice"], text = pullPrice(text)
+
+
+
     kept = " ".join(word for word in text.split() if word.lower() not in link_words)
 
     if kept or found["flatType"] or found["minPrice"] or found["maxPrice"]:
@@ -361,6 +346,7 @@ def hintSearch(text):
     if not place or not found["flatType"] or (found["town"] and found["q"]):
         return None
 
+
     kind = found["flatType"].replace(" ROOM", "-room").capitalize()
 
     return {
@@ -373,11 +359,12 @@ def hintSearch(text):
 def searchedEstate(filters):
     text = readSearch(filters.get("q"), False)["q"]
     estate = estate_of(text)
+    estates = searchData()["areas"]
 
-    if not estate or filters.get("town") not in (None, "", ESTATES[estate][0]):
+    if not estate or filters.get("town") not in (None, "", estates[estate][0]):
         return None
 
-    return {"name": estate.title(), "town": ESTATES[estate][0]}
+    return {"name": estate.title(), "town": estates[estate][0]}
 
 
 def hintTown(text):
@@ -386,8 +373,14 @@ def hintTown(text):
     if len(name) < 3 or any(letter.isdigit() for letter in name):
         return ""
 
-    if name in SHORT_TOWNS:
-        return SHORT_TOWNS[name]
+    aliases = searchData()["towns"]
+
+
+
+    if name in aliases:
+        return aliases[name]
+
+
 
     starts = {town[: len(name)]: town for town in reversed(TOWNS)}
     close = get_close_matches(name, list(starts), n=1, cutoff=TOWN_CUTOFF)
@@ -400,16 +393,22 @@ def hintTown(text):
 
 def tidySearch(filters, priceCap=None, priceFloor=None):
     params = {}
+
+
+
     typed = readSearch(filters.get("q"), not filters.get("town"))
     search = typed["q"]
 
     if typed["town"]:
         params["town"] = typed["town"]
 
+
     if search:
         params["q"] = search
 
     town = str(filters.get("town") or "").strip().upper()
+
+
 
     if town in TOWNS:
         params["town"] = town
@@ -436,8 +435,12 @@ def tidySearch(filters, priceCap=None, priceFloor=None):
             if not isfinite(value):
                 continue
 
-            if priceCap is None and not 0 <= value <= 9223372036854775807:
-                continue
+            if priceCap is None:
+                price_field = Listing._meta.get_field("askingPrice")
+                lower, upper = connection.ops.integer_field_range(price_field.get_internal_type())
+
+                if not max(0, lower) <= value <= upper:
+                    continue
 
             if priceCap is not None:
                 value = min(max(value, priceFloor or 0), priceCap)
@@ -476,6 +479,7 @@ def findHomes(q, queryset=None, priceCap=None, clampPrices=True):
 
     if priceCap is None:
         minAsk, priceCap = costRange()
+
 
     if minAsk is not None:
         minSpend = minAsk
@@ -521,11 +525,13 @@ def findHomes(q, queryset=None, priceCap=None, clampPrices=True):
     else:
         maxCost = None
 
-    minSqm = number(q.get("minSqm"), 400, decimal=True)
-    maxSqm = number(q.get("maxSqm"), 400, decimal=True)
-    beds = number(q.get("bedrooms"), 10)
-    baths = number(q.get("bathrooms"), 10)
-    minLease = number(q.get("minLease"), 99)
+    minSqm = float(q["minSqm"]) if q.get("minSqm") else None
+    maxSqm = float(q["maxSqm"]) if q.get("maxSqm") else None
+    beds = int(q["bedrooms"]) if q.get("bedrooms") else None
+    baths = int(q["bathrooms"]) if q.get("bathrooms") else None
+
+
+    minLease = int(q["minLease"]) if q.get("minLease") else None
     balcony = q.get("balcony") == "1"
 
     filters = {
@@ -550,6 +556,7 @@ def findHomes(q, queryset=None, priceCap=None, clampPrices=True):
     if minLease:
         filters["leaseCommenceYear__gte"] = timezone.localdate().year - 99 + minLease
 
+
     if queryset is None:
         queryset = Listing.objects.all()
 
@@ -565,13 +572,19 @@ def findHomes(q, queryset=None, priceCap=None, clampPrices=True):
     elif search.upper() in TOWNS:
         homes = homes.filter(town=search.upper())
     elif estate_of(search):
-        homes = homes.filter(street__in=ESTATES[estate_of(search)][1])
+        homes = homes.filter(street__in=searchData()["areas"][estate_of(search)][1])
     elif roadWords(search) in street_names():
         street = roadWords(search)
 
-        matchingPostals = [postal for postal, entry in blocks().items() if entry["s"] == street]
 
-        homes = homes.filter(Q(street__iexact=street) | Q(postalCode__in=matchingPostals))
+
+        matchingPostals = [
+            postal for postal, entry in blocks().items() if entry["s"] == street
+        ]
+
+        homes = homes.filter(
+            Q(street__iexact=street) | Q(postalCode__in=matchingPostals)
+        )
     elif search.casefold().startswith(("blk ", "block ")) and len(search.split()) >= 3:
         _, block, street = roadWords(search).split(maxsplit=2)
 
@@ -582,15 +595,20 @@ def findHomes(q, queryset=None, priceCap=None, clampPrices=True):
         ]
 
         homes = homes.filter(
-            Q(block__iexact=block, street__iexact=street) | Q(postalCode__in=matchingPostals)
+            Q(block__iexact=block, street__iexact=street)
+            | Q(postalCode__in=matchingPostals)
         )
     elif search.casefold().startswith(("blk ", "block ")) and len(search.split()) == 2:
         homes = homes.filter(block__iexact=search.split()[1])
     elif search:
-        typed = [word for word in search.casefold().split() if word not in ("blk", "block")]
+        typed = [
+            word for word in search.casefold().split() if word not in ("blk", "block")
+        ]
 
         stored = [
-            word for word in roadWords(search).casefold().split() if word not in ("blk", "block")
+            word
+            for word in roadWords(search).casefold().split()
+            if word not in ("blk", "block")
         ]
 
         matchingPostals = []
@@ -598,8 +616,11 @@ def findHomes(q, queryset=None, priceCap=None, clampPrices=True):
         for postal, entry in blocks().items():
             place = f"{entry['b']} {entry['s']} {entry['t']}".casefold()
 
+
+
             if typed and (
-                all(word in place for word in typed) or all(word in place for word in stored)
+                all(word in place for word in typed)
+                or all(word in place for word in stored)
             ):
                 matchingPostals.append(postal)
 
@@ -679,6 +700,8 @@ def searchName(params):
     if params.get("q"):
         parts.append(f"matching {params['q']}")
 
+
+
     for field, label in (("minPrice", "from "), ("maxPrice", "under ")):
         if params.get(field):
             price = int(params[field])
@@ -717,6 +740,7 @@ def saveSearch(request):
     lock_user(request.user.pk)
     params = tidySearch(request.POST)
 
+
     if SavedSearch.objects.filter(buyer=request.user, queryParams=params).exists():
         messages.success(request, "You already saved this search.")
     else:
@@ -725,7 +749,9 @@ def saveSearch(request):
         except ValidationError as error:
             messages.error(request, error.messages[0])
         else:
-            messages.success(request, "Search saved. We will let you know about matching flats.")
+            messages.success(
+                request, "Search saved. We will let you know about matching flats."
+            )
 
     return redirect("saved")
 
@@ -748,7 +774,11 @@ def editSearch(request, pk):
         hunt.isActive = action == "resume"
         hunt.save(update_fields=["isActive"])
 
-        messages.success(request, "Search resumed." if hunt.isActive else "Search paused.")
+
+
+        messages.success(
+            request, "Search resumed." if hunt.isActive else "Search paused."
+        )
 
     return redirect("saved")
 
@@ -769,6 +799,8 @@ def huntAlerts(listingId, kinds):
         .exclude(buyer_id=flat.seller_id)
         .select_related("buyer")
     )
+
+
 
     for savedSearch in hunts.iterator(chunk_size=100):
         matches, _ = findHomes(
@@ -792,12 +824,16 @@ def huntAlerts(listingId, kinds):
                     savedSearch=savedSearch, listing=flat, kind=kind
                 )
 
-                if kind == "price_drop" and earlier.filter(askingPrice__lte=price).exists():
+                if (
+                    kind == "price_drop"
+                    and earlier.filter(askingPrice__lte=price).exists()
+                ):
                     continue
 
                 _, created = SearchAlert.objects.get_or_create(
                     savedSearch=savedSearch, listing=flat, kind=kind, askingPrice=price
                 )
+
 
                 if created:
                     searchNote(savedSearch, flat, kind)
