@@ -71,7 +71,7 @@ def rankFlats(listings):
 
 
 def starFirst(listings):
-    starred = Case(When(rank=(3), then=Value(1)), default=Value(0))
+    starred = Case(When(rank=3, then=Value(1)), default=Value(0))
     listings = withTier(listings).annotate(taken=hasDeal())
 
     return listings.order_by(starred.desc(), "taken", "-createdAt", "-pk")
@@ -100,12 +100,19 @@ def decorate(listings):
 
 def readyPics(flats):
     flats = [flat for flat in flats if flat is not None]
+
+
     loaded = {}
 
     for flat in flats:
         if hasattr(flat, "roomPhotos"):
             flat_id = flat.pk
+
+
+
             loaded[flat_id] = flat.roomPhotos
+
+
 
     pending = []
 
@@ -147,11 +154,18 @@ def alertRow(icon, tone, title, meta, url, action, hero=""):
 
 def typeShelf(live, shown=()):
     rows = live.filter(flatType__in=FLAT_TYPES).values("flatType")
-    shelf = list(rows.annotate(count=Count("pk"), lowest=Min("askingPrice")).order_by("flatType"))
+    shelf = list(
+        rows.annotate(count=Count("pk"), lowest=Min("askingPrice")).order_by("flatType")
+    )
+
+
+
     withPics = Exists(ListingPhoto.objects.filter(listing_id=OuterRef("pk")))
 
     for row in shelf:
-        flats = starFirst(live.filter(flatType=row["flatType"])).prefetch_related(picsByRoom())
+        flats = starFirst(live.filter(flatType=row["flatType"])).prefetch_related(
+            picsByRoom()
+        )
         fresh = flats.exclude(pk__in=shown)
         row["flat"] = fresh.filter(withPics).first() or fresh.first() or flats.first()
 
@@ -168,6 +182,8 @@ def budgetShelf(live):
 
     for index, band in enumerate(BUDGET_BANDS):
         prices = {lookups[field]: band[field] for field in lookups if field in band}
+
+
         counts[f"band{index}"] = Count("pk", filter=Q(**prices))
 
     found = live.aggregate(**counts)
@@ -175,8 +191,12 @@ def budgetShelf(live):
 
     for index, band in enumerate(BUDGET_BANDS):
         if found[f"band{index}"]:
-            query = urlencode({field: band[field] for field in lookups if field in band})
-            shelf.append({"label": band["label"], "count": found[f"band{index}"], "query": query})
+            query = urlencode(
+                {field: band[field] for field in lookups if field in band}
+            )
+            shelf.append(
+                {"label": band["label"], "count": found[f"band{index}"], "query": query}
+            )
 
     return shelf
 
@@ -213,7 +233,12 @@ def saleChart(sales, asking):
     def position(price):
         return round(140 - (price - low) / (high - low) * 110, 1)
 
+
+
     points = []
+
+
+
     saleTags = []
 
     for index, sale in enumerate(sales):
@@ -250,7 +275,9 @@ def floorOverview(floors, storey):
 
     for name, low, high in (("Low", 1, 6), ("Mid", 7, 12), ("High", 13, 99)):
         bands = [
-            row for row in floors.get("rows", []) if low <= int(row["label"].split("–")[0]) <= high
+            row
+            for row in floors.get("rows", [])
+            if low <= int(row["label"].split("–")[0]) <= high
         ]
 
         count = sum(row["sales"] for row in bands)
@@ -270,6 +297,8 @@ def floorOverview(floors, storey):
         )
 
     highest = max((row["average"] or 0 for row in rows), default=0)
+
+
     labels = []
 
     for row in rows:
@@ -281,6 +310,7 @@ def floorOverview(floors, storey):
             price = "not enough recent sales"
 
         text = f"{row['name']} floors ({row['range']}): {price}"
+
 
         if row["mine"]:
             text += ", this flat"
@@ -311,7 +341,51 @@ def nextStation(flat, nearest):
 
         pool.append({"name": name, "metres": int(round(metres, -1))})
 
+
+
     return min(pool, key=lambda station: station["metres"], default=None)
+
+
+def flatGlance(flat):
+    sales = list(
+        lastSales(
+            flat.town,
+            flat.flatType,
+            flat.floorAreaSqm,
+            flat.block,
+            flat.leaseCommenceYear,
+            flat.storey,
+        )
+    )
+
+    floors = floorCosts(flat.town, flat.flatType, flat.storey)
+    shop = shop_look({}, flat)
+    cards = []
+
+    for panel in shop.get("panels", []):
+        cards.extend(panel["cards"])
+
+    peeks = []
+
+    for card in cards:
+        if len(peeks) == 4:
+            break
+
+        peeks.append(card)
+
+    shop["previews"] = peeks
+    nearest = nearest_mrt(flat)
+
+    return {
+        "sales": sales,
+        "median": median(sale.price for sale in sales) if sales else None,
+        "saleChart": saleChart(sales, flat.askingPrice),
+        "floors": floors,
+        "floorOverview": floorOverview(floors, flat.storey),
+        "shop": shop,
+        "nearest": nearest,
+        "nextStation": nextStation(flat, nearest),
+    }
 
 
 PACKAGE_COPY = {
@@ -406,6 +480,8 @@ def packages(request):
         except ValidationError:
             pass
 
+
+
         if not request.GET.get("listing") and hasRole(request.user, "seller"):
             theFlat = cartFlat(request.user, request.session.get("cartListing"))
             pickFlat = theFlat.publicId if theFlat else ""
@@ -422,6 +498,8 @@ def packages(request):
                 running[tier] = plan
 
     topTier = ""
+
+
 
     for tier in running:
         if TIER_RANKS[tier] > TIER_RANKS.get(topTier, 0):
@@ -445,6 +523,8 @@ def packages(request):
             and TIER_RANKS.get(product.packageTier, 0) < TIER_RANKS[topTier]
         ):
             product.coveredBy = topTier
+
+
 
     addons = list(addRatings(Product.objects.filter(kind="addon", isActive=True)).order_by("price"))
 
@@ -523,6 +603,8 @@ def saved(request):
 
         homes = decorate(withTier(homes))
 
+
+
     context = {
         "current": current,
         "savedSearches": request.user.savedSearches.order_by("createdAt", "pk"),
@@ -543,6 +625,7 @@ def saveMenu(request, flat):
         goTo, allowed_hosts={request.get_host()}, require_https=request.is_secure()
     ):
         goTo = reverse("listing_detail", args=[flat.publicId])
+
 
     scope = (
         request.POST.get("scope", "") if request.method == "POST" else request.GET.get("scope", "")
@@ -581,6 +664,7 @@ def saveAnswer(request, flat, text, failed=False):
             }
         )
 
+
     if failed:
         messages.error(request, text)
     else:
@@ -604,6 +688,7 @@ def toggle_save(request, publicId):
 
         return redirect("listing_detail", publicId=publicId)
 
+
     if flat.seller_id == request.user.pk:
         return saveAnswer(request, flat, "You can’t save your own flat.", True)
 
@@ -613,6 +698,8 @@ def toggle_save(request, publicId):
         return saveAnswer(request, flat, "Removed from your saved flats.")
 
     newName = cleanName(request.POST.get("newName", ""))
+
+
 
     if "collection" not in request.POST and "newName" not in request.POST:
         saved = SavedListing.objects.filter(collection__user=request.user, listing=flat)
@@ -675,6 +762,7 @@ def collection_create(request):
 
         return redirect("saved")
 
+
     folder = request.user.collections.filter(name__iexact=name).first()
 
     if folder is None:
@@ -700,6 +788,9 @@ def collection_rename(request, pk):
             messages.error(request, f"You already have a list called {name}. Pick another name.")
         else:
             folder.name = name
+
+
+
             folder.save()
             messages.success(request, f"Renamed to {name}.")
 
