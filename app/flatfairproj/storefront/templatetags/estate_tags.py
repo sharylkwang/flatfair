@@ -42,6 +42,8 @@ def fixedFeatures(tags):
     for tag in tags or []:
         feature = FIXED_FEATURES.get(str(tag).strip().lower())
 
+
+
         if feature and feature[0] not in seen:
             label, icon = feature
             traits.append({"label": label, "icon": icon})
@@ -127,6 +129,8 @@ def page_url(context, param, number):
 def cart_size(context):
     from storefront.models import Product
 
+
+
     cart = context["request"].session.get("cart", [])
 
     if not cart:
@@ -144,7 +148,11 @@ def nobreak(text):
 def fair_scale(low, estimate, high):
     try:
         low, estimate, high = float(low), float(estimate), float(high)
+
+
         start, end = low * 0.85, high * 1.15
+
+
         span = end - start
 
         if span <= 0:
@@ -201,8 +209,11 @@ def evidence_scale(low, estimate, high, asking=None):
             for key, value in [("lo", low), ("est", estimate), ("hi", high)]
         }
 
+
         if ask:
             scale["asking"] = round((ask - start) / (end - start) * 100, 2)
+
+
 
         return scale
     except Exception as error:
@@ -232,12 +243,16 @@ def month_label(month):
 @register.simple_tag
 def band_coverage(percent=False, count=False):
     try:
-        report = json.loads((TRAINING / "price_band_eval.json").read_text(encoding="utf-8"))
+        report = json.loads(
+            (TRAINING / "price_band_eval.json").read_text(encoding="utf-8")
+        )
 
         if count:
             return report["overall"]["count"]
 
         share = report["overall"]["servedCoverage"] * 100
+
+
 
         if percent:
             return round(share)
@@ -274,6 +289,7 @@ def priceUncertainty(town="", flatType=""):
     if summary and summary["servedCoverage"] < 0.8:
         share, count = summary["servedCoverage"], summary["count"]
 
+
         return f"For {flat_label(flatType)} flats, {share:.0%} of {count} past sales fell inside our range. {guide}"
 
     return ""
@@ -301,6 +317,8 @@ def money_short(value):
         millions = (value / 1000000).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     except Exception as error:
         return ""
+
+
 
     if dollars < 1000:
         return f"{sign}${dollars}"
@@ -349,6 +367,8 @@ def price_gap(asking, low, estimate, high, subject="The asking price", short=Fal
             gap = -gap
             place = "below"
 
+
+
         inside = low <= asking <= high
     except Exception as error:
         return ""
@@ -376,6 +396,8 @@ def asking_gap(amount, asking):
         gap = Decimal(str(amount)) - Decimal(str(asking))
     except Exception as error:
         return ""
+
+
 
     if not gap.is_finite():
         return ""
@@ -417,7 +439,10 @@ def viewing_word(booking):
 
 @register.simple_tag
 def save_signin(flat):
-    target = reverse("listing_detail", args=[flat.publicId]) + f"?save=1#save-{flat.publicId}"
+    target = (
+        reverse("listing_detail", args=[flat.publicId])
+        + f"?save=1#save-{flat.publicId}"
+    )
 
     return reverse("signin") + "?" + urlencode({"next": target})
 

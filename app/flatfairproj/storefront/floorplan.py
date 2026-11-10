@@ -33,6 +33,9 @@ def planRooms(flatType, bedrooms, bathrooms, area):
         ratio = 1.2
 
     depth = (area / ratio) ** 0.5
+
+
+
     width = area / depth
     top = max(0.42 * depth, 3.0)
     weights = [1.5, 1.15, 1.0, 0.95, 0.9]
@@ -46,6 +49,7 @@ def planRooms(flatType, bedrooms, bathrooms, area):
         if bedrooms > 1:
             name = "Master bedroom" if number == 1 else "Bedroom " + str(number)
             columns.append((name, weights[min(number - 1, 4)]))
+
 
     if flatType == "EXECUTIVE":
         columns.append(("Study", 0.75))
@@ -142,6 +146,9 @@ def planRooms(flatType, bedrooms, bathrooms, area):
     rooms.append(
         {"name": "Corridor", "box": (living, top, width, below), "door": None, "window": None}
     )
+
+
+
     rooms.append(
         {
             "name": "Common toilet",
@@ -158,8 +165,11 @@ def planRooms(flatType, bedrooms, bathrooms, area):
             "window": None,
         }
     )
+
+
     yardWide = min(1.6, 0.4 * (width - cookLeft))
     yardTop = depth - min(2.6, 0.5 * (depth - below))
+
 
     rooms.append(
         {
@@ -192,6 +202,9 @@ def room_Area(room, rooms):
 
     left, top, right, bottom = room["box"]
     size = (right - left) * (bottom - top)
+
+
+
     inner = inner_rooms.get(room["name"])
 
     for other in rooms:
@@ -203,6 +216,8 @@ def room_Area(room, rooms):
 
 def add_window(draw, room, left, top, right, bottom):
     across = (right - left) * 0.3
+
+
     down = (bottom - top) * 0.3
 
     if room["window"] == "top":
@@ -212,6 +227,8 @@ def add_window(draw, room, left, top, right, bottom):
             outline="black",
             width=2,
         )
+
+
 
     if room["window"] == "bottom":
         draw.rectangle(
@@ -245,6 +262,9 @@ def drawDoor(draw, door, hingeX, hingeY, leaf):
     else:
         draw.rectangle((hingeX - 5, hingeY, hingeX + 5, hingeY + leaf), fill="white")
         draw.line((hingeX, hingeY, hingeX + leaf * side, hingeY), fill="black", width=2)
+
+
+
         start, end = (0, 90) if side > 0 else (90, 180)
 
     draw.arc(
@@ -277,6 +297,9 @@ def drawPlan(flatType, bedrooms, bathrooms, area):
     for room in rooms:
         left, top = point(room["box"][0], room["box"][1])
         right, bottom = point(room["box"][2], room["box"][3])
+
+
+
         fill = (
             "#f4f6fb"
             if room["name"] in (("Corridor", "Service yard", "Household shelter"))
@@ -323,6 +346,9 @@ def drawPlan(flatType, bedrooms, bathrooms, area):
     for room in rooms:
         box = room.get("labelBox", room["box"])
         left, top = point(box[0], box[1])
+
+
+
         right, bottom = point(box[2], box[3])
         font = label
         lines = [room["name"]]
@@ -340,6 +366,8 @@ def drawPlan(flatType, bedrooms, bathrooms, area):
         if room["name"] != "Corridor":
             lines.append(f"{room_Area(room, rooms):.0f} sqm")
 
+
+
         text = "\n".join(lines)
         draw.multiline_text(
             ((left + right) / 2, (top + bottom) / 2),
@@ -353,6 +381,8 @@ def drawPlan(flatType, bedrooms, bathrooms, area):
     barY = mapLow + 62
     draw.line((40, barY, 40 + 5 * scale, barY), fill="black", width=3)
 
+
+
     for metre in range(6):
         draw.line(
             (40 + metre * scale, barY - 8, 40 + metre * scale, barY + 8), fill="black", width=2
@@ -362,7 +392,7 @@ def drawPlan(flatType, bedrooms, bathrooms, area):
     draw.text((40 + 5 * scale, barY + 14), "5 m", fill="black", font=small, anchor="ma")
     draw.text(
         (40, PLAN_HEIGHT - 34),
-        ("Illustration based on the flat type and size, not the actual plan"),
+        "Illustration based on the flat type and size, not the actual plan",
         fill="#555555",
         font=small,
     )
@@ -370,7 +400,6 @@ def drawPlan(flatType, bedrooms, bathrooms, area):
     return image
 
 
-@lru_cache(maxsize=200)
 def planPng(flatType, bedrooms, bathrooms, area):
     buffer = io.BytesIO()
     drawPlan(flatType, bedrooms, bathrooms, area).save(buffer, "PNG", optimize=True)
@@ -422,6 +451,8 @@ def seller_floor_plan(request, publicId):
     if not item:
         raise Http404
 
+
+
     try:
         reply = FileResponse(
             item.deliveryFile.open("rb"),
@@ -462,6 +493,9 @@ def plan_data(flat):
     data["storey"] = numberFrom(data, "storey", 1, 1, 100)
     try:
         area = float(data["floorAreaSqm"])
+
+
+
         if not math.isfinite(area):
             area = 92
     except (TypeError, ValueError, OverflowError):
@@ -488,6 +522,8 @@ def plan_caption(spec):
     if not fits_plan(spec):
         return f"{kind} · {size}"
     label = spec["flatModel"] or kind
+
+
     if spec["leaseCommenceYear"]:
         decade = spec["leaseCommenceYear"] // 10 * 10
         label = f"{decade}s {label}"
@@ -505,6 +541,8 @@ def planSvg(spec):
         spec["flatType"], spec["bedrooms"], spec["bathrooms"], round(spec["floorAreaSqm"])
     )
     image = base64.b64encode(png).decode()
+
+
     title = escape(plan_caption(spec))
     width, depth, rooms = planRooms(
         spec["flatType"], spec["bedrooms"], spec["bathrooms"], spec["floorAreaSqm"]
@@ -558,6 +596,8 @@ def svgReply(spec, public, versioned, notModified=False):
         "default-src 'none'; img-src data:; style-src 'unsafe-inline'"
     )
     reply["X-Content-Type-Options"] = "nosniff"
+
+
 
     return reply
 

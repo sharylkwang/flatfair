@@ -90,6 +90,9 @@ def sourceRows(seed):
     for town, group in frame.groupby("town", sort=True):
         rows = group.to_dict("records")
         rng.shuffle(rows)
+
+
+
         ordered.extend(((index + 0.5) / len(rows), town, row) for index, row in enumerate(rows))
 
     return [row for weight, town, row in sorted(ordered, key=lambda item: (item[0], item[1]))]
@@ -122,6 +125,7 @@ def batchBands(flats):
         }
     )
 
+
     geo = bundle.get("geo")
 
     if geo:
@@ -135,6 +139,8 @@ def batchBands(flats):
         frame["dist_mrt_km"] = gaps.min(axis=1)
         frame["n_mrt_1km"] = (gaps <= 1).sum(axis=1)
 
+
+
     for name, groups in bundle["categories"].items():
         if not frame[name].isin(groups).all():
             raise CommandError(f"Source contains unsupported {name} values.")
@@ -145,6 +151,8 @@ def batchBands(flats):
     predictions = {
         name: model.predict(frame, num_threads=2) for name, model in bundle["models"].items()
     }
+
+
 
     return [
         guessBand(
@@ -200,7 +208,9 @@ class Command(BaseCommand):
                     email__endswith="@bulk.flatfair.sg",
                 ).delete()
 
+
             self.stdout.write("Cleared bulk listings and accounts.")
+
 
         now = timezone.now()
         self.passwordHash = make_password("demo12345678")
@@ -274,9 +284,14 @@ class Command(BaseCommand):
             if flats:
                 for flat, (low, worth, high) in zip(flats, batchBands(flats)):
                     rng = random.Random(f"{self.seed}:price:{flat.seedKey}")
+
+
                     index = int(flat.seedKey.removeprefix("bulk-"))
                     above = index % 100 < 8
                     ratio = rng.uniform(1.01, 1.05) if index % 100 < 4 else rng.uniform(1.051, 1.08)
+
+
+
                     asking = (
                         round(high * ratio)
                         if above
@@ -294,6 +309,7 @@ class Command(BaseCommand):
                     f"Listings: {start + len(flats):,}/{options['listings']:,} ({time.perf_counter() - started:.1f}s)"
                 )
 
+
         self.fixStatuses()
         self.activity(options["buyers"])
 
@@ -304,6 +320,7 @@ class Command(BaseCommand):
         counts = Listing.objects.filter(seedKey__startswith="bulk-").count()
         sellers = User.objects.filter(username__regex=r"^seller[0-9]+@bulk\.flatfair\.sg$").count()
         buyers = User.objects.filter(username__regex=r"^buyer[0-9]+@bulk\.flatfair\.sg$").count()
+
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -334,11 +351,15 @@ class Command(BaseCommand):
 
         if pending:
             Listing.objects.bulk_update(pending, fields, batch_size=BATCH_SIZE)
+
+
             changed += len(pending)
 
         self.stdout.write(
             f"Corrected statuses and price hold reasons for {changed:,} existing bulk listings."
         )
+
+
 
     def accounts(self, role, total):
         for start in range(0, total, BATCH_SIZE):
@@ -394,12 +415,16 @@ class Command(BaseCommand):
                     )
                 )
 
+
             with transaction.atomic():
                 User.objects.bulk_create(users, batch_size=BATCH_SIZE)
                 users = list(User.objects.filter(username__in=names))
                 tastes = set(
                     Profile.objects.filter(user__in=users).values_list("user_id", flat=True)
                 )
+
+
+
                 sure = set(
                     EmailCheck.objects.filter(user__in=users).values_list("user_id", flat=True)
                 )
@@ -421,6 +446,8 @@ class Command(BaseCommand):
                     ],
                     batch_size=BATCH_SIZE,
                 )
+
+
 
             self.stdout.write(
                 f"{role.title()} accounts: {min(start + BATCH_SIZE, total):,}/{total:,}"
@@ -465,6 +492,8 @@ class Command(BaseCommand):
 
                     for flatId in chosen:
                         when = self.now - timedelta(days=rng.randint(2, 25))
+
+
                         views.append(
                             FlatView(
                                 buyer=buyer,
@@ -474,6 +503,8 @@ class Command(BaseCommand):
                                 lastViewedAt=when,
                             )
                         )
+
+
 
                     saves.append(
                         SavedListing(collection_id=folderIds[buyer.pk], listing_id=chosen[0])

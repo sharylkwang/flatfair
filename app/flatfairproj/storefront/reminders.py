@@ -28,7 +28,11 @@ def visitWords(slot, now):
 
 
 def order_text(order):
-    endsAt = timezone.localtime(order.lastDelivered + timedelta(days=AUTO_COMPLETE_DAYS))
+    endsAt = timezone.localtime(
+        order.lastDelivered + timedelta(days=AUTO_COMPLETE_DAYS)
+    )
+
+
 
     day = date_format(endsAt, "j M")
 
@@ -42,6 +46,7 @@ def order_text(order):
 def sendViewingReminders():
     now = timezone.now()
 
+
     booked = ViewingBooking.objects.filter(
         status="confirmed",
         buyer__is_active=True,
@@ -49,19 +54,21 @@ def sendViewingReminders():
         slot__listing__status="live",
         slot__listing__seller__is_active=True,
         slot__startsAt__gt=now,
-        slot__startsAt__lte=now + timedelta(hours=(24)),
+        slot__startsAt__lte=now + timedelta(hours=24),
     ).filter(Q(reminderSentAt__isnull=True) | Q(slot__reminderSentAt__isnull=True))
 
     sent = 0
+
+
 
     for booking in booked.select_related("slot__listing"):
         slot = booking.slot
         words = visitWords(slot, now)
         anchor = f"#slot-{slot.pk}"
 
-        if ViewingBooking.objects.filter(pk=booking.pk, reminderSentAt__isnull=True).update(
-            reminderSentAt=now
-        ):
+        if ViewingBooking.objects.filter(
+            pk=booking.pk, reminderSentAt__isnull=True
+        ).update(reminderSentAt=now):
             notify(
                 booking.buyer_id,
                 "viewing_reminder",
@@ -81,6 +88,8 @@ def sendViewingReminders():
                 reverse("seller_viewings") + anchor,
             )
 
+
+
             sent += 1
 
     return sent
@@ -91,7 +100,9 @@ def nudgeOrders():
     now = timezone.now()
     addon = Q(items__kind="addon")
 
-    unsent = Q(items__deliveredAt__isnull=True) | Q(items__deliveryFile="", items__deliveryNote="")
+    unsent = Q(items__deliveredAt__isnull=True) | Q(
+        items__deliveryFile="", items__deliveryNote=""
+    )
 
     orders = (
         Order.objects.filter(status="processing", reminderSentAt__isnull=True)
@@ -102,11 +113,14 @@ def nudgeOrders():
         .filter(
             waiting=0,
             lastDelivered__gt=now - timedelta(days=AUTO_COMPLETE_DAYS),
-            lastDelivered__lte=now - timedelta(days=AUTO_COMPLETE_DAYS - (1)),
+            lastDelivered__lte=now - timedelta(days=AUTO_COMPLETE_DAYS - 1),
         )
     )
 
+
     sent = 0
+
+
 
     for order in orders:
         if Order.objects.filter(pk=order.pk, reminderSentAt__isnull=True).update(
@@ -121,6 +135,8 @@ def nudgeOrders():
 
             sent += 1
 
+
+
     return sent
 
 
@@ -129,17 +145,26 @@ def nudgeDeals():
     from .deals import BY_KEY
 
     today = timezone.localdate()
+
+
+
     sent = 0
 
     for deal in (
-        Deal.objects.filter(status="open").select_related("listing").prefetch_related("steps")
+        Deal.objects.filter(status="open")
+        .select_related("listing")
+        .prefetch_related("steps")
     ):
         step = next((step for step in deal.steps.all() if step.doneAt is None), None)
+
 
         if step is None or step.dueOn is None:
             continue
 
-        dueSoon = step.dueOn <= today + timedelta(days=1) and step.reminderSentOn is None
+
+        dueSoon = (
+            step.dueOn <= today + timedelta(days=1) and step.reminderSentOn is None
+        )
 
         late = step.dueOn < today and (
             step.reminderSentOn is None or step.reminderSentOn <= step.dueOn
@@ -162,6 +187,7 @@ def nudgeDeals():
         else:
             when = "is due " + ("today" if step.dueOn == today else "tomorrow")
 
+
         words = f"“{info['title']}” {when} · {_place(deal.listing)}"
 
         people = {
@@ -182,6 +208,7 @@ def nudgeAll():
 
     from .offeradvice import coachSlow
 
+
     for send in (
         sendViewingReminders,
         nudgeOrders,
@@ -197,7 +224,7 @@ def nudgeAll():
 
 
 def autoNudge():
-    if caches["resources"].add(REMINDER_KEY, True, (600)):
+    if caches["resources"].add(REMINDER_KEY, True, 600):
         return nudgeAll()
 
     return 0

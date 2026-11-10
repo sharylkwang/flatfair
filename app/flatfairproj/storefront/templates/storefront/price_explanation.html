@@ -1,0 +1,7 @@
+{% load estate_tags humanize %}
+{% model_evidence version current=current_model as evidence %}
+{% band_coverage percent=True as coverage %}
+{% band_coverage count=True as saleCount %}
+<p>We compare this flat with about 240,000 HDB resale flats sold since 2017{% if evidence.month %}, <span class="evidence-source">using prices up to {{ evidence.month }}</span>{% endif %}.</p>
+{% if coverage and saleCount %}<p>When we tested this on {{ saleCount|intcomma }} past sales, about {{ coverage }} in every 100 sold within our range.</p>{% endif %}
+<p>It’s our best estimate, not an official HDB valuation.</p>

@@ -26,7 +26,12 @@ def saved_count(user):
     if not user.is_authenticated:
         return 0
 
-    return Listing.objects.public().filter(savedBy__collection__user=user).distinct().count()
+    return (
+        Listing.objects.public()
+        .filter(savedBy__collection__user=user)
+        .distinct()
+        .count()
+    )
 
 
 @register.simple_tag
@@ -39,8 +44,11 @@ def flatsLabel(name, count, joiner=" · "):
 
 
 @register.inclusion_tag("storefront/town_map.html")
-def town_map(mode="link", selected="", region="", query=None, field="", list=True, prompt=None):
+def town_map(
+    mode="link", selected="", region="", query=None, field="", list=True, prompt=None
+):
     selected = str(selected or "").upper()
+
 
     if selected:
         region = ""
@@ -53,14 +61,19 @@ def town_map(mode="link", selected="", region="", query=None, field="", list=Tru
         if query and query.get(key) and key not in ("q", "town", "region"):
             kept[key] = query.get(key)
 
+
+
     browse = reverse("listings")
     counts = {town: 0 for town in TOWNS}
 
     if mode == "link":
         live = Listing.objects.public().filter(status="live")
 
+
+
         counts = {
-            row["town"]: row["total"] for row in live.values("town").annotate(total=Count("pk"))
+            row["town"]: row["total"]
+            for row in live.values("town").annotate(total=Count("pk"))
         }
 
     paths = areaPaths()
@@ -73,12 +86,20 @@ def town_map(mode="link", selected="", region="", query=None, field="", list=Tru
 
         for town in regionTowns:
             outlines = [paths[area] for area in townAreas(town) if area in paths]
+
+
+
             point = townPoint(town)
+
+
 
             if town not in TOWNS or town not in counts or not outlines or not point:
                 continue
 
+
             label = town.title()
+
+
             words = label.replace("/", "/ ").rsplit(" ", 1)
 
             lines = [
@@ -106,10 +127,17 @@ def town_map(mode="link", selected="", region="", query=None, field="", list=Tru
                     "selected": town == selected,
                     "inRegion": name == region,
                     "href": browse + "?" + urlencode({**kept, "town": town}),
-                    "caption": (flatsLabel(label, counts[town]) if mode == "link" else label),
-                    "spoken": (flatsLabel(label, counts[town], ", ") if mode == "link" else label),
+                    "caption": (
+                        flatsLabel(label, counts[town]) if mode == "link" else label
+                    ),
+                    "spoken": (
+                        flatsLabel(label, counts[town], ", ")
+                        if mode == "link"
+                        else label
+                    ),
                 }
             )
+
 
         total = sum(town["count"] for town in towns)
 
@@ -133,9 +161,13 @@ def town_map(mode="link", selected="", region="", query=None, field="", list=Tru
     rest = prompt
     chosen = False
 
+
     for group in regions:
         if group["current"]:
             rest = group["caption"]
+
+
+
             chosen = True
 
         for town in group["towns"]:
@@ -146,6 +178,7 @@ def town_map(mode="link", selected="", region="", query=None, field="", list=Tru
                     rest = town["label"] + " selected"
 
                 chosen = True
+
 
     return {
         "mode": mode,

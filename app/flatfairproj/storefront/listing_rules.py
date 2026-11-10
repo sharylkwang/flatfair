@@ -31,7 +31,9 @@ def otherOpen(user, flat=None):
     return others.exists()
 
 
-def liveIssue(flat, expectedRevision, expectedStatus, staffAccepted=False, acceptingDocument=None):
+def liveIssue(
+    flat, expectedRevision, expectedStatus, staffAccepted=False, acceptingDocument=None
+):
     from sellerpanel.photocheck import doubtQ, manualQ, missingQ
 
     if (
@@ -43,12 +45,16 @@ def liveIssue(flat, expectedRevision, expectedStatus, staffAccepted=False, accep
 
     docs = flat.documentRequests.order_by("-createdAt", "-pk").first()
 
+
+
     if (
         docs
         and docs.status != "accepted"
         and not (docs.pk == acceptingDocument and docs.status == "submitted")
     ):
-        return "Review and accept the submitted documents before approving this listing."
+        return (
+            "Review and accept the submitted documents before approving this listing."
+        )
 
     if flat.photos.filter(missingQ()).exclude(manualQ(flat.revision)).exists() or (
         not staffAccepted and flat.photos.filter(doubtQ()).exists()
@@ -61,17 +67,28 @@ def liveIssue(flat, expectedRevision, expectedStatus, staffAccepted=False, accep
 def heldByCost(flat):
     from accounts.verification import emailVerified
     from adminpanel.models import AuditLog
+
+
+
     from .models import Profile
     from .valuation import flagReason
 
-    if flat.status != "review" or not all((flat.bandLow, flat.estimatedPrice, flat.bandHigh)):
+    if flat.status != "review" or not all(
+        (flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+    ):
         return False
 
-    if flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh) != "above":
+
+    if (
+        flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+        != "above"
+    ):
         return False
 
     profile = (
-        Profile.objects.select_related("user").filter(user_id=flat.seller_id, canSell=True).first()
+        Profile.objects.select_related("user")
+        .filter(user_id=flat.seller_id, canSell=True)
+        .first()
     )
 
     if (
@@ -87,6 +104,7 @@ def heldByCost(flat):
 
     if flat.documentRequests.exclude(status="accepted").exists():
         return False
+
 
     latest = flat.decisions.order_by("-createdAt", "-pk").first()
 
@@ -113,18 +131,26 @@ def smallPriceGap(flat):
         return False
 
     return (
-        flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh) == "above"
-        and 0 < flat.askingPrice - flat.bandHigh <= Decimal(flat.bandHigh) * AUTO_APPROVE_PRICE_GAP
+        flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+        == "above"
+        and 0
+        < flat.askingPrice - flat.bandHigh
+        <= Decimal(flat.bandHigh) * AUTO_APPROVE_PRICE_GAP
     )
 
 
 def passPrice(flat, wasHeld=None):
     from adminpanel.models import AuditLog, Decision
 
-    if flat.status != "review" or not all((flat.bandLow, flat.estimatedPrice, flat.bandHigh)):
+    if flat.status != "review" or not all(
+        (flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+    ):
         return False
 
-    flag = flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+
+    flag = flagReason(
+        flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh
+    )
 
     if flat.askingPrice < flat.bandLow or (flag and not smallPriceGap(flat)):
         return False
@@ -132,10 +158,14 @@ def passPrice(flat, wasHeld=None):
     if wasHeld is None:
         wasHeld = heldByCost(flat)
 
+
+
     if not wasHeld or liveIssue(flat, flat.revision, "review"):
         return False
 
     flat.status = "live"
+
+
     flat.save(update_fields=["status"])
 
     reason = (
@@ -170,20 +200,29 @@ def passPrice(flat, wasHeld=None):
 def closeOrder(orderId, seller=None):
     from adminpanel.models import AuditLog
 
-    order = Order.objects.select_for_update().filter(pk=orderId, status="processing").first()
+    order = (
+        Order.objects.select_for_update()
+        .filter(pk=orderId, status="processing")
+        .first()
+    )
 
-    if not order or (seller is not None and (order.seller_id != seller.pk or not seller.is_active)):
+    if not order or (
+        seller is not None and (order.seller_id != seller.pk or not seller.is_active)
+    ):
         return False
 
     items = list(order.items.select_for_update().filter(kind="addon"))
     cutoff = timezone.now() - timedelta(days=AUTO_COMPLETE_DAYS)
 
     if not items or any(
-        not item.deliveredAt or not (item.deliveryFile or item.deliveryNote) for item in items
+        not item.deliveredAt or not (item.deliveryFile or item.deliveryNote)
+        for item in items
     ):
         return False
 
     expired = all(item.deliveredAt <= cutoff for item in items)
+
+
 
     if seller is None and not expired:
         return False
@@ -196,8 +235,12 @@ def closeOrder(orderId, seller=None):
         else f"{AUTO_COMPLETE_DAYS} days since delivery"
     )
     change = (
-        "Processing → Completed" if seller is not None else "Processing → Completed automatically"
+        "Processing → Completed"
+        if seller is not None
+        else "Processing → Completed automatically"
     )
+
+
 
     AuditLog.objects.create(
         actor=seller,
@@ -205,6 +248,7 @@ def closeOrder(orderId, seller=None):
         target=f"Order #{order.pk}",
         detail=f"{change}: {reason}.",
     )
+
 
     return True
 
@@ -220,6 +264,8 @@ def closeSent():
         .distinct()
     )
 
+
+
     closed = 0
 
     for order_id in orders:
@@ -228,11 +274,14 @@ def closeSent():
         except Exception:
             log.exception("Could not complete delivered order %s", order_id)
 
+
+
     return closed
 
 
 def autoClose():
-    if caches["resources"].add(AUTO_COMPLETE_KEY, True, (600)):
+    if caches["resources"].add(AUTO_COMPLETE_KEY, True, 600):
         return closeSent()
+
 
     return 0

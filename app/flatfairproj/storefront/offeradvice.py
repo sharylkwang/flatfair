@@ -59,6 +59,8 @@ def advise(offer):
     if not (flat.estimatedPrice and flat.bandLow and flat.askingPrice):
         return None
 
+
+
     worth = round1000(flat.estimatedPrice)
     low = round1000(flat.bandLow)
     asking = flat.askingPrice
@@ -70,6 +72,9 @@ def advise(offer):
 
     percent = abs(gap) * 100
     percent = percent / worth
+
+
+
     percent = round(percent)
 
     if amount >= asking:
@@ -171,6 +176,9 @@ def lastSales(town, flatType, area, block=None, lease=None, storey=None):
     sameBlock = Case(
         When(block=block or "", then=Value(0)), default=Value(1), output_field=IntegerField()
     )
+
+
+
     nearFloor = Value(0)
 
     if storey:
@@ -182,7 +190,7 @@ def lastSales(town, flatType, area, block=None, lease=None, storey=None):
 
     similar = similar.annotate(sameBlock=sameBlock, nearFloor=nearFloor)
 
-    return similar.order_by("sameBlock", "nearFloor", "-month", "-pk")[:(5)]
+    return similar.order_by("sameBlock", "nearFloor", "-month", "-pk")[:5]
 
 
 def usualSales(town, flatType):
@@ -193,6 +201,7 @@ def usualSales(town, flatType):
         return {}
 
     prices = sales.order_by("price", "pk").values_list("price", flat=True)
+
 
     return {
         "lo": prices[count // 10],
@@ -206,15 +215,18 @@ def floorCosts(town, flatType, storey):
     today = timezone.localdate()
     since = date(today.year - 1, today.month, 1)
 
+
+
     bands = (
         Sale.objects.filter(town=town, flatType=flatType, month__gte=since)
         .values("storeyRange")
         .annotate(sales=Count("pk"), average=Avg("price"))
-        .filter(sales__gte=(5))
+        .filter(sales__gte=5)
         .order_by("-storeyRange")
     )
 
     rows = []
+
 
     for band in bands:
         low = int(band["storeyRange"][:2])
@@ -232,6 +244,8 @@ def floorCosts(town, flatType, storey):
         return {}
 
     highest = max(row["average"] for row in rows)
+
+
 
     for row in rows:
         row["width"] = round(row["average"] * 100 / highest)
@@ -257,6 +271,7 @@ def hints_used(offer):
     for step in offer.priceSteps or []:
         if step["by"] == "buyer":
             buyerSteps.append(step)
+
 
     used = len(buyerSteps) - 1
 
@@ -322,6 +337,8 @@ def hintPrice(offer, amount):
         )
 
     steps = priceSteps(offer)
+
+
     steps.append({"by": "buyer", "amount": int(amount)})
 
     updated = Offer.objects.filter(
@@ -335,10 +352,16 @@ def hintPrice(offer, amount):
     )
 
     if not updated:
-        raise ValidationError("The seller changed their price. Please reload the page to see it.")
+        raise ValidationError(
+            "The seller changed their price. Please reload the page to see it."
+        )
+
+
 
     offer.amount = amount
     offer.counterAmount = None
+
+
     offer.status = "pending"
     offer.priceSteps = steps
     offer_note(offer, "offer_suggested", "seller")
@@ -353,6 +376,7 @@ def stepsLine(offer, viewer):
         return ""
 
     words = []
+
 
     for index, step in enumerate(steps):
         if step["by"] == viewer:
@@ -393,14 +417,17 @@ def suggestion(flat, now=None):
 
     target = round1000(flat.estimatedPrice)
 
-    if flat.askingPrice <= target or (
-        flat.askingPrice - flat.estimatedPrice
-    ) / flat.estimatedPrice < (0.01):
+
+
+    if (
+        flat.askingPrice <= target
+        or (flat.askingPrice - flat.estimatedPrice) / flat.estimatedPrice < 0.01
+    ):
         return None
 
     seen = interest(flat, now - timedelta(days=WINDOW_DAYS))
 
-    if seen["agreed"] or seen["offers"] or seen["saves"] >= (2) or seen["views"] >= (10):
+    if seen["agreed"] or seen["offers"] or seen["saves"] >= 2 or seen["views"] >= 10:
         return None
 
     return {"price": target, "views": seen["views"], "saves": seen["saves"]}
@@ -423,7 +450,7 @@ def openHint(flat):
 @transaction.atomic
 def coachSlow(now=None):
     now = now or timezone.now()
-    recent = PriceSuggestion.objects.filter(createdAt__gte=now - timedelta(days=(30))).values(
+    recent = PriceSuggestion.objects.filter(createdAt__gte=now - timedelta(days=30)).values(
         "listing_id"
     )
 
@@ -433,11 +460,11 @@ def coachSlow(now=None):
             createdAt__lte=now - timedelta(days=WINDOW_DAYS),
             estimatedPrice__isnull=False,
             seller__is_active=True,
-            seller__last_login__gte=now - timedelta(days=(60)),
+            seller__last_login__gte=now - timedelta(days=60),
         )
         .exclude(pk__in=recent)
         .select_related("seller")
-        .order_by("createdAt", "pk")[:(50)]
+        .order_by("createdAt", "pk")[:50]
     )
 
     made = 0
@@ -447,6 +474,7 @@ def coachSlow(now=None):
 
         if not idea:
             continue
+
 
         found = PriceSuggestion.objects.create(
             listing=flat,
@@ -467,6 +495,8 @@ def coachSlow(now=None):
 
         made += 1
 
+
+
     return made
 
 
@@ -481,8 +511,13 @@ def keep_price(request, pk):
         status="open",
     )
     PriceSuggestion.objects.filter(pk=found.pk).update(status="kept", closedAt=timezone.now())
+
+
+
     messages.success(
         request, "Got it. We’ll keep your price and won’t suggest another for 30 days."
     )
+
+
 
     return redirect(reverse("seller_listing", args=[found.listing.publicId]))

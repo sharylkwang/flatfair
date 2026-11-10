@@ -72,6 +72,7 @@ def browseReturn(request, value):
     if parts.scheme or parts.netloc or parts.path != backup or parts.fragment:
         return backup
 
+
     return value
 
 
@@ -84,6 +85,8 @@ def home(request):
     towns = list(live.values("town").annotate(count=Count("pk")).order_by("town"))
 
     gallery = starFirst(live).annotate(acceptedCount=hasDeal()).prefetch_related(picsByRoom())
+
+
 
     buyerHome = (
         request.user.is_authenticated
@@ -99,6 +102,8 @@ def home(request):
 
     if promo:
         gallery = gallery.exclude(pk=promo[0].pk)
+
+
 
     gallery = list(gallery[:(4)])
     sells = hasRole(request.user, "seller")
@@ -163,6 +168,7 @@ def home(request):
             }
         )
 
+
     return render(request, "storefront/home.html", context)
 
 
@@ -177,6 +183,7 @@ def listings(request):
     ranked = ranked.annotate(acceptedCount=hasDeal())
     sort = request.GET.get("sort", "recommended")
 
+
     if sort in sorts:
         ranked = ranked.order_by(*sorts[sort])
     else:
@@ -184,6 +191,8 @@ def listings(request):
         ranked = ranked.annotate(
             hasPhotos=Exists(ListingPhoto.objects.filter(listing_id=OuterRef("pk")))
         )
+
+
         ranked = ranked.order_by("-rank", "-hasPhotos", "taken", "-createdAt", "-pk")
 
     page = Paginator(ranked, LISTINGS_PER_PAGE).get_page(request.GET.get("page"))
@@ -228,6 +237,8 @@ def listings(request):
 
     chips = []
     placeOk = ""
+
+
 
     for key, label in labels.items():
         if label:
@@ -286,6 +297,8 @@ def layoutUrl(form):
 
     query = {}
 
+
+
     for name, key in names.items():
         try:
             if form.fields[name].clean(form[name].value()):
@@ -314,6 +327,9 @@ VALUATION_STEPS = [
 def likeUrl(data):
     year = timezone.localdate().year
     area = int(data["area"])
+
+
+
     base = {"town": data["town"], "flatType": data["flatType"]}
     size = {**base, "minSqm": max(area - 10, 0) // 5 * 5, "maxSqm": -(-(area + 10) // 5) * 5}
     leaseLeft = max(
@@ -351,6 +367,7 @@ def showWorth(request, context):
 
         for field in fields:
             field.unit = units.get(field.name, "")
+
 
         if form.is_bound:
             stuck = any(field.errors for field in fields)
@@ -435,6 +452,8 @@ def valuation_check(request):
     if sizeTip:
         warns.setdefault("area", sizeTip)
 
+
+
     lease = data.get("lease")
 
     if lease and lease + MOP_YEARS > timezone.localdate().year:
@@ -457,10 +476,13 @@ def valuation_check(request):
     for name in errors:
         warns.pop(name, None)
 
+
     fixes = {}
 
     if form.address:
         fixes = {"town": form.address["town"], "townLabel": form.address["townLabel"]}
+
+
 
     return JsonResponse({"errors": errors, "warnings": warns, "fixes": fixes})
 
@@ -476,6 +498,7 @@ def valuation(request):
 
     if asked and (unsized or "edit" in request.GET):
         form = ValuationForm(initial=request.GET.dict())
+
 
         return showWorth(request, {"form": form})
 
@@ -515,6 +538,7 @@ def valuation(request):
         "leaseCommenceYear": data["lease"],
     }
 
+
     if data.get("postal"):
         carried["postalCode"] = data["postal"]
 
@@ -540,6 +564,9 @@ def valuation(request):
         messages.info(request, sizeTip)
 
     context["lo"] = low_cost
+
+
+
     context["est"] = fair_cost
     context["hi"] = top_cost
     context["asking"] = data["ask"] or 0
@@ -562,6 +589,9 @@ def countView(request, flat):
         return
 
     Listing.objects.filter(pk=flat.pk).update(viewCount=F("viewCount") + 1)
+
+
+
     seen.append(flat.pk)
     request.session["seenListings"] = seen[-200:]
 
@@ -572,6 +602,8 @@ def listing_detail(request, publicId):
     decorate([flat])
     public = Listing.objects.public().filter(pk=flat.pk).exists()
     teamPeek = canOpen(request.user, "admin_queue") and not public
+
+
 
     if not canSeeFlat(request.user, flat):
         if flat.status == "withdrawn":
@@ -593,6 +625,7 @@ def listing_detail(request, publicId):
                 defaults={"count": F("count") + 1, "lastViewedAt": now},
                 create_defaults={"count": 1, "firstViewedAt": now, "lastViewedAt": now},
             )
+
 
     if request.GET.get("save") == "1" and request.user.is_authenticated:
         canSave = (
@@ -616,6 +649,8 @@ def listing_detail(request, publicId):
 
     if not (low_cost and fair_cost and top_cost):
         low_cost = fair_cost = top_cost = None
+
+
 
     nextSlots = flat.viewingSlots.filter(removed=False, startsAt__gt=timezone.now())
     myVisits = {}
@@ -670,6 +705,8 @@ def listing_detail(request, publicId):
         **save_data(request.user),
     }
 
+
+
     bidError = getattr(request, "offer_error", None)
 
     if bidError and (context["myOffer"] or not context["canTransact"]):
@@ -684,6 +721,9 @@ def listing_detail(request, publicId):
 @require_GET
 def listing_photo(request, publicId, room):
     flat = get_object_or_404(Listing, publicId=publicId)
+
+
+
     public = Listing.objects.public().filter(pk=flat.pk).exists()
 
     if not public and not canSeeFlat(request.user, flat):
@@ -706,6 +746,46 @@ def listing_photo(request, publicId, room):
 @require_GET
 def address_search(request):
     return JsonResponse({"results": address.search(request.GET.get("q", "")[:60])})
+
+
+@require_GET
+def findHints(request):
+    key = f"search-suggestions:{request.META.get('REMOTE_ADDR', '')}"
+
+    if addTry(key, 60) > 120:
+        reply = JsonResponse({"results": []}, status=429)
+        reply["Retry-After"] = "60"
+
+        return reply
+
+    query = request.GET.get("q", "")[:60]
+    results = address.search_hints(query)
+    town = hintTown(query)
+
+    if town and all(item["value"] != town for item in results):
+        guess = {"kind": "town", "label": address.town_label(town), "value": town}
+        results = [guess] + results[: address.SEARCH_LIMIT - 1]
+
+    estate = hintEstate(query)
+
+    if estate:
+        guess = {"kind": "area", "label": estate.title(), "value": estate.title()}
+        results = [guess] + results[: address.SEARCH_LIMIT - 1]
+
+    sector = hintSector(query)
+
+    if sector:
+        results = [{"kind": "area", "label": sector, "value": sector}] + results[
+            : address.SEARCH_LIMIT - 1
+        ]
+
+    search = hintSearch(query)
+
+    if search:
+        results = [search] + results[: address.SEARCH_LIMIT - 1]
+
+    return JsonResponse({"results": results})
+
 
 
 def terms(request):
@@ -782,6 +862,8 @@ def lensDemo():
             group = "other"
 
         byGroup.setdefault(group, photo)
+
+
         byRoom.setdefault(photo.room, photo)
 
         if len(morePics) < 6:
@@ -803,6 +885,8 @@ def lensDemo():
     samples = list(
         {photo.pk: photo for photo in [*preferred, *byRoom.values(), *morePics]}.values()
     )[:6]
+
+
     popular = sorted(traitNums, key=lambda label: (-traitNums[label], label))[:4]
 
     return {
@@ -847,6 +931,7 @@ def lens(request):
     for match in context.get("matches", []):
         rooms = [photo.pk for photo in match["flat"].orderedPhotos()]
 
+
         if match["photo"].pk in rooms:
             match["number"] = rooms.index(match["photo"].pk) + 1
 
@@ -877,6 +962,8 @@ def draftPhoto(request, path):
 
     saved = ListingDraft.objects.filter(seller=request.user).first()
     paths = set(saved.photos.values()) if saved else set()
+
+
 
     for data in request.session.get(DRAFTS_KEY, {}).values():
         if data["created"] >= time.time() - 86400:

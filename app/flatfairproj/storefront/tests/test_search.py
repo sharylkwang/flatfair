@@ -69,6 +69,309 @@ class EstimateBrowseTests(TestCase):
         self.assertNotContains(page, "your estimate")
 
 
+class SearchSuggestionTests(TestCase):
+
+    def filterForm(self, response):
+        return response.content.decode().split('class="browse-filters"', 1)[1].split("</form>", 1)[0]
+
+    def test_new_town_replaces_previous(self):
+        bedok = makeListing(makeUser("next-town@test.com", "seller"), town="BEDOK", askingPrice=500000)
+        makeListing(makeUser("previous-town@test.com", "seller"), town="TAMPINES", askingPrice=500000)
+        makeListing(makeUser("next-town-high@test.com", "seller"), town="BEDOK", askingPrice=900000)
+        makeListing(makeUser("next-town-low@test.com", "seller"), town="BEDOK", askingPrice=400000)
+        previous = self.client.get(reverse("listings"), {"q": "tampines"})
+        self.assertContains(previous, 'name="q" value="Tampines"')
+        self.assertNotIn('type="hidden" name="town"', self.filterForm(previous))
+        response = self.client.get(
+            reverse("listings"),
+            {"q": "bedok", "flatType": "4 ROOM", "minPrice": "450000", "maxPrice": "550000"},
+        )
+        self.assertEqual({flat.pk for flat in response.context["listings"]}, {bedok.pk})
+        self.assertEqual(response.context["town"], "BEDOK")
+        self.assertEqual(response.context["searchQuery"], "")
+        self.assertEqual(response.context["searchParams"]["flatType"], "4 ROOM")
+        self.assertEqual(response.context["searchParams"]["minPrice"], "450000")
+        self.assertEqual(response.context["searchParams"]["maxPrice"], "550000")
+
+    def results(self, query):
+        response = self.client.get(reverse("search_suggestions"), {"q": query})
+        self.assertEqual(response.status_code, 200)
+        return response.json()["results"]
+
+    def test_postal_prefix_exact_show(self):
+        results = self.results("51056")
+        self.assertLessEqual(len(results), 8)
+        self.assertTrue(all((item["kind"] == "postal" for item in results)))
+        self.assertIn(
+            {"kind": "postal", "label": "Blk 560 Pasir Ris St 51 · 510560", "value": "510560"},
+            results,
+        )
+        self.assertEqual(
+            self.results("510560"),
+            [{"kind": "postal", "label": "Blk 560 Pasir Ris St 51 · 510560", "value": "510560"}],
+        )
+
+    def test_label_four_kinds(self):
+        cases = (
+            ("306A Sengkang", "block", "Blk 306A Anchorvale Link", "Blk 306A Anchorvale Link"),
+            ("Pasir Ris St 51", "street", "Pasir Ris St 51", "PASIR RIS ST 51"),
+            ("Pasir Ris", "town", "Pasir Ris", "PASIR RIS"),
+            ("Whampoa", "town", "Kallang / Whampoa", "KALLANG/WHAMPOA"),
+            ("510560", "postal", "Blk 560 Pasir Ris St 51 · 510560", "510560"),
+        )
+        for query, kind, label, value in cases:
+            with self.subTest(kind=kind):
+                results = self.results(query)
+                self.assertLessEqual(len(results), 8)
+                self.assertIn({"kind": kind, "label": label, "value": value}, results)
+        self.assertEqual(self.results("Blk 306A Anchorvale"), self.results("306A Anchorvale"))
+
+    def test_misspelt_short_form_towns(self):
+        cases = (
+            ("chua chu", "Choa Chu Kang", "CHOA CHU KANG"),
+            ("chua", "Choa Chu Kang", "CHOA CHU KANG"),
+            ("cck", "Choa Chu Kang", "CHOA CHU KANG"),
+            ("amk", "Ang Mo Kio", "ANG MO KIO"),
+            ("TPY", "Toa Payoh", "TOA PAYOH"),
+            ("pungol", "Punggol", "PUNGGOL"),
+            ("kalang", "Kallang / Whampoa", "KALLANG/WHAMPOA"),
+        )
+        for query, label, value in cases:
+            with self.subTest(query=query):
+                results = self.results(query)
+                self.assertEqual(results[0], {"kind": "town", "label": label, "value": value})
+                self.assertLessEqual(len(results), 8)
+                listings, filters = findHomes({"q": results[0]["value"]})
+                self.assertEqual(filters["town"], value)
+
+    def test_town_guess_keeps_grouping(self):
+        for query in ("pung", "Pasir Ris", "whampoa", "bukit"):
+            with self.subTest(query=query):
+                towns = [item["value"] for item in self.results(query) if item["kind"] == "town"]
+                self.assertEqual(len(towns), len(set(towns)))
+                self.assertTrue(towns)
+        kinds = [item["kind"] for item in self.results("pung")]
+        self.assertEqual(kinds[0], "town")
+        self.assertIn("street", kinds)
+        self.assertEqual([item["kind"] for item in self.results("chua")], ["town"])
+        with self.assertNumQueries(0):
+            self.assertEqual(hintTown("chua chu"), "CHOA CHU KANG")
+            self.assertEqual(hintTown("garden"), "")
+            self.assertEqual(hintTown("56"), "")
+        for query in ("garden", "station"):
+            self.assertNotIn("town", [item["kind"] for item in self.results(query)])
+
+    def test_sectors_town_plus_type(self):
+        for query, sector in (
+            ("nor", "North"),
+            ("north e", "North-East"),
+            ("north-east", "North-East"),
+            ("wes", "West"),
+            ("central", "Central"),
+        ):
+            with self.subTest(query=query):
+                self.assertIn({"kind": "area", "label": sector, "value": sector}, self.results(query))
+        cases = (
+            (
+                "tampines 4 room",
+                "Tampines · 4-room",
+                "Tampines 4-room",
+                {"town": "TAMPINES", "flatType": "4 ROOM"},
+            ),
+            (
+                "5rm amk",
+                "Ang Mo Kio · 5-room",
+                "Ang Mo Kio 5-room",
+                {"town": "ANG MO KIO", "flatType": "5 ROOM"},
+            ),
+            (
+                "exec north east",
+                "North-East · Executive",
+                "North-East Executive",
+                {"region": "North-East", "flatType": "EXECUTIVE"},
+            ),
+            (
+                "kallang 3 room",
+                "Kallang / Whampoa · 3-room",
+                "Kallang/Whampoa 3-room",
+                {"town": "KALLANG/WHAMPOA", "flatType": "3 ROOM"},
+            ),
+            (
+                "yew tee 4 room",
+                "Yew Tee · 4-room",
+                "Yew Tee 4-room",
+                {"q": "Yew Tee", "flatType": "4 ROOM"},
+            ),
+        )
+        for query, label, value, params in cases:
+            with self.subTest(query=query):
+                results = self.results(query)
+                self.assertEqual(results[0], {"kind": "search", "label": label, "value": value})
+                self.assertEqual(tidySearch({"q": value}), params)
+        for query in ("tampines", "4 room", "tampines blk 5 4 room"):
+            self.assertNotIn("search", [item["kind"] for item in self.results(query)])
+
+    def test_short_blank_unknown_markup(self):
+        for query in ("", " ", "5", "p", "zzzz street", "999999", "<script>", "\x00"):
+            with self.subTest(query=query):
+                self.assertEqual(self.results(query), [])
+
+    def test_endpoint_allows_get_shared(self):
+        self.assertEqual(self.client.post(reverse("search_suggestions")).status_code, 405)
+        with patch("storefront.views.addTry", return_value=121) as attempts:
+            response = self.client.get(reverse("search_suggestions"), {"q": "Pasir"})
+        attempts.assert_called_once_with("search-suggestions:127.0.0.1", 60)
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.json(), {"results": []})
+        self.assertEqual(response["Retry-After"], "60")
+
+    def test_repeated_reuse_parsed_index(self):
+        from storefront.address import blocks, hint_index
+
+        self.results("Pasir Ris")
+        data, index = blocks(), hint_index()
+        misses = hint_index.cache_info().misses
+        self.assertTrue(self.results("306A Sengkang"))
+        self.assertTrue(self.results("510560"))
+        self.assertIs(blocks(), data)
+        self.assertIs(hint_index(), index)
+        self.assertEqual(hint_index.cache_info().misses, misses)
+
+    def test_both_forms_keep_plain(self):
+        for name, boxes in (("home", 2), ("listings", 1)):
+            with self.subTest(page=name):
+                response = self.client.get(reverse(name))
+                self.assertContains(
+                    response, 'data-search-suggestions="/api/search-suggestions"', count=boxes
+                )
+                self.assertContains(response, 'type="search" name="q"', count=boxes)
+                self.assertContains(response, "Search flats by town, block, street or postal code", count=1)
+                forms = re.findall("<form\\b.*?</form>", response.content.decode(), re.DOTALL)
+                searchForms = [form for form in forms if 'type="search" name="q"' in form]
+                self.assertEqual(len(searchForms), boxes)
+                self.assertIn('class="header-search"', searchForms[0])
+                for form in searchForms:
+                    self.assertIn('method="get"', form)
+                    self.assertNotRegex(form, '<select\\b[^>]*\\bname="town"')
+
+    def test_sidebar_keeps_active_missing(self):
+        makeListing(makeUser("sidebar-town@test.com", "seller"), town="BEDOK", street="BEDOK NTH AVE 1")
+        plain = self.filterForm(self.client.get(reverse("listings")))
+        self.assertNotIn('name="q"', plain)
+        typed = self.filterForm(self.client.get(reverse("listings"), {"q": "bedok nth"}))
+        self.assertIn('<input type="hidden" name="q" value="bedok nth">', typed)
+        self.assertNotIn('type="search"', typed)
+        response = self.client.get(reverse("listings"), {"q": "bedok nth", "flatType": "4 ROOM"})
+        self.assertEqual([chip["label"] for chip in response.context["filterChips"]], ["bedok nth", "4-room"])
+
+    def test_typed_town_shows_same(self):
+        flat = makeListing(makeUser("town@test.com", "seller"), town="TAMPINES")
+        makeListing(makeUser("other-town@test.com", "seller"), town="BEDOK")
+        typed = self.client.get(reverse("listings"), {"q": "tampines"})
+        linked = self.client.get(reverse("listings"), {"town": "TAMPINES"})
+        for response in (typed, linked):
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual({item.pk for item in response.context["listings"]}, {flat.pk})
+            self.assertEqual(response.context["town"], "TAMPINES")
+            self.assertEqual(response.context["searchQuery"], "")
+            self.assertEqual(response.context["filterChips"], [{"label": "Tampines", "url": "?"}])
+            self.assertContains(response, 'aria-label="Remove Tampines"')
+            self.assertContains(response, 'name="q" value="Tampines"')
+            self.assertNotIn('type="hidden" name="town"', self.filterForm(response))
+            self.assertContains(response, '<a class="clear-filters" href="/listings">Clear all</a>')
+            self.assertIn(("town", "TAMPINES"), response.context["sortFields"])
+            self.assertEqual(parse_qs(response.context["pageQuery"]), {"town": ["TAMPINES"]})
+
+    def test_town_persists_type_budget(self):
+        flat = makeListing(
+            makeUser("town-filter@test.com", "seller"),
+            town="TAMPINES",
+            flatType="4 ROOM",
+            askingPrice=500000,
+        )
+        makeListing(
+            makeUser("town-filter-other@test.com", "seller"),
+            town="BEDOK",
+            flatType="4 ROOM",
+            askingPrice=500000,
+        )
+        response = self.client.get(reverse("listings"), {"q": "tampines"})
+        params = response.context["searchParams"].copy()
+        params.update(flatType="4 ROOM", maxPrice="550000")
+        response = self.client.get(reverse("listings"), params)
+        self.assertEqual({item.pk for item in response.context["listings"]}, {flat.pk})
+        self.assertEqual(response.context["town"], "TAMPINES")
+        self.assertContains(response, 'name="q" value="Tampines"')
+        self.assertNotIn('type="hidden" name="town"', self.filterForm(response))
+        chip = next((chip for chip in response.context["filterChips"] if chip["label"] == "Tampines"))
+        self.assertNotIn("town", parse_qs(chip["url"][1:]))
+        self.assertFalse(self.client.get(reverse("listings")).context["town"])
+
+    def test_typed_kallang_whampoa_variants(self):
+        flat = makeListing(makeUser("whampoa@test.com", "seller"), town="KALLANG/WHAMPOA")
+        for query in ("kallang/whampoa", "Kallang / Whampoa", " KALLANG/ Whampoa "):
+            with self.subTest(query=query):
+                response = self.client.get(reverse("listings"), {"q": query})
+                self.assertEqual(response.context["town"], "KALLANG/WHAMPOA")
+                self.assertEqual(response.context["searchQuery"], "")
+                self.assertEqual({item.pk for item in response.context["listings"]}, {flat.pk})
+
+    def test_selected_exactly_their_location(self):
+        seller = makeUser("suggestions@test.com", "seller")
+        flat = makeListing(
+            seller, block="560", street="PASIR RIS ST 51", postalCode="510560", town="PASIR RIS"
+        )
+        neighbour = makeListing(
+            makeUser("suggestion-neighbour@test.com", "seller"),
+            block="561",
+            street="PASIR RIS ST 51",
+            postalCode="510561",
+            town="PASIR RIS",
+        )
+        otherStreet = makeListing(
+            makeUser("suggestion-street@test.com", "seller"),
+            block="123",
+            street="PASIR RIS ST 512",
+            postalCode="999991",
+            town="PASIR RIS",
+        )
+        otherBlock = makeListing(
+            makeUser("suggestion-block@test.com", "seller"),
+            block="1560",
+            street="PASIR RIS ST 51",
+            postalCode="999992",
+            town="YISHUN",
+        )
+        makeListing(
+            makeUser("suggestion-town@test.com", "seller"),
+            block="100",
+            street="PASIR RIS",
+            postalCode="999993",
+            town="YISHUN",
+        )
+        makeListing(
+            seller,
+            block="560",
+            street="PASIR RIS ST 51",
+            postalCode="510560",
+            town="PASIR RIS",
+            status="hidden",
+        )
+        cases = (
+            ("510560", "postal", {flat.pk}),
+            ("560 Pasir Ris St 51", "block", {flat.pk}),
+            ("Pasir Ris", "town", {flat.pk, neighbour.pk, otherStreet.pk}),
+        )
+        for query, kind, expected in cases:
+            suggestion = next((item for item in self.results(query) if item["kind"] == kind))
+            with self.subTest(kind=kind):
+                listings, _ = findHomes({"q": suggestion["value"]})
+                self.assertEqual({item.pk for item in listings}, expected)
+        street = next((item for item in self.results("Pasir Ris St 51") if item["kind"] == "street"))
+        listings, _ = findHomes({"q": street["value"]})
+        self.assertEqual({item.pk for item in listings}, {flat.pk, neighbour.pk, otherBlock.pk})
+
+
 class BudgetParser(HTMLParser):
 
     def __init__(self):

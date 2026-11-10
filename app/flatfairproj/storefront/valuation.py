@@ -74,6 +74,8 @@ def _bundleOk(candidate):
         if name not in candidate["models"]:
             raise ValueError("Invalid model schema")
 
+
+
     if candidate.get("calibration_scale") != "dollars":
         raise ValueError("Serving requires dollar calibration")
 
@@ -92,6 +94,8 @@ def _bundleOk(candidate):
 
 def _load():
     global _CACHE, _CACHE_SIGNATURE
+
+
 
     try:
         mark = (ARTIFACT.stat().st_mtime_ns, ARTIFACT.stat().st_size)
@@ -118,6 +122,9 @@ def _load():
     except Exception as error:
         log.exception("Price model loading failed")
         _CACHE = None
+
+
+
         _CACHE_SIGNATURE = None
 
         raise ValueError(
@@ -129,13 +136,14 @@ def modelInfo():
     try:
         bundle = _load()
 
+
         return {
             "available": True,
             "version": VERSION,
             "month": bundle["max_training_month"],
             "mape": bundle["metrics"][bundle.get("selected_variant", "v5")]["test"]["MAPE"],
             "coverage": bundle["metrics"]["band"]["coverage"] * 100,
-            "target": (80),
+            "target": 80,
         }
     except ValueError:
         return {"available": False, "version": VERSION}
@@ -165,6 +173,8 @@ def _mapPlaces(geo):
 
         if len(code) == 6 and code.isdigit():
             postals.setdefault(code, record)
+
+
 
         key = (str(record.get("block", "")).strip().upper(), record.get("town"))
         blocks.setdefault(key, []).append(record)
@@ -202,6 +212,7 @@ def makeRow(town, flatType, flatModel, floorAreaSqm, storey, leaseYear, postal=N
         if not all(math.isfinite(number) for number in (area, floor, year)):
             raise ValueError("Invalid area, storey or lease year")
 
+
         if not (25 <= area <= 300 and 1 <= floor <= 50 and 1960 <= year <= today.year):
             raise ValueError("Invalid area, storey or lease year")
 
@@ -218,6 +229,8 @@ def makeRow(town, flatType, flatModel, floorAreaSqm, storey, leaseYear, postal=N
         trend = min(
             pd.Timestamp(today.replace(day=1)), pd.Timestamp(bundle["max_training_month"] + "-01")
         )
+
+
         months = (today.year - int(year)) * 12 + today.month - 1
 
         values.update(
@@ -248,6 +261,7 @@ def makeRow(town, flatType, flatModel, floorAreaSqm, storey, leaseYear, postal=N
 
         row = pd.DataFrame([values])
 
+
         for name, groups in cats.items():
             row[name] = pd.Categorical(row[name], categories=groups)
 
@@ -269,7 +283,11 @@ def rawBand(predictions, calibrationOffsets):
 
 def guessBand(predictions, calibrationOffsets):
     low, fair_cost, high = rawBand(predictions, calibrationOffsets)
+
+
+
     spread = max(10000, round(fair_cost * 0.05))
+
 
     return (
         max(1, min(round(low), fair_cost - spread)),
@@ -294,6 +312,7 @@ def band(town, flatType, flatModel, floorAreaSqm, storey, leaseYear, postal=None
 
         for name, model in bundle["models"].items():
             guesses[name] = float(model.predict(row)[0])
+
 
         return guessBand(guesses, bundle["calibration_offsets"])
     except Exception as error:
@@ -351,8 +370,7 @@ def summary_ok(summary):
     )
 
 
-@lru_cache(maxsize=4)
-def readTrial(path, modified):
+def readTrial(path):
     try:
         pooled = json.loads(path.read_text(encoding="utf-8"))["pooled"]
 
@@ -364,6 +382,8 @@ def readTrial(path, modified):
                 for name, summary in groups.items()
             ):
                 return None
+
+
 
         weakest = pooled.get("weakestSubgroups", [])
 
@@ -387,7 +407,4 @@ def readTrial(path, modified):
 
 
 def pastCheck():
-    try:
-        return readTrial(priceBacktestPath, priceBacktestPath.stat().st_mtime_ns)
-    except OSError:
-        return None
+    return readTrial(priceBacktestPath)

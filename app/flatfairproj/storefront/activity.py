@@ -115,6 +115,9 @@ def take_offer(offer, buyer_counter=False):
         )
 
     wanted = "countered" if buyer_counter else "pending"
+
+
+
     values = {"status": "accepted", "respondedAt": timezone.now()}
 
     if buyer_counter:
@@ -136,6 +139,8 @@ def take_offer(offer, buyer_counter=False):
 
 def new_offer(request, pk):
     flat = lock_flat(get_object_or_404(Listing, publicId=pk).pk)
+
+
     actionable(flat)
 
     if Offer.objects.filter(
@@ -162,12 +167,16 @@ def new_offer(request, pk):
     )
 
     offer.full_clean()
+
+
     floor = offerFloor(flat)
 
     if floor and offer.amount < floor:
         offer.status = "declined"
         offer.respondedAt = timezone.now()
         offer.reply = f"Thanks for your offer. This seller considers offers from ${floor:,} (what similar flats sold for), so it was declined automatically. You’re welcome to offer again."
+
+
         offer.save()
         offer_note(offer, "offer_declined_auto", "buyer")
         offer_note(offer, "offer_declined_auto", "seller")
@@ -190,6 +199,9 @@ def reply_offer(request, kind, pk):
     scope = {"buyer": request.user} if kind in BUYER_ACTIONS else {"listing__seller": request.user}
     stamp = get_object_or_404(Offer, pk=pk, **scope)
     flat = lock_flat(stamp.listing_id)
+
+
+
     offer = get_object_or_404(Offer.objects.select_for_update(), pk=pk, **scope)
     offer.listing = flat
     anchor = f"offer-{pk}"
@@ -219,6 +231,9 @@ def reply_offer(request, kind, pk):
             raise ValidationError("This offer is closed, so you can’t reply to it.")
 
         OfferMessage.objects.create(offer=offer, by="buyer", text=text)
+
+
+
         offer_note(offer, "offer_buyer_reply", "seller")
 
         return "Reply sent to the seller.", anchor
@@ -309,6 +324,8 @@ def reply_offer(request, kind, pk):
         offer.counterAmount = amount
         offer_note(offer, "offer_countered", "buyer")
 
+
+
         return f"New price of ${amount:,.0f} sent to the buyer.", anchor
 
     updated = Offer.objects.filter(pk=pk, status__in=wanted).update(
@@ -325,11 +342,15 @@ def reply_offer(request, kind, pk):
     if kind in OFFER_NOTICES:
         offer_note(offer, *OFFER_NOTICES[kind])
 
+
     return note, anchor
 
 
 def cancels(user, by):
     since = timezone.now() - timedelta(days=CANCEL_DAYS)
+
+
+
     counted = ViewingBooking.objects.filter(
         cancelCounts=True, cancelledBy=by, cancelledAt__gte=since
     )
@@ -410,6 +431,7 @@ def new_slot(request, pk):
     if slot:
         if not slot.removed:
             raise ValidationError("You already have a viewing at this time.")
+
 
         slot.removed = False
         slot.capacity = capacity
@@ -494,6 +516,7 @@ def edit_visit(request, kind, pk):
         if told:
             return f"Viewing time removed. We’ve let the {told} buyers know.", "viewing-calendar"
 
+
         return "Viewing time removed.", "viewing-calendar"
 
     if kind == "book":
@@ -516,7 +539,11 @@ def edit_visit(request, kind, pk):
         if booking:
             booking.status = "requested"
             booking.cancelledBy = booking.cancelReason = booking.cancelNote = ""
+
+
             booking.cancelledAt = None
+
+
             booking.cancelCounts = False
             booking.movedFromStatus = ""
             booking.save(
@@ -534,6 +561,8 @@ def edit_visit(request, kind, pk):
             ViewingBooking.objects.create(slot=slot, buyer=request.user)
 
         visit_note(slot, "viewing_booked", [flat.seller_id], "buyer")
+
+
         local = timezone.localtime(slot.startsAt)
         when = date_format(local, "j M, g:i") + date_format(local, "A").lower()
 
@@ -584,6 +613,7 @@ def edit_visit(request, kind, pk):
     elif kind == "confirm":
         visit_note(slot, "viewing_confirmed", [booking.buyer_id], "seller")
 
+
     if kind == "seller_cancel":
         if booking.status == "requested":
             return "You turned down this viewing request. We’ll let the buyer know.", anchor
@@ -596,6 +626,8 @@ def edit_visit(request, kind, pk):
 def mutate(request, kind, pk):
     if kind == "accept":
         offer = get_object_or_404(Offer, pk=pk, listing__seller=request.user)
+
+
         buyer = lock_user(offer.buyer_id)
 
         if not buyer or not buyer.is_active:
@@ -660,6 +692,8 @@ def cancel_viewing(request):
             )
 
             slot = booking.slot
+
+
             by_whom = "buyer" if booking.buyer_id == request.user.pk else "seller"
             kind, target, people = (
                 "cancel" if by_whom == "buyer" else "seller_cancel",
@@ -673,6 +707,8 @@ def cancel_viewing(request):
         raise Http404
 
     back = reverse("my_offers" if by_whom == "buyer" else "seller_viewings") + f"#slot-{slot.pk}"
+
+
 
     if slot.startsAt <= timezone.now():
         messages.error(request, "This viewing has already passed, so it can’t be cancelled.")
@@ -743,6 +779,7 @@ def action(request):
         else:
             messages.success(request, note)
 
+
         if kind == "offer":
             return redirect(reverse("listing_detail", args=[to_id]) + "#listing-action-card")
 
@@ -782,6 +819,7 @@ def action(request):
     if not back and kind == "slot":
         back = target + "#slot-form"
 
+
     return redirect(back or target)
 
 
@@ -800,6 +838,8 @@ def flat_back(kind, raw_id):
 
     if not publicId:
         return None
+
+
 
     return reverse("listing_detail", args=[publicId]) + "#listing-action-card"
 
@@ -824,6 +864,7 @@ def buy_flats(offers, bookings):
         if booking.status == "confirmed" and group["rank"] == 2:
             group["rank"] = 1
 
+
     return sorted(groups.values(), key=lambda group: group["rank"])
 
 
@@ -844,6 +885,7 @@ def buy_data(user, params=None):
         waitingFirst=due_first, agreedElsewhere=deal_away()
     )
 
+
     live = live.order_by("waitingFirst", "-createdAt", "-pk")
     offers = Paginator(live, 10).get_page(params.get("offers_page"))
     past_rows = bid_rows.filter(status__in=PAST).order_by("-createdAt", "-pk")
@@ -853,6 +895,8 @@ def buy_data(user, params=None):
     now = timezone.now()
     soon = booked.filter(slot__startsAt__gte=now).exclude(status="cancelled")
     past = booked.filter(slot__startsAt__lt=now).exclude(status="cancelled")
+
+
     dropped = booked.filter(status="cancelled")
     soon_page = Paginator(soon, 10).get_page(params.get("upcoming_page"))
     old_page = Paginator(past, 10).get_page(params.get("past_page"))
@@ -866,6 +910,7 @@ def buy_data(user, params=None):
             for booking in bookingPage
         ]
     )
+
 
     next_up = soon.first()
 
@@ -887,6 +932,7 @@ def sell_data(user, params=None):
     params = params or {}
     now = timezone.now()
     flats = Listing.objects.filter(seller=user).exclude(status="withdrawn")
+
 
     flat_nums = flats.aggregate(
         live=Count("pk", filter=Q(status="live")),
@@ -926,6 +972,8 @@ def sell_data(user, params=None):
         startsAt__lt=now + timedelta(days=10),
     ).order_by("startsAt", "pk")
 
+
+
     today = timezone.localdate()
     days = []
 
@@ -936,6 +984,8 @@ def sell_data(user, params=None):
         for slot in slots:
             if timezone.localdate(slot.startsAt) == day:
                 day_slots.append(slot)
+
+
 
         days.append({"date": day, "slots": day_slots})
 
@@ -974,8 +1024,11 @@ def dateFile(slot, title, uid):
         place = flat.town.title()
 
     where = ", ".join(
-        part for part in (place, f"Singapore {flat.postalCode}" if flat.postalCode else "") if part
+        part
+        for part in (place, f"Singapore {flat.postalCode}" if flat.postalCode else "")
+        if part
     )
+
 
     lines = [
         "BEGIN:VCALENDAR",
@@ -986,7 +1039,7 @@ def dateFile(slot, title, uid):
         f"UID:{uid}@flatfair",
         f"DTSTAMP:{stamp(timezone.now())}",
         f"DTSTART:{stamp(slot.startsAt)}",
-        f"DTEND:{stamp(slot.startsAt + timedelta(minutes=(30)))}",
+        f"DTEND:{stamp(slot.startsAt + timedelta(minutes=30))}",
         f"SUMMARY:{escape(title + ' ' + place)}",
         f"LOCATION:{escape(where)}",
         "DESCRIPTION:Booked on FlatFair.",
@@ -999,11 +1052,18 @@ def dateFile(slot, title, uid):
         "END:VCALENDAR",
     ]
 
-    reply = HttpResponse("\r\n".join(lines) + "\r\n", content_type="text/calendar; charset=utf-8")
+    reply = HttpResponse(
+        "\r\n".join(lines) + "\r\n", content_type="text/calendar; charset=utf-8"
+    )
 
-    reply["Content-Disposition"] = f'attachment; filename="flatfair-viewing-{slot.pk}.ics"'
+    reply["Content-Disposition"] = (
+        f'attachment; filename="flatfair-viewing-{slot.pk}.ics"'
+    )
+
 
     reply["Cache-Control"] = "private, no-store"
+
+
 
     return reply
 
@@ -1082,7 +1142,9 @@ def ask_viewing(request, publicId):
 
         ViewingAsk.objects.create(listing=flat, buyer=request.user)
 
-        waiting = ViewingAsk.objects.filter(listing=flat, answeredAt__isnull=True).count()
+        waiting = ViewingAsk.objects.filter(
+            listing=flat, answeredAt__isnull=True
+        ).count()
 
         if waiting == 1:
             people = "A buyer would"
@@ -1095,6 +1157,8 @@ def ask_viewing(request, publicId):
             f"{people} like to view {_place(flat)}. Add some viewing times",
             reverse("seller_viewings") + "#viewings-tab",
         )
+
+
 
     messages.success(
         request,
@@ -1116,6 +1180,7 @@ def enableMode(request, mode):
     if request.method == "POST":
         with transaction.atomic():
             user = lock_user(request.user.pk)
+
 
             if not user or not user.is_active or user.is_staff:
                 return notAllowed(request, mode)
@@ -1180,15 +1245,21 @@ def otherTimes(booking):
         status__in=ACTIVE_BOOKINGS,
     ).values("slot_id")
 
+
     slots = ViewingSlot.objects.filter(
         listing=booking.slot.listing, removed=False, startsAt__gt=timezone.now()
     ).exclude(pk__in=taken)
 
-    return withUsed(slots).filter(usedCount__lt=F("capacity")).order_by("startsAt", "pk")
+    return (
+        withUsed(slots).filter(usedCount__lt=F("capacity")).order_by("startsAt", "pk")
+    )
 
 
 def flatPage(booking):
-    return reverse("listing_detail", args=[booking.slot.listing.publicId]) + "#your-viewing"
+    return (
+        reverse("listing_detail", args=[booking.slot.listing.publicId])
+        + "#your-viewing"
+    )
 
 
 def rebook(request, booking):
@@ -1205,6 +1276,8 @@ def rebook(request, booking):
 
     if oldSlot.startsAt <= timezone.now():
         raise ValidationError("This viewing has already passed, so it can’t be moved.")
+
+
 
     if booking.movedFromStatus:
         raise ValidationError(
@@ -1224,7 +1297,9 @@ def rebook(request, booking):
     newSlot = otherTimes(booking).filter(pk=slotId).first()
 
     if newSlot is None:
-        raise ValidationError("That time is full or no longer open. Please pick another time.")
+        raise ValidationError(
+            "That time is full or no longer open. Please pick another time."
+        )
 
     now = timezone.now()
 
@@ -1238,6 +1313,8 @@ def rebook(request, booking):
     )
 
     moved = ViewingBooking.objects.filter(slot=newSlot, buyer=request.user).first()
+
+
 
     if moved is None:
         moved = ViewingBooking(slot=newSlot, buyer=request.user)
@@ -1267,7 +1344,9 @@ def move_viewing(request):
     if not hasRole(request.user, "buyer"):
         raise Http404
 
-    booking = myBooking(request, request.GET.get("booking") or request.POST.get("booking"))
+    booking = myBooking(
+        request, request.GET.get("booking") or request.POST.get("booking")
+    )
 
     back = request.GET.get("from") or request.POST.get("from")
 
@@ -1283,6 +1362,8 @@ def move_viewing(request):
                 newSlot = rebook(request, booking)
         except ValidationError as error:
             messages.error(request, " ".join(error.messages))
+
+
 
             return redirect(
                 reverse("move_viewing") + f"?booking={booking.pk}&from={back or 'flat'}"
@@ -1307,8 +1388,11 @@ def move_viewing(request):
 
         return redirect(flatPage(booking))
 
+
     if booking.slot.startsAt <= timezone.now():
-        messages.error(request, "This viewing has already passed, so it can’t be moved.")
+        messages.error(
+            request, "This viewing has already passed, so it can’t be moved."
+        )
 
         return redirect(backUrl)
 

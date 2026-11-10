@@ -71,7 +71,11 @@ def createDeal(offer):
             deal.status, deal.closedAt, deal.price = "open", None, int(offer.amount)
             deal.save(update_fields=["status", "closedAt", "price"])
 
-            deal.steps.update(doneAt=None, doneBy="", note="", reminderSentOn=None, dueOn=None)
+
+
+            deal.steps.update(
+                doneAt=None, doneBy="", note="", reminderSentOn=None, dueOn=None
+            )
 
             plan_from(deal, 0, timezone.localdate())
 
@@ -84,8 +88,13 @@ def createDeal(offer):
         price=int(offer.amount),
     )
 
+
+
     DealStep.objects.bulk_create(
-        [DealStep(deal=deal, key=step["key"], position=index) for index, step in enumerate(STEPS)]
+        [
+            DealStep(deal=deal, key=step["key"], position=index)
+            for index, step in enumerate(STEPS)
+        ]
     )
 
     plan_from(deal, 0, timezone.localdate())
@@ -148,20 +157,30 @@ def stepRows(deal, role=None, today=None):
             }
         )
 
+
+
     return rows
 
 
 def progress(deal):
     steps = list(deal.steps.all())
     done = sum(step.doneAt is not None for step in steps)
+
+
     nextStep = next((step for step in steps if step.doneAt is None), None)
 
     return {
         "deal": deal,
         "done": done,
         "total": len(steps),
-        "next": (BY_KEY[nextStep.key]["title"] if nextStep and deal.status == "open" else ""),
-        "nextWho": (WHO[BY_KEY[nextStep.key]["who"]] if nextStep and deal.status == "open" else ""),
+        "next": (
+            BY_KEY[nextStep.key]["title"] if nextStep and deal.status == "open" else ""
+        ),
+        "nextWho": (
+            WHO[BY_KEY[nextStep.key]["who"]]
+            if nextStep and deal.status == "open"
+            else ""
+        ),
         "dueOn": nextStep.dueOn if nextStep and deal.status == "open" else None,
     }
 
@@ -180,6 +199,7 @@ def stuckDeals(today=None):
 
 def finishSale(deal):
     flat = Listing.objects.select_for_update().get(pk=deal.listing_id)
+
 
     if flat.status in ("live", "review", "paused"):
         flat.statusBeforeSold = flat.status
@@ -223,6 +243,7 @@ def dealFor(request, pk):
 def deal_page(request, pk):
     deal, role = dealFor(request, pk)
 
+
     context = {
         "deal": deal,
         "flat": deal.listing,
@@ -248,23 +269,37 @@ def deal_page(request, pk):
 @needEmail
 def deal_step(request, pk):
     with transaction.atomic():
-        deal = get_object_or_404(Deal.objects.select_for_update().select_related("listing"), pk=pk)
+        deal = get_object_or_404(
+            Deal.objects.select_for_update().select_related("listing"), pk=pk
+        )
 
         role = role_in(deal, request.user)
 
         if role is None:
             raise Http404
 
+
         rows = stepRows(deal, role)
+
+
         row = next((row for row in rows if row["current"]), None)
 
-        if deal.status != "open" or row is None or row["step"].key != request.POST.get("step"):
-            messages.error(request, "This step has changed. Please check the deal again.")
+        if (
+            deal.status != "open"
+            or row is None
+            or row["step"].key != request.POST.get("step")
+        ):
+            messages.error(
+                request, "This step has changed. Please check the deal again."
+            )
 
             return redirect("deal_page", pk=deal.pk)
 
+
         if not row["canMark"]:
-            messages.error(request, "Only the " + row["who"].lower() + " can tick this step.")
+            messages.error(
+                request, "Only the " + row["who"].lower() + " can tick this step."
+            )
 
             return redirect("deal_page", pk=deal.pk)
 
@@ -273,6 +308,8 @@ def deal_step(request, pk):
         now = timezone.now()
         DealStep.objects.filter(pk=step.pk).update(doneAt=now, doneBy=role, note=note)
         plan_from(deal, step.position + 1, timezone.localdate())
+
+
 
         if role == "buyer":
             other = deal.listing.seller_id
@@ -303,5 +340,6 @@ def deal_step(request, pk):
                 request,
                 f"“{row['title']}” is ticked. We’ve told the {'seller' if role == 'buyer' else 'buyer'}.",
             )
+
 
     return redirect("deal_page", pk=deal.pk)

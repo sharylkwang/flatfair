@@ -362,6 +362,8 @@ def flatGlance(flat):
     shop = shop_look({}, flat)
     cards = []
 
+
+
     for panel in shop.get("panels", []):
         cards.extend(panel["cards"])
 
@@ -374,6 +376,8 @@ def flatGlance(flat):
         peeks.append(card)
 
     shop["previews"] = peeks
+
+
     nearest = nearest_mrt(flat)
 
     return {

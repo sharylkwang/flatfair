@@ -53,7 +53,9 @@ class LensForm(forms.Form):
         photo = self.cleaned_data["photo"]
 
         if photo.size > MAX_MB * 1024 * 1024:
-            raise ValidationError(f"This photo is over {MAX_MB} MB. Choose a smaller one.")
+            raise ValidationError(
+                f"This photo is over {MAX_MB} MB. Choose a smaller one."
+            )
 
         if photo.image.format not in ("JPEG", "PNG"):
             raise ValidationError("This file is not a photo. Choose a JPG or PNG.")
@@ -77,6 +79,7 @@ def searchFlood(request):
 
     if request.user.is_authenticated:
         stamps.append(f"user:{request.user.pk}")
+
 
     window = int(now // 3600)
 
@@ -115,6 +118,7 @@ def validEmbedding(embedding):
         with numpy.errstate(over="ignore", invalid="ignore"):
             length = numpy.linalg.norm(vector)
 
+
         if not numpy.isfinite(vector).all() or not math.isfinite(length) or length == 0:
             return None
 
@@ -128,11 +132,19 @@ def scoreOk(score):
 
 
 def embeddingMatrix():
-    photos = ListingPhoto.objects.filter(embedding__isnull=False, modelVersion=MODEL_VERSION)
+    photos = ListingPhoto.objects.filter(
+        embedding__isnull=False, modelVersion=MODEL_VERSION
+    )
 
-    mark = photos.aggregate(count=Count("pk"), latest=Max("updatedAt"), lastId=Max("pk"))
+    mark = photos.aggregate(
+        count=Count("pk"), latest=Max("updatedAt"), lastId=Max("pk")
+    )
 
-    key = "lens:matrix:" + hashlib.sha256(f"{MODEL_VERSION}:{mark}".encode()).hexdigest()
+    key = (
+        "lens:matrix:" + hashlib.sha256(f"{MODEL_VERSION}:{mark}".encode()).hexdigest()
+    )
+
+
 
     cached = resourceCache.get(key)
 
@@ -149,6 +161,9 @@ def embeddingMatrix():
             vectors.append(vector)
 
     matrix = numpy.asarray(vectors, dtype=float).reshape((-1, EMBEDDING_SIZE))
+
+
+
     cached = (ids, matrix)
     resourceCache.set(key, cached, 300)
 
@@ -158,8 +173,12 @@ def embeddingMatrix():
 def similarFlats(embedding, skipListing=None):
     query = validEmbedding(embedding)
 
+
+
     if query is None:
         warnGone(log, "Photo search unavailable: incompatible query embedding")
+
+
 
         return []
 
@@ -179,6 +198,8 @@ def similarFlats(embedding, skipListing=None):
         allowed = dict(photos.values_list("pk", "listing_id"))
         cover = {}
 
+
+
         for photoId in ids:
             flatId = allowed.get(photoId)
 
@@ -187,7 +208,9 @@ def similarFlats(embedding, skipListing=None):
 
         picked, homes = [], set()
 
-        tieRank = numpy.asarray([cover.get(allowed.get(photoId), photoId) for photoId in ids])
+        tieRank = numpy.asarray(
+            [cover.get(allowed.get(photoId), photoId) for photoId in ids]
+        )
 
         for index in numpy.lexsort((numpy.arange(len(ids)), tieRank, -scores)):
             photoId = ids[index]
@@ -222,11 +245,16 @@ def similarFlats(embedding, skipListing=None):
     except Exception as error:
         log.exception("Photo similarity search failed")
 
+
+
         return []
 
 
 def fromUpload(request, context):
     form = LensForm(request.POST, request.FILES)
+
+
+
     context["form"] = form
 
     if not form.is_valid():
@@ -248,6 +276,8 @@ def fromUpload(request, context):
         result = checkPics([data])[0]
     except Exception as error:
         log.exception("Photo search inference failed")
+
+
         context["error"] = FAILED
 
         return
@@ -293,16 +323,21 @@ def fromPic(request, context):
     source = source.select_related("listing").first()
 
     if not source:
-        context["error"] = "We cannot search with that photo yet. Upload a room photo instead."
+        context["error"] = (
+            "We cannot search with that photo yet. Upload a room photo instead."
+        )
 
         return
+
 
     if (
         source.modelVersion != MODEL_VERSION
         or validEmbedding(source.embedding) is None
         or not scoreOk(source.aiIrrelevant)
     ):
-        warnGone(log, "Photo search unavailable: missing or incompatible stored embedding")
+        warnGone(
+            log, "Photo search unavailable: missing or incompatible stored embedding"
+        )
 
         context["error"] = FAILED
 
@@ -326,5 +361,6 @@ def lens(request):
         fromUpload(request, context)
     elif "photo" in request.GET:
         fromPic(request, context)
+
 
     return render(request, "storefront/lens.html", context)

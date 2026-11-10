@@ -59,6 +59,7 @@ def tasteProfile(buyer, skipListing=None, now=None):
         if row.lastViewedAt < now - timedelta(days=OLD_VIEW_DAYS):
             weight *= OLD_VIEW_FACTOR
 
+
         if weight:
             weights[row.listing_id] += weight
             viewed.add(row.listing_id)
@@ -94,6 +95,8 @@ def tasteProfile(buyer, skipListing=None, now=None):
         .prefetch_related(Prefetch("photos", queryset=photos, to_attr="tastePhotos"))
     )
 
+
+
     searches = [
         tidySearch(row.queryParams)
         for row in SavedSearch.objects.filter(buyer=buyer, isActive=True).order_by("pk")
@@ -115,6 +118,7 @@ def tasteProfile(buyer, skipListing=None, now=None):
 
         for field in groups:
             groups[field][getattr(flat, field)] += weight
+
 
         for field, value in (
             ("price", math.log(flat.askingPrice)),
@@ -141,6 +145,8 @@ def tasteProfile(buyer, skipListing=None, now=None):
             numbers["price"].append((math.log(float(params["maxPrice"])), SEARCH_WEIGHT))
 
         bounds = [float(params[key]) for key in ("minSqm", "maxSqm") if params.get(key)]
+
+
 
         if bounds:
             numbers["size"].append((sum(bounds) / len(bounds), SEARCH_WEIGHT))
@@ -206,6 +212,9 @@ def scoreFlat(flat, profile):
 
     if best == "photo":
         oldVector = profile["savedEmbedding"]
+
+
+
         reason = (
             "Rooms look like flats you saved"
             if oldVector is not None and float(vector @ oldVector) >= 0.75
@@ -215,10 +224,16 @@ def scoreFlat(flat, profile):
         reason = "Priced within our fair range"
     elif best in ("town", "type", "price"):
         kind = flat.flatType.replace(" ROOM", "-room").lower()
+
+
         typeFit = factors.get("type", 0) >= TYPE_WEIGHT * 0.5
+
+
         townFit = factors.get("town", 0) >= TOWN_WEIGHT * 0.5
         subject = f"{kind} flats" if typeFit else "flats"
         place = f" in {flat.town.title()}" if townFit else ""
+
+
         price = ""
 
         if factors.get("price", 0) >= PRICE_WEIGHT * 0.8:
@@ -238,6 +253,9 @@ def scoreFlat(flat, profile):
 
 def goodFlats(buyer, now=None, skipListing=None):
     now = now or timezone.now()
+
+
+
     saved = (
         SavedListing.objects.filter(collection__user=buyer)
         .exclude(listing_id=skipListing)
@@ -269,6 +287,7 @@ def goodFlats(buyer, now=None, skipListing=None):
 def maybeFlats(buyer, profile):
     flats = goodFlats(buyer)
 
+
     for field in ("town", "flatType"):
         liked = profile["categories"][field]
 
@@ -299,27 +318,22 @@ def recommendedFlats(buyer):
     if not hasRole(buyer, "buyer"):
         return []
 
-    key = picksKey(buyer)
-    cache = caches["default"]
-    picked = cache.get(key)
+    profile = tasteProfile(buyer)
 
-    if picked is None:
-        profile = tasteProfile(buyer)
-        picked = []
 
-        if profile:
-            photos = ListingPhoto.objects.filter(
-                modelVersion=MODEL_VERSION, embedding__isnull=False
-            )
-            pool = maybeFlats(buyer, profile).prefetch_related(
-                Prefetch("photos", queryset=photos, to_attr="tastePhotos")
-            )
-            picked = [
-                (flat.pk, score, reason)
-                for flat, score, reason in rankFlats(profile, pool.iterator(chunk_size=100))
-            ]
+    if not profile:
+        return []
 
-        cache.set(key, picked, (600))
+    photos = ListingPhoto.objects.filter(modelVersion=MODEL_VERSION, embedding__isnull=False)
+    pool = maybeFlats(buyer, profile).prefetch_related(
+        Prefetch("photos", queryset=photos, to_attr="tastePhotos")
+    )
+
+
+    picked = [
+        (flat.pk, score, reason)
+        for flat, score, reason in rankFlats(profile, pool.iterator(chunk_size=100))
+    ]
 
     flats = (
         withTier(goodFlats(buyer))
@@ -336,6 +350,7 @@ def recommendedFlats(buyer):
             flat = found[flatId]
             flat.recommendationReason = reason
             result.append(flat)
+
 
     return result
 

@@ -122,10 +122,12 @@ def flatIssues(flatType, flatModel, area):
     issues = {}
     kind = flat_label(flatType)
 
+
     if flatModel not in rule["models"]:
         issues["flatModel"] = (
             f"{kind} flats don’t come in {flatModel}. Pick a flat model from the list."
         )
+
 
     if area is not None and not 25 <= area <= 300:
         issues["area"] = "Enter a size from 25 to 300 sqm."
@@ -179,6 +181,7 @@ def needRooms(have):
         if applies(needs, have):
             rooms.append(key)
 
+
     return rooms
 
 
@@ -198,7 +201,10 @@ def hasRole(user, role):
 
     profile = getattr(user, "profile", None)
 
-    return bool(profile and {"buyer": profile.canBuy, "seller": profile.canSell}.get(role, False))
+    return bool(
+        profile
+        and {"buyer": profile.canBuy, "seller": profile.canSell}.get(role, False)
+    )
 
 
 def currentMode(request):
@@ -209,10 +215,14 @@ def currentMode(request):
 
     profile = getattr(request.user, "profile", None)
 
+
+
     if profile and hasRole(request.user, profile.role):
         return profile.role
 
-    return next((role for role in ("buyer", "seller") if hasRole(request.user, role)), None)
+    return next(
+        (role for role in ("buyer", "seller") if hasRole(request.user, role)), None
+    )
 
 
 def modeContext(request):
@@ -234,6 +244,9 @@ def needEmail(view):
     @wraps(view)
     def checked(request, *args, **kwargs):
         from accounts.verification import emailVerified
+
+
+
         from accounts.verification import saveBack
 
         if (
@@ -248,13 +261,19 @@ def needEmail(view):
 
         return view(request, *args, **kwargs)
 
+
     return checked
 
 
 def object_id(value):
     value = str(value or "")
 
-    if not value.isascii() or not value.isdecimal() or len(value) > 18 or int(value) < 1:
+    if (
+        not value.isascii()
+        or not value.isdecimal()
+        or len(value) > 18
+        or int(value) < 1
+    ):
         raise ValidationError("Choose a valid object ID.")
 
     return int(value)
@@ -315,6 +334,8 @@ def publicQ(prefix=""):
     live = Q(**{prefix + "status": "live"})
     soldLive = Q(**{prefix + "status": "sold", prefix + "statusBeforeSold": "live"})
     sellerOn = Q(**{prefix + "seller__is_active": True})
+
+
 
     return (live | soldLive) & sellerOn
 
@@ -431,6 +452,9 @@ class Listing(models.Model):
     def save(self, *args, **kwargs):
         fields = kwargs.get("update_fields")
         watches = fields is None or bool({"status", "askingPrice"}.intersection(fields))
+
+
+
         old = None
 
         if watches and not self._state.adding:
@@ -450,6 +474,8 @@ class Listing(models.Model):
 
             if fields is not None:
                 fields = [*fields, "revision"]
+
+
                 kwargs["update_fields"] = fields
 
         if fields is not None and "status" in fields and "reviewSince" not in fields:
@@ -479,13 +505,18 @@ class Listing(models.Model):
             ):
                 kinds.append("price_drop")
 
+
+
             if kinds:
                 transaction.on_commit(lambda listingId=self.pk: huntAlerts(listingId, kinds))
+
+
 
             saved = []
 
             if "price_drop" in kinds:
                 saved.append("saved_price_drop")
+
 
             if old and old["status"] != "sold" and self.status == "sold":
                 saved.append("saved_sold")
@@ -499,6 +530,8 @@ class Listing(models.Model):
     def underOffer(self):
         if self.status == "sold":
             return False
+
+
 
         if hasattr(self, "acceptedCount"):
             return self.acceptedCount > 0
@@ -593,6 +626,8 @@ class ListingPhoto(models.Model):
     def save(self, *args, **kwargs):
         fields = kwargs.get("update_fields")
 
+
+
         if not self._state.adding and (
             fields is None or {"image", "room", "listing", "listing_id"}.intersection(fields)
         ):
@@ -616,6 +651,7 @@ class ListingPhoto(models.Model):
                     }
 
         self.updatedAt = timezone.now()
+
 
         if kwargs.get("update_fields") is not None:
             kwargs["update_fields"] = set(kwargs["update_fields"]) | {"updatedAt"}
@@ -643,6 +679,9 @@ class Profile(models.Model):
     def save(self, *args, **kwargs):
         if self._state.adding and not self.user.is_staff:
             self.canBuy = self.canBuy or self.role in ("buyer", "seller")
+
+
+
             self.canSell = self.canSell or self.role == "seller"
 
         super().save(*args, **kwargs)
@@ -785,6 +824,8 @@ class Refund(models.Model):
     createdAt = models.DateTimeField(default=timezone.now)
     staff = models.ForeignKey(User, on_delete=models.PROTECT, related_name="refunds")
 
+
+
     class Meta:
         constraints = [
             models.CheckConstraint(condition=Q(amount__gte=0), name="refund_nonnegative_amount"),
@@ -848,6 +889,8 @@ class OrderItem(models.Model):
         if self.listing and self.listing.status == "sold":
             return True
 
+
+
         return timezone.now() - self.order.createdAt >= timedelta(days=RATE_PACKAGE_AFTER_DAYS)
 
 
@@ -871,6 +914,8 @@ class Review(models.Model):
     @property
     def firstName(self):
         name = self.seller.first_name.strip()
+
+
 
         if not name:
             return "A seller"
@@ -933,13 +978,20 @@ class SavedSearch(models.Model):
     def save(self, *args, **kwargs):
 
         from .search import searchName
+
+
+
         from .search import tidySearch
 
         self.queryParams = tidySearch(self.queryParams)
+
+
+
         self.name = searchName(self.queryParams)
 
         if not self.queryParams:
             raise ValidationError("Choose at least one filter before saving a search.")
+
 
         if kwargs.get("update_fields") is not None:
             kwargs["update_fields"] = set(kwargs["update_fields"]) | {"name", "queryParams"}
@@ -1042,6 +1094,8 @@ class Offer(models.Model):
             raise ValidationError(
                 {"counterAmount": "Enter a positive counter amount for a countered offer."}
             )
+
+
 
         costError = "Enter a positive amount between half the asking price and $3,000,000."
 

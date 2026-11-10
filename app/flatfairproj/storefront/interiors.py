@@ -130,6 +130,9 @@ def seedPics(flat):
         return
 
     folder = Path(settings.MEDIA_ROOT) / "demo" / str(flat.publicId)
+
+
+
     folder.mkdir(parents=True, exist_ok=True)
     flat.photos.exclude(room__in=list(rooms)).delete()
 
@@ -138,6 +141,8 @@ def seedPics(flat):
 
         if not target.exists():
             shutil.copyfile(PHOTO_DIR / photo["file"], target)
+
+
 
         ListingPhoto.objects.update_or_create(
             listing=flat,
@@ -153,7 +158,7 @@ def seedPics(flat):
 
 
 def picCredits():
-    path = finders.find(("storefront/photos/credits.json"))
+    path = finders.find("storefront/photos/credits.json")
 
     if not path:
         return {"note": "", "photos": []}
@@ -166,17 +171,21 @@ def townCover(town):
     slug = slugify(str(town).replace("/", " "))
     path = f"storefront/towns/{slug}.jpg"
 
+
     return path if finders.find(path) else FALLBACK_COVER
 
 
-@lru_cache(maxsize=64)
 def townPhotos(slug):
     found = [f"storefront/towns/{slug}.jpg"] if finders.find(f"storefront/towns/{slug}.jpg") else []
     number = 2
 
     while finders.find(f"storefront/towns/{slug}-{number}.jpg"):
         found.append(f"storefront/towns/{slug}-{number}.jpg")
+
+
         number += 1
+
+
 
     return tuple(found)
 
@@ -192,6 +201,8 @@ def estatePic(flat):
 
 def regionName(value):
     wanted = str(value or "").strip().casefold()
+
+
 
     for name in REGIONS:
         if name.casefold() == wanted:
@@ -212,20 +223,24 @@ def townPoint(town):
     return LABEL_POINTS.get(town) or centroids().get(ALIASES.get(town, town))
 
 
-@file_cache(lambda: OUTLINES)
 def areaPaths():
-    return dict(re.findall(r'<path data-area="([^"]+)" d="([^"]+)"', OUTLINES.read_text()))
+    return dict(
+        re.findall(r'<path data-area="([^"]+)" d="([^"]+)"', OUTLINES.read_text())
+    )
 
 
-@file_cache(lambda: OUTLINES)
 def mapBounds():
     across = []
+
+
+
     down = []
 
     for path in areaPaths().values():
         numbers = [float(number) for number in re.findall(r"-?\d+\.?\d*", path)]
         across += numbers[0::2]
         down += numbers[1::2]
+
 
     width = max(across) - min(across)
     height = max(down) - min(down)
@@ -239,7 +254,6 @@ def mapBounds():
     ]
 
 
-@file_cache(lambda: CENTROIDS)
 def centroids():
     return json.loads(CENTROIDS.read_text())["centroids"]
 
@@ -250,13 +264,16 @@ def mapDots(liveTowns):
     for town in liveTowns:
         biggest = max(biggest, town["count"])
 
+
     dots = []
+
 
     for town in liveTowns:
         point = centroids().get(ALIASES.get(town["town"], town["town"]))
 
         if point:
             share = sqrt(town["count"] / biggest)
+
 
             dots.append(
                 {
@@ -285,6 +302,7 @@ def roomPhotos():
             .order_by("pk")
             .first()
         )
+
 
         if photo:
             picked.append(photo)

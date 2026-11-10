@@ -29,6 +29,9 @@ def offer_floor(flat):
 @register.simple_tag
 def deal_progress(offer):
     from storefront.deals import progress
+
+
+
     from storefront.models import Deal
 
     deal = Deal.objects.filter(offer=offer).first()
@@ -45,6 +48,8 @@ def try_price(raw):
         value = int(str(raw).replace(",", "").replace("$", "").strip())
     except Exception as error:
         return None
+
+
 
     if 50000 <= value <= 3000000:
         return value
@@ -75,12 +80,17 @@ def share_links(context, flat):
 
     url = base + path
 
+
+
     if flat.block:
         place = f"Blk {flat.block} {flat.town.title()}"
     else:
         place = flat.town.title()
 
+
+
     words = f"Have a look at this flat on FlatFair: {place}, ${flat.askingPrice:,}"
+
 
     return {
         "whatsapp": "https://wa.me/?" + urlencode({"text": f"{words} {url}"}),
@@ -95,6 +105,8 @@ def share_links(context, flat):
 @register.simple_tag
 def price_coach(flat):
     from storefront.offeradvice import openHint
+
+
 
     return openHint(flat)
 
@@ -123,12 +135,15 @@ def estimate_gap(asking, raw):
     if gap > 0:
         return f"{words} above your estimate"
 
+
     return f"{words} below your estimate"
 
 
 @register.filter
 def cart_points(item):
-    from storefront.views import PACKAGE_COPY
+    from storefront.presentation import PACKAGE_COPY
+
+
 
     copy = PACKAGE_COPY.get(item.name)
 
@@ -140,8 +155,12 @@ def cart_points(item):
 
         return [line.format(duration=duration).strip() for line in copy["benefits"]]
 
+
+
     return [
-        part.strip().rstrip(".") for part in (item.description or "").split(". ") if part.strip()
+        part.strip().rstrip(".")
+        for part in (item.description or "").split(". ")
+        if part.strip()
     ]
 
 
@@ -170,8 +189,12 @@ def suggest_room(offer):
     from storefront.offeradvice import SUGGEST_LIMIT, hintsLeft
 
     left = hintsLeft(offer)
+
+
+
     low = int(offer.amount) + 1
     high = int(offer.counterAmount or 0) - 1
+
 
     return {
         "left": left,
@@ -186,13 +209,17 @@ def suggest_room(offer):
 def seller_round(offer):
     from storefront.offeradvice import sellerAsk, hintsLeft
 
+
+
     lastAsk = sellerAsk(offer)
     high = int(offer.counterHigh)
 
     if offer.status == "pending" and lastAsk:
         high = min(high, lastAsk)
 
-    lastRound = offer.status == "pending" and bool(offer.priceSteps) and hintsLeft(offer) == 0
+    lastRound = (
+        offer.status == "pending" and bool(offer.priceSteps) and hintsLeft(offer) == 0
+    )
 
     return {"lastRound": lastRound, "high": high, "open": offer.counterLow <= high}
 

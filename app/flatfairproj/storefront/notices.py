@@ -45,9 +45,9 @@ def count_new(user):
 
 
 def new_notes(user, count=3):
-    return ActivityNotice.objects.filter(user=user, read=False).order_by("-createdAt", "-pk")[
-        :count
-    ]
+    return ActivityNotice.objects.filter(user=user, read=False).order_by(
+        "-createdAt", "-pk"
+    )[:count]
 
 
 def notify(user, kind, text, url):
@@ -68,6 +68,8 @@ def searchNote(savedSearch, flat, kind):
     else:
         text = "Price dropped on a flat in your saved search"
 
+
+
     url = reverse("listing_detail", args=[flat.publicId])
 
     notice = notify(
@@ -81,6 +83,8 @@ def searchNote(savedSearch, flat, kind):
     from .notices import real_mail
 
     email = savedSearch.buyer.email
+
+
 
     if real_mail(email):
         if kind == "new_match":
@@ -176,6 +180,9 @@ def _offer_note(offer, kind, to):
 
     if to == "seller":
         user_id = flat.seller_id
+
+
+
         url = reverse("seller_viewings") + f"#offer-{offer.pk}"
     else:
         user_id = offer.buyer_id
@@ -186,6 +193,8 @@ def _offer_note(offer, kind, to):
         counter=_dollars(offer.counterAmount),
         place=_place(flat),
     )
+
+
 
     return ActivityNotice(user_id=user_id, kind=kind, text=words[:200], url=url)
 
@@ -217,6 +226,7 @@ def visit_note(slot, kind, users, by, reason=""):
     when = _time(slot.startsAt)
     place = _place(slot.listing)
 
+
     if by == "buyer":
         url = reverse("seller_viewings") + f"#slot-{slot.pk}"
 
@@ -241,7 +251,9 @@ def visit_note(slot, kind, users, by, reason=""):
 
     for user in users:
         notices.append(
-            ActivityNotice(user_id=getattr(user, "pk", user), kind=kind, text=words[:200], url=url)
+            ActivityNotice(
+                user_id=getattr(user, "pk", user), kind=kind, text=words[:200], url=url
+            )
         )
 
     made = ActivityNotice.objects.bulk_create(notices)
@@ -264,21 +276,25 @@ def choice_note(flat, choice, reason=""):
     else:
         url = reverse("my_listings") + f"#listing-{flat.publicId}"
 
+
     return notify(flat.seller_id, f"listing_{choice}", words, url)
 
 
 def page_items(user, community=False):
     from .reminders import autoNudge
 
+
+
     autoNudge()
     notices = ActivityNotice.objects.filter(user=user)
+
 
     if community:
         notices = notices.filter(kind__startswith="community_")
 
     items = []
 
-    for notice in notices.order_by("-createdAt", "-pk")[:(30)]:
+    for notice in notices.order_by("-createdAt", "-pk")[:30]:
         items.append(
             {
                 "title": notice.get_kind_display(),
@@ -302,7 +318,8 @@ def real_mail(email):
     domain = email.rsplit("@", 1)[1].lower()
 
     return not any(
-        domain == skip or domain.endswith("." + skip) for skip in settings.NOTICE_MAIL_SKIP
+        domain == skip or domain.endswith("." + skip)
+        for skip in settings.NOTICE_MAIL_SKIP
     )
 
 
@@ -321,7 +338,7 @@ def buildEmail(
     button=None,
     notes=(),
     preview="",
-    reason=("You’re getting this email because of activity on your FlatFair account."),
+    reason="You’re getting this email because of activity on your FlatFair account.",
 ):
     context = {
         "subject": subject,
@@ -337,10 +354,18 @@ def buildEmail(
         "supportUrl": site_Url(reverse("support")),
     }
 
+
     message = EmailMultiAlternatives(
-        subject, render_to_string("emails/message.txt", context), settings.DEFAULT_FROM_EMAIL, [to]
+        subject,
+        render_to_string("emails/message.txt", context),
+        settings.DEFAULT_FROM_EMAIL,
+        [to],
     )
-    message.attach_alternative(render_to_string("emails/message.html", context), "text/html")
+    message.attach_alternative(
+        render_to_string("emails/message.html", context), "text/html"
+    )
+
+
 
     return message
 
@@ -414,18 +439,23 @@ def mailNotes(notices):
     if not wanted:
         return
 
+
+
     from accounts.models import EmailCheck
+
 
     ids = {notice.user_id for notice in wanted}
     people = User.objects.in_bulk(ids)
     firm = set(
-        EmailCheck.objects.filter(user_id__in=ids, verifiedAt__isnull=False).values_list(
-            "user_id", flat=True
-        )
+        EmailCheck.objects.filter(
+            user_id__in=ids, verifiedAt__isnull=False
+        ).values_list("user_id", flat=True)
     )
 
     for notice in wanted:
         person = people.get(notice.user_id)
+
+
 
         if (
             person is None
@@ -436,6 +466,8 @@ def mailNotes(notices):
             continue
 
         subject = subjects[notice.kind]
+
+
 
         sendLater(
             buildEmail(
@@ -455,6 +487,8 @@ def mailNotes(notices):
 def fanAlerts(listingId, kinds):
     from .models import ActivityNotice, Listing, SavedListing
     from .notices import _dollars, _place
+
+
 
     flat = Listing.objects.filter(pk=listingId).first()
 
@@ -495,13 +529,16 @@ def mailSlip(sender, instance, created, **kwargs):
 
     person = instance.seller
 
+
     if person is None or not real_mail(person.email):
         return
+
 
     def send():
         from .models import Order
 
         order = Order.objects.filter(pk=instance.pk).prefetch_related("items").first()
+
 
         if order is None:
             return
@@ -530,6 +567,7 @@ def mailSlip(sender, instance, created, **kwargs):
                 preview=f"Receipt for order #{order.pk}: ${order.total:,.2f}",
             )
         )
+
 
     transaction.on_commit(
         lambda: (
@@ -581,6 +619,8 @@ def helpStart(request):
 
 
 def support(request):
+    from adminpanel.forms import TicketForm
+
     form = None
 
     if not request.user.is_staff:
@@ -595,6 +635,7 @@ def support(request):
                 messages.error(
                     request, "You’ve sent a few messages already. Please try again in an hour."
                 )
+
 
                 return render(request, "storefront/support.html", {"ticketForm": form})
 
@@ -633,6 +674,8 @@ def userOnly(request, pk=None):
 def ticketRows(user):
     latest = TicketMessage.objects.filter(ticket=OuterRef("pk")).order_by("-createdAt", "-pk")
 
+
+
     return (
         Ticket.objects.filter(customer=user)
         .select_related("order")
@@ -669,12 +712,15 @@ def userReply(ticket, user, body):
 
 @login_required
 def my_ticket(request, pk):
+    from adminpanel.forms import ReplyForm
+
     blocked = userOnly(request, pk)
 
     if blocked:
         return blocked
 
     ticket = get_object_or_404(Ticket.objects.select_related("order"), pk=pk, customer=request.user)
+
 
     form = ReplyForm(request.POST or None)
 

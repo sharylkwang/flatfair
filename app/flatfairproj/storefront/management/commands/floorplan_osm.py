@@ -37,6 +37,8 @@ def contains(poly, x, y):
 
 def blockShape(outline, lat, lon):
     points = to_metres(outline, lat, lon)
+
+
     best = None
 
     for degrees in range(180):
@@ -49,19 +51,30 @@ def blockShape(outline, lat, lon):
             horizontal_position * math.cos(angle) - vertical_position * math.sin(angle)
             for horizontal_position, vertical_position in points
         ]
+
+
+
         length = max(alongs) - min(alongs)
         depth = max(acrosses) - min(acrosses)
 
         if best is None or length * depth < best[0]:
             best = (length * depth, degrees, length, depth)
 
+
+
     area, degrees, length, depth = best
 
     if depth > length:
         degrees = (degrees + 90) % 180
+
+
+
         length, depth = depth, length
 
     ratio = length / max(depth, 1)
+
+
+
     form = "other"
 
     if ratio >= 2.2 and length >= 40:
@@ -76,7 +89,7 @@ def get_blocks(lat, lon):
     query = f'[out:json][timeout:25];way(around:30,{lat},{lon})["building"];out geom;'
     data = urllib.parse.urlencode({"data": query}).encode()
     request = urllib.request.Request(
-        ("https://overpass-api.de/api/interpreter"),
+        "https://overpass-api.de/api/interpreter",
         data=data,
         headers={"User-Agent": "FlatFair-coursework/1.0"},
     )
@@ -103,6 +116,8 @@ def pickBlock(ways, lat, lon):
         )
         score = math.hypot(middleX, middleY)
 
+
+
         if contains(poly, 0, 0):
             score = 0
 
@@ -124,6 +139,7 @@ class Command(BaseCommand):
             raise CommandError("Floor plans are turned off.")
 
         path = floorplan.BLOCK_SHAPES_PATH
+
 
         try:
             cache = json.loads(path.read_text())
@@ -151,6 +167,7 @@ class Command(BaseCommand):
 
             entry = known.get(postal)
 
+
             if not entry:
                 self.stdout.write(f"{postal}: not an HDB block, skipped")
 
@@ -171,13 +188,20 @@ class Command(BaseCommand):
                 self.stdout.write(f"{postal}: no building outline found, skipped")
             else:
                 shape = blockShape(picked[2], lat, lon)
+
+
                 shape["osm"] = picked[1]
+
+
                 shapes[postal] = shape
                 self.stdout.write(
                     f"{postal} blk {entry['b']}: {shape['form']} {shape['length']}x{shape['depth']} m"
                 )
 
+
+
             time.sleep(2)
+
 
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(cache, indent=1, sort_keys=True) + "\n")

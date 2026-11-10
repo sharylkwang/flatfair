@@ -183,6 +183,9 @@ def seed_offer(key, listing, buyer, factor, status, when):
         "HFE ready, hoping to move before the new school term.",
         "Could we view on Saturday morning? Our timeline is flexible.",
     )
+
+
+
     offer = Offer.objects.filter(seedKey=key).first()
 
     if offer:
@@ -200,6 +203,7 @@ def seed_offer(key, listing, buyer, factor, status, when):
         counter = max(amount + step, round_cost(ask * Decimal(".985"), step))
 
     replied = None
+
 
     if status != "pending":
         replied = min(timezone.now(), when + timedelta(hours=20))
@@ -237,6 +241,8 @@ class Command(BaseCommand):
         seller = User.objects.filter(username="seller@flatfair.sg").first()
         buyer = User.objects.filter(username="buyer@flatfair.sg").first()
         demos = list(User.objects.filter(username__in=DEMO_SELLERS).order_by("pk"))
+
+
         buyers = list(User.objects.filter(username__in=DEMO_BUYERS).order_by("pk"))
 
         if seller:
@@ -272,6 +278,9 @@ class Command(BaseCommand):
                 )
             )
             engaged.update(Offer.objects.filter(buyer=buyer).values_list("listing_id", flat=True))
+
+
+
             engaged.update(
                 ViewingBooking.objects.filter(buyer=buyer).values_list(
                     "slot__listing_id", flat=True
@@ -302,6 +311,8 @@ class Command(BaseCommand):
             Listing.objects.filter(pk=flat.pk).update(intentToSellDate=signed, viewCount=views)
 
         Offer.objects.filter(status="accepted").update(hasHfe=True)
+
+
 
         for offer in Offer.objects.filter(status__in=["pending", "countered"]).order_by("pk"):
             if offer.pk % 3 != 0:
@@ -369,7 +380,7 @@ class Command(BaseCommand):
                         buyer,
                         ".99",
                         "accepted",
-                        flat.createdAt + timedelta(days=(40)),
+                        flat.createdAt + timedelta(days=40),
                     )
 
         staff = User.objects.filter(username="admin@flatfair.sg").first()
@@ -389,8 +400,12 @@ class Command(BaseCommand):
             listing = Listing.objects.filter(seller=seller, postalCode=postal).first()
             product = Product.objects.filter(name=name).first()
 
+
+
             if listing is None or product is None:
                 continue
+
+
 
             token = f"activity-order-{seller.pk}-{i}"
 
@@ -403,6 +418,8 @@ class Command(BaseCommand):
                 continue
 
             subtotal = Decimal(product.price)
+
+
             gst = (subtotal * Decimal(".09")).quantize(Decimal(".01"))
 
             order = Order.objects.create(
@@ -426,6 +443,8 @@ class Command(BaseCommand):
                 listing=listing,
             )
 
+
+
             deliver(item)
             logOrder(order, staff)
 
@@ -441,6 +460,8 @@ class Command(BaseCommand):
             pool = buyers[start:] + buyers[:start]
             plan = OFFER_PLANS[flat.pk % len(OFFER_PLANS)]
             seen = None
+
+
             latest = now
 
             if plan[0][1] == "accepted":
@@ -461,6 +482,8 @@ class Command(BaseCommand):
             for person in pool[: 3 if own else flat.pk % 4]:
                 faves, _ = Collection.objects.get_or_create(user=person, name="Shortlist")
                 SavedListing.objects.get_or_create(collection=faves, listing=flat)
+
+
 
             soon = slot_times(now, 4, flat.pk)
 
@@ -530,6 +553,7 @@ class Command(BaseCommand):
 
         soon = slot_times(now, 2, buyer.pk + 1)
 
+
         for i in range(3):
             if i < 2:
                 starts = soon[i]
@@ -537,6 +561,9 @@ class Command(BaseCommand):
                 starts = visit_time(timezone.localdate(now) - timedelta(days=3))
 
             slot = seed_slot(f"buyer-slot:{buyer.pk}:{i}", public[i % len(public)], starts)
+
+
+
             status = "done" if slot.startsAt < now else "confirmed"
             seed_visit(slot, buyer, status)
 
@@ -548,6 +575,8 @@ class Command(BaseCommand):
 
     def seedOfferThread(self, buyer, now):
         offer = Offer.objects.filter(seedKey=f"buyer:{buyer.pk}:0", status="pending").first()
+
+
 
         if offer is None or offer.messages.exists():
             return
@@ -586,18 +615,27 @@ class Command(BaseCommand):
                 "username", flat=True
             )
 
+
+
             if all(name.endswith("flatfair.sg") for name in savers):
                 flat.askingPrice = int(round_cost(Decimal(flat.askingPrice) * Decimal(".98"), 1000))
+
+
+
                 flat.save(update_fields=["askingPrice"])
 
                 return
 
     def seedPriceCoach(self, now):
         from storefront.offeradvice import WINDOW_DAYS, coachSlow
+
+
         from storefront.offeradvice import round1000
 
         if PriceSuggestion.objects.filter(listing__seller__username__in=DEMO_SELLERS).exists():
             return
+
+
 
         agreed = Offer.objects.filter(status="accepted").values("listing")
 
@@ -615,6 +653,8 @@ class Command(BaseCommand):
             return
 
         quiet = now - timedelta(days=WINDOW_DAYS + 6)
+
+
 
         Listing.objects.filter(pk=flat.pk).update(
             createdAt=now - timedelta(days=45),
@@ -636,6 +676,8 @@ class Command(BaseCommand):
             if item is None:
                 continue
 
+
+
             Review.objects.get_or_create(
                 orderItem=item,
                 defaults={
@@ -655,6 +697,8 @@ class Command(BaseCommand):
         ):
             return
 
+
+
         offers = Offer.objects.select_related("listing").order_by("-createdAt")
         offer_notes(
             offers.filter(listing__seller=seller, status="pending")[:2], "offer_new", "seller"
@@ -664,6 +708,7 @@ class Command(BaseCommand):
 
     def seed_support(self, now):
         staff = User.objects.filter(username="admin@flatfair.sg").first()
+
 
         for email, topic, product, status, days, message, replies in TICKETS:
             customer = User.objects.filter(username=email).first()
@@ -677,6 +722,7 @@ class Command(BaseCommand):
             opened = now - timedelta(days=days)
             order = None
 
+
             if product:
                 order = (
                     Order.objects.filter(seller=customer, items__name=product)
@@ -688,6 +734,8 @@ class Command(BaseCommand):
                 opened = order.createdAt + timedelta(hours=3)
 
             closed = None
+
+
 
             if status == "resolved":
                 closed = opened + timedelta(hours=6)

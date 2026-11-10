@@ -128,6 +128,8 @@ def plan_pdf(flat):
     street = address["label"] if address else f"Blk {flat.block}"
     draw.text((100, 100), f"{street}, {flat.town.title()}", fill="black", font=title)
     details = f"{flat_label(flat.flatType)} · {flat.flatModel} · {flat.floorAreaSqm:g} sqm · Floor {flat.storey}"
+
+
     draw.text((100, 160), details, fill="black", font=label)
 
     if "Maisonette" in flat.flatModel:
@@ -147,6 +149,8 @@ def plan_pdf(flat):
         font=small,
     )
     buffer = io.BytesIO()
+
+
     image.save(buffer, "PDF", resolution=150)
 
     return buffer.getvalue()
@@ -169,6 +173,8 @@ def photos_zip(flat):
             number += 1
             picture = Image.open(io.BytesIO(data)).convert("RGB")
             width, height = picture.size
+
+
             detail = picture.crop((width * 0.15, height * 0.15, width * 0.85, height * 0.85))
             output = io.BytesIO()
             detail.save(output, "JPEG", quality=90)
@@ -196,6 +202,8 @@ def deliver(item):
 
     if item.listing and item.name == "Pro photography":
         name = f"photos-blk-{item.listing.block.lower()}.zip"
+
+
         item.deliveryFile.save(name, ContentFile(photos_zip(item.listing)), save=False)
 
     item.save()
@@ -238,6 +246,8 @@ def logOrder(order, staff):
             },
         )
 
+
+
     if staff is None or not order.items.filter(kind="addon").exists():
         return
 
@@ -246,6 +256,8 @@ def logOrder(order, staff):
 
     gap = min(timedelta(days=1), (timezone.now() - order.createdAt) / 3)
     when = order.createdAt
+
+
 
     for old, new in ORDER_STEPS.get(order.status, []):
         when = when + gap
@@ -272,6 +284,7 @@ def seedChoice(flat, staff, choice, reason, when, askingPrice):
         createdAt=when,
     )
 
+
     if choice == "approved":
         flat.photos.update(staffChecked=True)
 
@@ -292,6 +305,8 @@ def okFlagged(staff):
         "Next to the MRT station. A recent sale in the next block supports the price.",
     ]
 
+
+
     if staff is None:
         return
 
@@ -301,8 +316,11 @@ def okFlagged(staff):
         .order_by("createdAt", "pk")
     )
 
+
     priced = 0
     photos = 0
+
+
 
     for flat in flats:
         if (
@@ -310,6 +328,7 @@ def okFlagged(staff):
             == "above"
         ):
             reason = reasons[priced % len(reasons)]
+
 
             if priced < 2:
                 denied = "Asking price was far above similar sales with no reason given. Asked the seller to lower it."
@@ -353,6 +372,7 @@ class Command(BaseCommand):
                 "Demo accounts have known passwords. Set DEMO_DATA=true to add them anyway."
             )
 
+
         if not picsReady():
             raise CommandError(
                 "Interior photos missing from storefront/static/storefront/interiors; no records created."
@@ -380,6 +400,8 @@ class Command(BaseCommand):
         for email, first, last, password, role in ACCOUNTS:
             user, created = User.objects.get_or_create(username=email, defaults={"email": email})
 
+
+
             if created:
                 user.set_password(password)
                 user.date_joined = now - timedelta(days=150)
@@ -403,7 +425,13 @@ class Command(BaseCommand):
             users[email] = user
 
         retireDemo()
+
+
+
         self.staff = users["admin@flatfair.sg"]
+
+
+
         flats = []
 
         for i, (
@@ -433,6 +461,8 @@ class Command(BaseCommand):
 
             if flat is not None and not flat.description:
                 flat.description = DESCRIPTIONS.get(postal, "")
+
+
                 flat.save(update_fields=["description"])
 
             if flat is None:
@@ -505,6 +535,8 @@ class Command(BaseCommand):
 
         subtotal = Decimal(product.price)
         gst = (subtotal * Decimal("0.09")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
         order = Order.objects.create(
             checkoutToken=token,
             seller=flat.seller,

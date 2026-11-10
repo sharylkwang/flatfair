@@ -456,6 +456,68 @@ class SettingsTests(TestCase):
         self.assertEqual(settings.DATABASES["default"]["OPTIONS"]["timeout"], 20)
 
 
+class ActionLinks(HTMLParser):
+
+    def __init__(self, content):
+        super().__init__()
+        self.links = []
+        self.link = None
+        self.feed(content)
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            self.link = {**dict(attrs), "text": ""}
+
+    def handle_data(self, data):
+        if self.link is not None:
+            self.link["text"] += data
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.link is not None:
+            self.links.append(self.link)
+            self.link = None
+
+
+class RowActionTests(TestCase):
+
+    def test_buyer_offer_viewing_on(self):
+        seller = makeUser("row-seller@test.com", "seller")
+        buyer = makeUser("row-buyer@test.com")
+        flat = makeListing(seller)
+        Offer.objects.create(listing=flat, buyer=buyer, amount=500000)
+        slot = ViewingSlot.objects.create(
+            listing=flat, startsAt=timezone.now() + timedelta(days=2), capacity=2
+        )
+        ViewingBooking.objects.create(slot=slot, buyer=buyer, status="confirmed")
+        self.client.force_login(buyer)
+        response = self.client.get(reverse("my_offers"))
+        links = [link for link in ActionLinks(response.content.decode()).links if link["text"] == "View flat"]
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0]["class"], "btn btn-ghost btn-sm")
+        self.assertEqual(links[0]["href"], reverse("listing_detail", args=[flat.publicId]))
+        self.assertContains(response, 'class="buyer-line"', count=2)
+
+    def test_task_cards_give_same(self):
+        for label, style in (
+            ("View flat", "btn-ghost"),
+            ("View order", "btn-ghost"),
+            ("View receipt", "btn-ghost"),
+            ("Browse flats", "btn-ghost"),
+            ("Review offer", "btn-brand"),
+            ("Check listing", "btn-brand"),
+            ("Check activity", "btn-brand"),
+            ("Manage listing", "btn-brand"),
+        ):
+            for template in ("storefront/ui/photo_row.html", "storefront/ui/task_card.html"):
+                with self.subTest(label=label, template=template):
+                    content = render_to_string(
+                        template,
+                        {"action_url": "/next", "action_label": label, "title": "Next step"},
+                    )
+                    link = next((link for link in ActionLinks(content).links if link["text"] == label))
+                    self.assertEqual(link["class"], f"btn {style} btn-sm")
+
+
 class LightboxLinkParser(HTMLParser):
 
     def __init__(self):

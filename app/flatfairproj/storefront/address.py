@@ -43,10 +43,14 @@ def search(query):
         if digits.isdigit() and postal.startswith(digits):
             found = True
         else:
-            found = all(any(word.startswith(part) for word in blockBits) for part in words)
+            found = all(
+                any(word.startswith(part) for word in blockBits) for part in words
+            )
 
         if found:
             entry = blocks()[postal]
+
+
 
             matches.append(
                 {
@@ -65,9 +69,14 @@ def search(query):
     return matches
 
 
-@file_cache(lambda: BLOCKS_JSON)
 def street_names():
-    return frozenset(entry["s"] for entry in blocks().values())
+    names = set()
+
+
+    for entry in blocks().values():
+        names.add(entry["s"])
+
+    return frozenset(names)
 
 
 @file_cache(lambda: BLOCKS_JSON)
@@ -93,6 +102,8 @@ def hint_index():
     for postal, entry in sorted(blocks().items()):
         label = f"Blk {entry['b']} {entry['s'].title()}"
         add("block", label, label, f"{entry['b']} {entry['s']} {entry['t']}")
+
+
         add("postal", f"{label} · {postal}", postal, postal)
 
     return items, starts
@@ -105,8 +116,12 @@ def search_hints(query):
     if len(" ".join(words)) < 2:
         return []
 
+
     items, starts = hint_index()
     matches = set.intersection(*(starts.get(word, set()) for word in words))
+
+
+
     ordered = sorted(matches)
 
     if "".join(words).isdigit():
@@ -125,10 +140,13 @@ def get_postal(postal):
     postal = str(postal or "").strip()
     entry = blocks().get(postal)
 
+
+
     if entry is None:
         return None
 
     kinds = []
+
 
     for kind, (low_area, top_area, models) in (entry.get("x") or {}).items():
         kinds.append(
@@ -161,12 +179,14 @@ def not_found(postal):
 
 def area_range(kind):
     low_area, top_area = kind["sqm"]
-    margin = max((8), top_area * (0.1))
+    margin = max(8, top_area * 0.1)
 
     return low_area - margin, top_area + margin
 
 
-def check(postal, town=None, block=None, flatType=None, area=None, lease=None, storey=None):
+def check(
+    postal, town=None, block=None, flatType=None, area=None, lease=None, storey=None
+):
     errors, warns, fixes = {}, {}, {}
     record = get_postal(postal)
 
@@ -212,6 +232,7 @@ def check(postal, town=None, block=None, flatType=None, area=None, lease=None, s
             "Please check the flat type."
         )
 
+
     if kind and area is not None:
         low, high = area_range(kind)
 
@@ -228,22 +249,31 @@ def check(postal, town=None, block=None, flatType=None, area=None, lease=None, s
                 f"so {float(area):g} sqm looks wrong. Check your HDB papers or change the flat type."
             )
 
-    if lease is not None and record["leaseYear"] and abs(int(lease) - record["leaseYear"]) > 1:
+    if (
+        lease is not None
+        and record["leaseYear"]
+        and abs(int(lease) - record["leaseYear"]) > 1
+    ):
         errors["lease"] = (
             f"The lease at {where} started in {record['leaseYear']}, not {lease}. "
             f"Use {record['leaseYear']}, or check the postal code."
         )
 
-    if storey is not None and record["storeys"] and int(storey) > record["storeys"][1] + 3:
+    if (
+        storey is not None
+        and record["storeys"]
+        and int(storey) > record["storeys"][1] + 3
+    ):
         warns["storey"] = (
             f"The highest flat sold at {where} was on the {ordinal(record['storeys'][1])} floor, "
             f"so the {ordinal(storey)} floor looks too high. Please check it."
         )
 
+
+
     return record, errors, warns, fixes
 
 
-@file_cache(lambda: STATIONS_CSV)
 def stations():
     rows = []
 
@@ -258,16 +288,20 @@ def stations():
 def walk_index():
     try:
         stopData = json.loads(STATIONS_JSON.read_text(encoding="utf-8"))
+
+
         index = json.loads(WALK_FILE.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {"stations": [], "lines": {}, "blocks": {}, "byBlock": {}}
 
     byId = {}
 
+
     for station in stopData["stations"]:
         byId[station["id"]] = station
 
     ordered = []
+
 
     for stopId in index["stationIds"]:
         ordered.append(byId[stopId])
@@ -287,6 +321,7 @@ def distance(lat, lon, lat2, lon2):
         math.radians(lat2),
         math.radians(lon2),
     )
+
 
     arc = (
         math.sin((lat_two - lat_one) / 2) ** 2
@@ -316,14 +351,7 @@ def nearest_station(postal):
 
 
 def line_tags(codes, lines):
-    lrt_codes = {
-        "STC": "SK",
-        "SE": "SK",
-        "SW": "SK",
-        "PTC": "PG",
-        "PE": "PG",
-        "PW": "PG",
-    }
+    lrt_codes = {"STC": "SK", "SE": "SK", "SW": "SK", "PTC": "PG", "PE": "PG", "PW": "PG"}
     colours = {"#009645": "#007A38", "#748477": "#5F6D62"}
     badges = []
 
@@ -337,6 +365,7 @@ def line_tags(codes, lines):
 
         if line in DARK_TEXT_LINES:
             text = "#1B2A3A"
+
 
         badges.append(
             {"code": code, "lineName": meta.get("name", line), "colour": colour, "text": text}
@@ -352,6 +381,8 @@ def walk_stop(postal, block="", town=""):
     if row is None and block and town:
         row = index["byBlock"].get(f"{town.strip().upper()}|{block.strip().upper()}")
 
+
+
     if row is None:
         return None
 
@@ -364,7 +395,7 @@ def walk_stop(postal, block="", town=""):
     return {
         "name": f"{station['name']} {station['kind']}",
         "metres": int(round(row[1], -1)),
-        "minutes": max(1, round(row[1] / (80))),
+        "minutes": max(1, round(row[1] / 80)),
         "exit": wayOut,
         "badges": line_tags(station["codes"], index["lines"]),
         "walking": True,
