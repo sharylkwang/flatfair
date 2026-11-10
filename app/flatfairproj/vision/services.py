@@ -59,10 +59,13 @@ def process(photo, force=False):
 # Save the photo check results
 def _process(photo, force=False):
     record, _ = PhotoAnalysis.objects.get_or_create(photo=photo)
+
+
     path = photo.image.path
 
     if record.status == "done" and not force and not is_stale(record):
         return record
+
 
     batch = uuid4().hex
     stamp = pipelineIdentity()
@@ -70,6 +73,9 @@ def _process(photo, force=False):
     record.status = "running"
     record.error = ""
     record.timings = dict(record.timings, publication_generation=batch)
+
+
+
     record.save(update_fields=["status", "error", "timings", "pipelineIdentity"])
     new_crops = []
 
@@ -109,6 +115,9 @@ def _process(photo, force=False):
                     item, f"{record.pk}-{index}-{uuid4().hex}.png"
                 )
                 item.save()
+
+
+
                 new_crops.append((item, png))
 
             record.flooring, record.layout = result["flooring"], result["layout"]
@@ -124,6 +133,7 @@ def _process(photo, force=False):
             def publish_crops():
                 written = []
                 reserved = [(item.crop.storage, item.crop.name) for item, _ in new_crops]
+
 
                 try:
                     if not owned().exists():
@@ -161,6 +171,7 @@ def _process(photo, force=False):
                         if updated != len(posted):
                             raise RuntimeError("Crop row removed during publication")
 
+
                         current.status = "done"
                         current.save(update_fields=["status"])
 
@@ -184,6 +195,8 @@ def runPick(pick):
 
     pick.error = ""
 
+
+
     try:
         with ai_lock():
             result = pick_item(
@@ -196,11 +209,15 @@ def runPick(pick):
 
         return pick
 
+
+
     if result.get("empty"):
         ItemPick.objects.filter(pk=pick.pk).update(
             status="empty", label=result.get("label", "")[:60]
         )
         pick.status = "empty"
+
+
 
         return pick
 
@@ -261,6 +278,7 @@ def like_pool(listing_id):
     for other in pool:
         vector = np.asarray(other.embedding, dtype=float)
 
+
         if vector.shape != (512,) or not np.isfinite(vector).all():
             continue
 
@@ -304,6 +322,7 @@ def nearest(label, embedding, candidates):
 
     scores = matrix @ (vector / max(float(np.linalg.norm(vector)), 1e-8))
 
+
     return [
         items[index]
         for index in np.argsort(-scores, kind="stable")
@@ -342,6 +361,7 @@ def links(item):
         and not host.endswith((".localhost", ".local"))
     )
 
+
     import ipaddress
 
     try:
@@ -354,5 +374,6 @@ def links(item):
         lens = "https://lens.google.com/uploadbyurl?" + urlencode({"url": crop_url})
     else:
         lens = ""
+
 
     return search, lens

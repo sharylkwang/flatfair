@@ -67,6 +67,7 @@ def fixStale(locked=False, heartbeat=None):
 
     heartbeat = resourceCache.get(HEARTBEAT_KEY, 0) if heartbeat is None else heartbeat
 
+
     if time.time() - heartbeat < STALE_SECONDS:
         return 0
 
@@ -89,6 +90,8 @@ def fixStale(locked=False, heartbeat=None):
 def watchWork(process, token, gpu=None):
     from django.db import close_old_connections
 
+
+
     try:
         if gpu is None:
             process.wait()
@@ -97,6 +100,9 @@ def watchWork(process, token, gpu=None):
                 process.wait(timeout=STUCK_SECONDS)
             except subprocess.TimeoutExpired:
                 disableGpu("the photo worker on the GPU did not stop")
+
+
+
                 process.kill()
                 process.wait()
 
@@ -108,6 +114,8 @@ def watchWork(process, token, gpu=None):
         claimKey = f"photo-worker:claimed:{token}"
         claimed = resourceCache.get(claimKey, False)
         resourceCache.delete(claimKey)
+
+
 
         if not claimed:
             with modelLock() as held:
@@ -135,11 +143,19 @@ def watchWork(process, token, gpu=None):
         close_old_connections()
 
 
+def warmWorker():
+    from django.conf import settings
+    from .photocheck import isOn
+
+    return settings.PHOTO_WORKER_ON and isOn() and ensureWorker(warm=True)
+
+
 def ensureWorker(warm=False):
     try:
         with modelLock() as held:
             if not held:
                 return False
+
 
             fixStale(locked=True)
 
@@ -170,6 +186,7 @@ def ensureWorker(warm=False):
                     if os.name == "nt"
                     else {"start_new_session": True}
                 )
+
 
                 process = subprocess.Popen(
                     [sys.executable, "-m", "sellerpanel.photoworker"],
@@ -225,6 +242,8 @@ def queuePics(owner, paths, previousPaths=None):
         if jobs:
             transaction.on_commit(ensureWorker)
 
+
+
     return jobs
 
 
@@ -232,13 +251,15 @@ def workerAlive():
     if resourceCache.get(STARTING_KEY):
         return True
 
+
     with modelLock() as held:
         return not held
 
 
-def checkNow(photos, seconds=(45)):
+def checkNow(photos, seconds=45):
     paths = []
     ids = []
+
 
     try:
         for data in photos:
@@ -249,7 +270,10 @@ def checkNow(photos, seconds=(45)):
         waiting = PhotoCheckJob.objects.filter(pk__in=ids, status__in=("queued", "running"))
         started = time.monotonic()
         until = started + seconds
-        limit = started + max(seconds, (120))
+
+
+
+        limit = started + max(seconds, 120)
         checkAt = 0
 
         while waiting.exists():
@@ -274,6 +298,7 @@ def checkNow(photos, seconds=(45)):
             log.warning("The photo worker did not answer, so a one-off check runs instead")
 
             return None
+
 
         answers = []
 
@@ -327,6 +352,8 @@ def claimJobs(limit=6):
 
     for job_id in pool:
         job = try_again(lambda: claimJob(job_id))
+
+
 
         if job is not None:
             claimed.append(job)

@@ -40,6 +40,7 @@ def _workers(executor):
 def _rss_mb(executor):
     total = 0
 
+
     for pid in _workers(executor):
         try:
             with open(f"/proc/{pid}/statm") as ram_file:
@@ -95,6 +96,8 @@ def memory_cap(hard_mb, gpu_hard_mb=0):
     def watch():
         page = os.sysconf("SC_PAGE_SIZE")
 
+
+
         while True:
             time.sleep(2)
 
@@ -112,13 +115,15 @@ def memory_cap(hard_mb, gpu_hard_mb=0):
                 disableGpu("an AI worker used too much GPU memory")
                 os._exit(3)
 
+
+
     threading.Thread(target=watch, name="memory-guard", daemon=True).start()
 
 
 def _start_up(hard_mb, gpu=None):
     os.environ.update(gpuVars(gpu))
     _quit_too()
-    memory_cap(hard_mb, (6000))
+    memory_cap(hard_mb, 6000)
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "flatfair.settings")
 
     import django
@@ -170,8 +175,10 @@ def _scan_one(record_id):
     try:
         record = PhotoAnalysis.objects.filter(pk=record_id).select_related("photo").first()
 
+
         if record is not None:
             done = process(record.photo)
+
 
             if done.status == "failed" and gpu_failed(done.error):
                 PhotoAnalysis.objects.filter(pk=record_id, status="failed").update(
@@ -198,11 +205,14 @@ def _pick_one(pick_id):
     try:
         pick = ItemPick.objects.filter(pk=pick_id).select_related("analysis__photo").first()
 
+
         if pick is not None:
             done = runPick(pick)
 
             if done.status == "failed" and gpu_failed(done.error):
                 disableGpu("Tap search failed on the GPU: " + done.error[:200])
+
+
                 os._exit(5)
 
             return done.status
@@ -216,7 +226,11 @@ def _pick_one(pick_id):
 def run_pick(pick_id):
     global _vision_pool, _vision_count
 
+
+
     from vision.models import ItemPick
+
+
     from vision.pipeline import weights_ok
 
     if not weights_ok():
@@ -247,6 +261,7 @@ def run_pick(pick_id):
 
             return None
 
+
         _vision_count += 1
 
         if _vision_count >= VISION_MAX_JOBS or _rss_mb(runner) > VISION_RSS_CAP_MB:
@@ -272,18 +287,23 @@ def run_vision(record_id):
             runner = _vision_pool
 
         try:
-            status = runner.submit(_scan_one, record_id).result(timeout=(900))
+            status = runner.submit(_scan_one, record_id).result(timeout=900)
         except Exception:
             log.exception("Photo analysis worker failed")
 
             if _vision_gpu is not None:
                 disableGpu("the Shop the look worker failed or timed out on the GPU")
 
+
+
             _retire(runner, kill=True)
 
             return None
 
+
+
         _vision_count += 1
+
 
         if _vision_count >= VISION_MAX_JOBS or _rss_mb(runner) > VISION_RSS_CAP_MB:
             _retire(runner)

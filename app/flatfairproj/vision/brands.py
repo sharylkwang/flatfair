@@ -20,7 +20,6 @@ def ocr_available():
     return (OCR_DIR / "model.safetensors").exists()
 
 
-@lru_cache(maxsize=1)
 def catalogue():
     data = json.loads(DATA.read_text())
     group_of = {}
@@ -34,6 +33,8 @@ def catalogue():
         (brand["name"], [alias.upper() for alias in brand["aliases"]], frozenset(brand["families"]))
         for brand in data["brands"]
     ]
+
+
 
     return group_of, read, brands, frozenset(word.upper() for word in data["words"])
 
@@ -54,6 +55,9 @@ def tokens(text):
             word += char
         elif word:
             words.append(word)
+
+
+
             word = ""
 
     if word:
@@ -75,6 +79,7 @@ def _same(read, letter):
         "6": "G",
         "2": "Z",
     }
+
 
     return read.upper() == letter or letter in confusable.get(read, "")
 
@@ -102,6 +107,7 @@ def match_line(text, label):
     if not kind or not words:
         return None
 
+
     _, _, brands, known = catalogue()
     letters = sum(len(word) for word in words)
     best = []
@@ -113,7 +119,7 @@ def match_line(text, label):
         for alias in aliases:
             compact = "".join(alias.split())
             size = len(alias.split())
-            short = len(compact) <= (3)
+            short = len(compact) <= 3
 
             for window_size in range(max(1, size - 1), size + 2):
                 for start in range(len(words) - window_size + 1):
@@ -129,12 +135,15 @@ def match_line(text, label):
                             continue
                     else:
                         edits = distance(joined, compact)
-                        allowed = 1 if len(compact) >= (8) else 0
+
+
+
+                        allowed = 1 if len(compact) >= 8 else 0
 
                         if edits > allowed or abs(len(joined) - len(compact)) > 1:
                             continue
 
-                        if len(joined) / letters < (0.6) and not all(
+                        if len(joined) / letters < 0.6 and not all(
                             word.upper() in known for word in rest
                         ):
                             continue
@@ -147,6 +156,8 @@ def match_line(text, label):
     best.sort(reverse=True)
     top = best[0]
 
+
+
     if any(other[2] != top[2] and other[:2] == top[:2] for other in best[1:]):
         return None
 
@@ -154,11 +165,7 @@ def match_line(text, label):
 
 
 def trusted(match, line):
-    confidence = {
-        "exact": (0.85, 0.50),
-        "edit": (0.93, 0.70),
-        "short": (0.90, 0.70),
-    }
+    confidence = {"exact": (0.85, 0.50), "edit": (0.93, 0.70), "short": (0.90, 0.70)}
 
     if match["short"]:
         rule = "short"
@@ -201,8 +208,13 @@ def choose(lines, label):
 
         return None, None, denied
 
+
     name = names.pop()
+
+
     candidates = [line for line in agreed if line["brand"] == name]
+
+
     line = max(candidates, key=lambda line: line["confidence"])
 
     return name, line, denied
@@ -240,6 +252,8 @@ def read_lines(image):
 
     prep, model = ocr_model()
     side = max(image.size)
+
+
     square = Image.new("RGB", (side, side), (128, 128, 128))
     square.paste(image.convert("RGB"), (0, 0))
 
@@ -292,8 +306,13 @@ def parse(tokenizer, ids, probabilities, side):
                 text, scores, corners = [], [], []
         elif token not in special:
             corners = []
+
+
+
             text.append(token)
             scores.append(chance)
+
+
 
     return lines
 
@@ -303,6 +322,9 @@ def confirm_with_clip(crop, label, brand, rivals):
     import torch
 
     prep, model = load("clip")
+
+
+
     texts = (
         [f"a {label} with the {brand} logo"]
         + [f"a {label} with the {other} logo" for other in rivals]
@@ -320,7 +342,7 @@ def confirm_with_clip(crop, label, brand, rivals):
         image = torch.nn.functional.normalize(image.float(), dim=-1)
         odds = (image @ embed_text(tuple(texts)).T * model.logit_scale.exp())[0].softmax(-1)
 
-    return int(odds.argmax()) == 0 and float(odds[0]) >= (0.6), float(odds[0])
+    return int(odds.argmax()) == 0 and float(odds[0]) >= 0.6, float(odds[0])
 
 
 def region(item, scale):
@@ -339,10 +361,12 @@ def region(item, scale):
     else:
         box = list(item.get("box") or [0, 0, 0, 0])
 
+
+
     return [box[0] * scale[0], box[1] * scale[1], box[2] * scale[0], box[3] * scale[1]]
 
 
-def padded(box, size, fraction=(0.08)):
+def padded(box, size, fraction=0.08):
     margin = max(16, fraction * max(box[2] - box[0], box[3] - box[1]))
 
     return (
@@ -401,7 +425,7 @@ def detect(path, items, size):
         lines = {item_index: [] for item_index in wanted}
         close_reads = [item_index for item_index in wanted if read[kinds[item_index]] == "item"]
 
-        for item_no in close_reads[:(6)]:
+        for item_no in close_reads[:6]:
             crop = padded(boxes[item_no], photo.size)
             report["reads"] += 1
 
@@ -412,6 +436,7 @@ def detect(path, items, size):
                     line["box"][2] + crop[0],
                     line["box"][3] + crop[1],
                 ]
+
 
                 if _centre_in(line, boxes[item_no]):
                     lines[item_no].append(line)
@@ -457,6 +482,8 @@ def detect(path, items, size):
                     brand,
                     rivals,
                 )
+
+
                 line = dict(line, clip=round(chance, 3))
 
                 if not agreed:
@@ -475,6 +502,8 @@ def detect(path, items, size):
 
     report["rejected"] = report["rejected"][:20]
     report["seconds"] = round(time.monotonic() - started, 2)
+
+
 
     return found, report
 
@@ -505,6 +534,8 @@ def add_brands(path, result):
         result.setdefault("timings", {})["brands"] = {"error": str(exc)[:300]}
 
         return result
+
+
 
     for item, brand in zip(result.get("items", []), found):
         item["attributes"] = with_brand(item.get("attributes"), brand)

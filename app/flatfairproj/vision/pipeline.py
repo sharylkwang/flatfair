@@ -228,6 +228,8 @@ def load(kind):
     prep = proc.from_pretrained(ML / path, local_files_only=True)
     network = model.from_pretrained(ML / path, local_files_only=True).eval()
 
+
+
     if DEVICE == "cuda":
         network.to("cuda")
 
@@ -344,9 +346,11 @@ def room_cutoff(label, room):
         "washing machine": 0.30,
     }
 
+
     cutoff = thresholds.get(label, 0.38)
     banned = set()
     kind = room_kind(room)
+
 
     if "bedroom" in room:
         banned = KITCHEN_ONLY | BATHROOM_ONLY | {"sink", "dining table", "stool", "washing machine"}
@@ -385,6 +389,7 @@ def room_cutoff(label, room):
             "air conditioner",
         }
 
+
         if label in ("table lamp", "floor lamp", "lamp", "cushion"):
             cutoff = max(cutoff, 0.55)
 
@@ -395,6 +400,8 @@ def room_cutoff(label, room):
 
     if kind == "bathroom" and label == "window blind":
         cutoff = max(cutoff, 0.50)
+
+
 
     return max(cutoff, 0.82) if label in banned else cutoff
 
@@ -481,6 +488,7 @@ def shape_ok(label, box, size):
 
     area, short = box_wide * box_tall / (width * height), min(box_wide / width, box_tall / height)
 
+
     if label in shapes:
         min_area, min_short, (low_ratio, top_ratio) = shapes[label]
     else:
@@ -497,6 +505,8 @@ def shape_ok(label, box, size):
 
     top, bottom = band.get(label, (0, 1))
 
+
+
     if not top <= (box[1] + box[3]) / (2 * height) <= bottom:
         return False
 
@@ -506,6 +516,7 @@ def shape_ok(label, box, size):
         return False
 
     edge = box[0] <= 0.01 * width or box[2] >= 0.99 * width
+
 
     return not (
         edge
@@ -524,6 +535,7 @@ def mask_ok(mask, box, label=""):
         minimum = 0.0006
     else:
         minimum = 0.010
+
 
     if label == "painting":
         fill = 0.70
@@ -556,6 +568,8 @@ def nms(boxes, scores, threshold=0.6, labels=None, limit=12):
                     0, np.minimum(try_box[2:], kept_box[2:]) - np.maximum(try_box[:2], kept_box[:2])
                 )
             )
+
+
             inside = inter / max(
                 min(np.prod(try_box[2:] - try_box[:2]), np.prod(kept_box[2:] - kept_box[:2])), 1
             )
@@ -590,6 +604,8 @@ def mixups(label):
             "kitchen island counter",
         ]
 
+
+
     if label == "window blind":
         return [
             "window blind",
@@ -605,6 +621,7 @@ def mixups(label):
             "glass door",
         ]
 
+
     if label == "cushion":
         return [
             "cushion",
@@ -614,6 +631,7 @@ def mixups(label):
             "bag or clothing",
             "unrecognizable object",
         ]
+
 
     if label == "potted plant":
         return [
@@ -630,6 +648,8 @@ def mixups(label):
             "unrecognizable object",
         ]
 
+
+
     if label == "curtains":
         return [
             "curtains",
@@ -642,6 +662,7 @@ def mixups(label):
             "window",
             "towel",
         ]
+
 
     if label == "rug":
         return ["rug", "fitted carpet flooring", "floor tiles", "blanket", "shadow"]
@@ -788,6 +809,7 @@ def mixups(label):
         if label in group:
             return group
 
+
     return [label, "unrecognizable object", "empty wall", "window", "door"]
 
 
@@ -843,6 +865,8 @@ def sure_label(label, choices, probabilities):
         if choices[best] == "armchair" and probabilities[best] >= 0.65 and margin >= 0.20:
             return "armchair"
 
+
+
         return "chair"
 
     if label == "window blind" and (
@@ -862,6 +886,7 @@ def sure_label(label, choices, probabilities):
         min_chance, min_gap = 0.32, 0.07
     else:
         min_chance, min_gap = 0.40, 0.10
+
 
     if choices[best] != label or probabilities[best] < min_chance or margin < min_gap:
         return ""
@@ -902,6 +927,8 @@ def check_crop(label, score, box, room, cut, source, clip_scores):
     odds = clip_scores(source.crop(padded(box, source.size)), prompts)
     sure = sure_label(label, choices, odds)
 
+
+
     if (
         sure
         and sure != label
@@ -910,6 +937,9 @@ def check_crop(label, score, box, room, cut, source, clip_scores):
         and shape_ok(label, box, source.size)
     ):
         rank = np.argsort(odds)
+
+
+
         second = int(rank[-2])
 
         if choices[second] == label and odds[second] >= 0.10:
@@ -939,6 +969,7 @@ def check_crop(label, score, box, room, cut, source, clip_scores):
         ):
             sure = "window blind"
 
+
     if sure in ("table lamp", "floor lamp") and box[1] <= 0.02 * source.size[1]:
         sure = "pendant light"
 
@@ -946,6 +977,9 @@ def check_crop(label, score, box, room, cut, source, clip_scores):
         alpha = np.asarray(cut.convert("RGBA"))[:, :, 3] > 0
         height, width = alpha.shape
         top = alpha[: max(1, height // 3)].any(axis=0).sum()
+
+
+
         bottom = alpha[height * 2 // 3 :].any(axis=0).sum()
 
         if width / max(height, 1) > 0.8 and bottom / max(top, 1) > 0.65:
@@ -955,6 +989,8 @@ def check_crop(label, score, box, room, cut, source, clip_scores):
 
     if sure in ("armchair", "chair") and (box[2] - box[0]) / max(box[3] - box[1], 1) > 2.2:
         sure = "sofa"
+
+
 
     return sure, dict(zip(choices, odds.tolist()))
 
@@ -989,9 +1025,12 @@ def anchored(item, items):
     item_box = item["box"]
     sinks = []
 
+
+
     for other in items:
         if other["label"] != "sink":
             continue
+
 
         centre = (other["box"][0] + other["box"][2]) / 2
 
@@ -1031,6 +1070,9 @@ def in_other(label, box, items, fraction=0.75):
     }
 
     item_box = np.asarray(box, dtype=float)
+
+
+
     area = max(np.prod(item_box[2:] - item_box[:2]), 1)
 
     for other in items:
@@ -1106,6 +1148,7 @@ def blind_ok(cut):
     x_change = float(x_diffs[x_mask].mean()) if x_mask.any() else 0
     y_change = float(y_diffs[y_mask].mean()) if y_mask.any() else 0
 
+
     return max(x_change, y_change) / max(min(x_change, y_change), 0.1) >= 2.8
 
 
@@ -1142,6 +1185,8 @@ def _analyse(path, room=""):
     with torch.inference_mode():
         dino_prep, dino = load("dino")
         boxes, scores, labels = [], [], []
+
+
         clues = []
         wrongs = []
 
@@ -1168,6 +1213,9 @@ def _analyse(path, room=""):
                 result.get("text_labels", result.get("labels")),
             ):
                 label = canonical(raw_tag)
+
+
+
                 box = [
                     box[0] + offset[0],
                     box[1] + offset[1],
@@ -1202,6 +1250,7 @@ def _analyse(path, room=""):
                         }
                     )
 
+
                     continue
 
                 boxes.append(box)
@@ -1210,6 +1259,7 @@ def _analyse(path, room=""):
 
         for chunk in VOCABULARY[room_kind(room)]:
             detect(image, chunk)
+
 
         tile_w, tile_h = int(width * 0.62), int(height * 0.62)
 
@@ -1363,6 +1413,7 @@ def _analyse(path, room=""):
                 if key not in ("pixel_values", "original_sizes", "reshaped_input_sizes"):
                     prompt_in[key] = onDevice(value)
 
+
             out = sam(image_embeddings=traits, **prompt_in)
             masks = sam_prep.post_process_masks(
                 out.pred_masks.cpu(), data["original_sizes"], data["reshaped_input_sizes"]
@@ -1411,6 +1462,8 @@ def _analyse(path, room=""):
             clipped = np.zeros_like(mask)
             clipped[box[1] : box[3], box[0] : box[2]] = mask[box[1] : box[3], box[0] : box[2]]
             rgba = image.convert("RGBA")
+
+
             rgba.putalpha(Image.fromarray((clipped * 255).astype("uint8")))
             cut = rgba.crop(box)
             white = Image.new("RGB", cut.size, "white")
@@ -1439,6 +1492,7 @@ def _analyse(path, room=""):
                 key = (im.size, im.tobytes())
                 vector = cache.get(key)
 
+
                 if vector is None:
                     vector = clip.get_image_features(
                         **onDevice(clip_prep(images=im, return_tensors="pt"))
@@ -1452,6 +1506,7 @@ def _analyse(path, room=""):
 
             return last_feature
 
+
         def clip_scores(im, texts):
             logits = image_feature(im) @ embed_text(tuple(texts)).T * clip.logit_scale.exp()
 
@@ -1463,7 +1518,10 @@ def _analyse(path, room=""):
 
         for box_no, mask in zip(ids, masks):
             box = [max(0, int(coordinate)) for coordinate in boxes[box_no]]
+
+
             box[2], box[3] = min(width, box[2]), min(height, box[3])
+
 
             if labels[box_no] == "window blind" and (
                 (box[2] - box[0]) < 0.12 * width or (box[1] + box[3]) / 2 > 0.65 * height
@@ -1477,6 +1535,7 @@ def _analyse(path, room=""):
                 clues.append({"label": labels[box_no], "reason": "mask", "box": box})
 
                 continue
+
 
             clipped = np.zeros_like(mask)
             clipped[box[1] : box[3], box[0] : box[2]] = mask[box[1] : box[3], box[0] : box[2]]
@@ -1532,6 +1591,7 @@ def _analyse(path, room=""):
 
                 if not choices:
                     continue
+
 
                 options = choices + ["uncertain"]
                 probs = clip_scores(white, [f"a photo of a {option} {label}" for option in options])
@@ -1603,7 +1663,7 @@ def _analyse(path, room=""):
             [item["box"] for item in items],
             [item["score"] for item in items],
             labels=[item["label"] for item in items],
-            limit=(10),
+            limit=10,
         )
         items = [items[kept_index] for kept_index in kept]
         lower = np.indices((height, width))[0] >= height * 0.64
@@ -1649,6 +1709,7 @@ def _analyse(path, room=""):
             tag_floor(image, floor, clip_scores, image_feature, clip) if room != "view" else {}
         )
         spots = []
+
 
         for here in items:
             spots.append(f"{here['label'].capitalize()} {here['placement']}")
@@ -1741,12 +1802,17 @@ def tag_floor(image, floor, clip_scores, image_feature, model):
     logits = []
     checks = []
 
+
+
     for box in picked:
         patch = image.crop(box)
         traits = image_feature(patch)
         source = (traits @ embed_text(texts).T * model.logit_scale.exp())[0].cpu().numpy()
         contrast = 4.0 if np.asarray(patch).mean(axis=2).std() < 12 else 2.0
         texture = ImageEnhance.Contrast(patch).enhance(contrast)
+
+
+
         better = (
             (image_feature(texture) @ embed_text(texts).T * model.logit_scale.exp())[0]
             .cpu()
@@ -1767,6 +1833,9 @@ def tag_floor(image, floor, clip_scores, image_feature, model):
     values = np.mean(logits, axis=0)
     exp = np.exp(values - values.max())
     odds = exp / exp.sum()
+
+
+
     rank = np.argsort(odds)
     best = int(rank[-1])
     margin = float(odds[best] - odds[rank[-2]])
@@ -1796,6 +1865,8 @@ def analyse(path, room=""):
 
     if issues:
         raise ValueError("Model identity mismatch; staff review required: " + "; ".join(issues))
+
+
 
     start = time.monotonic()
     key = (hashlib.sha256(Path(path).read_bytes()).hexdigest(), room)
@@ -1858,6 +1929,7 @@ def best_mask(choices, point, size):
     for mask, quality in choices:
         share = mask.sum() / (width * height)
 
+
         if mask[point[1], point[0]] and 0.002 <= share <= 0.55:
             usable.append((quality, share, mask))
 
@@ -1919,6 +1991,9 @@ def pick_item(path, x, y, room=""):
             (masks[0, mask_index].numpy().astype(bool), float(grades[mask_index]))
             for mask_index in range(masks.shape[1])
         ]
+
+
+
         mask = best_mask(choices, (x_pixel, y_pixel), (width, height))
 
         if mask is None:
@@ -1928,6 +2003,8 @@ def pick_item(path, x, y, room=""):
 
         if is_room(mask):
             return {"empty": True, "label": "wall"}
+
+
 
         y_spots, x_spots = np.nonzero(mask)
         box = [
@@ -1943,6 +2020,8 @@ def pick_item(path, x, y, room=""):
         white.paste(cut, mask=cut.getchannel("A"))
         clip_prep, clip = load("clip")
         vector = clip.get_image_features(**onDevice(clip_prep(images=white, return_tensors="pt")))
+
+
 
         if not isinstance(vector, torch.Tensor):
             vector = vector.pooler_output
@@ -1983,7 +2062,7 @@ def pick_item(path, x, y, room=""):
     return {
         "empty": False,
         "label": canonical(labels[best]) or labels[best],
-        "confident": bool(probs[best] >= (0.3)),
+        "confident": bool(probs[best] >= 0.3),
         "box": box,
         "polygon": polygon(mask),
         "embedding": vector[0].cpu().numpy().tolist(),

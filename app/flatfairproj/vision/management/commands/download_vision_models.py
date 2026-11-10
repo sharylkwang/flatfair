@@ -13,11 +13,15 @@ REVISIONS = {repo: PIPELINE_REVISIONS[repo] for repo, directory in MODELS}
 class Command(BaseCommand):
     help = "Download Grounding DINO, SlimSAM, Florence-2 and Depth Anything V2 weights (requires internet)."
 
+
+
     def handle(self, *args, **options):
         from huggingface_hub import snapshot_download
 
+
         for repo, folder in MODELS:
             target = ML / folder
+
 
             if (
                 (target / "model.safetensors").exists()
@@ -27,10 +31,19 @@ class Command(BaseCommand):
                 self.stdout.write(f"{folder}: already downloaded ({REVISIONS[repo]})")
             else:
                 snapshot_download(repo_id=repo, revision=REVISIONS[repo], local_dir=str(target))
+
+
+
                 self.stdout.write(f"{folder}: downloaded")
 
+
             status = verifyModel(repo, target, REVISIONS[repo])
+
+
+
             nextUp = ""
+
+
 
             if status == "not installed":
                 nextUp = (
@@ -38,6 +51,11 @@ class Command(BaseCommand):
                 )
             elif status != "verified":
                 script = TRAINING / "write_manifest.py"
+
+
+
                 nextUp = f"; after reviewing the new files, run python {script}"
+
+
 
             self.stdout.write(f"{folder}: {status}{nextUp}")

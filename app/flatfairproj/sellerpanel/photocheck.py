@@ -84,6 +84,7 @@ def get_cutoffs():
         review = metrics["thresholds"]["review"]
         ai_cutoff = metrics["ai"]["threshold"]
 
+
         if (
             not all(
                 isinstance(value, Real) and math.isfinite(value) and 0 <= value <= 1
@@ -128,6 +129,7 @@ def heads():
                 log.exception("Photo check head loading failed: %s", name)
                 loaded.append(None)
 
+
         _heads = tuple(loaded)
 
     return _heads
@@ -144,6 +146,7 @@ def check_head(head, ai):
 
     model = head["model"]
     classes = np.asarray(model.classes_)
+
 
     if not callable(getattr(model, "predict_proba", None)):
         raise ValueError("Expected a probability classifier")
@@ -167,6 +170,8 @@ def check_head(head, ai):
             raise ValueError("Expected relevant room labels")
 
     traitNum = 512 + (len(FREQUENCY_RINGS) if ai and head.get("frequency") else 0)
+
+
 
     if model.n_features_in_ != traitNum:
         raise ValueError("Incompatible classifier feature count")
@@ -221,14 +226,12 @@ def slotWarn(result, slot):
     if not result or slot not in ROOM_LABELS:
         return ""
 
+
+
     if result.get("labelSource") == "clip-override":
         label = result.get("label")
 
-        fitSlots = {
-            "balcony": "balcony",
-            "service yard": "service_yard",
-            "window view": "view",
-        }
+        fitSlots = {"balcony": "balcony", "service yard": "service_yard", "window view": "view"}
 
         guessed = fitSlots.get(label)
 
@@ -243,6 +246,7 @@ def slotWarn(result, slot):
         return ""
 
     trust = result.get("roomConfidence")
+
 
     if not isinstance(trust, Real) or not math.isfinite(trust) or not SLOT_CONFIDENCE <= trust <= 1:
         return ""
@@ -284,8 +288,12 @@ def reviewReasons(result):
     if result.get("identityStatus") == "identity mismatch":
         reasons.append("Photo model identity mismatch; staff must review it")
 
+
+
     if result.get("modelVersion") != MODEL_VERSION:
         reasons.append("photo check is out of date; staff must review it")
+
+
 
     if result.get("irrelevant") is None:
         reasons.append("The room-photo check could not run")
@@ -328,10 +336,11 @@ def runChecks(photos):
 
     unseen = [None] * len(photos)
 
+
+
     if not isOn():
         warnGone(
-            log,
-            "Photo check is off: run `python manage.py download_photo_model` to turn it on.",
+            log, "Photo check is off: run `python manage.py download_photo_model` to turn it on."
         )
 
         return unseen
@@ -342,6 +351,8 @@ def runChecks(photos):
 
         for photo in photos:
             misfits.append({"identityStatus": "identity mismatch", "modelVersion": MODEL_VERSION})
+
+
 
         return misfits
 
@@ -354,10 +365,12 @@ def runChecks(photos):
             return results
 
     gpu = photoGpu()
+
+
     token = uuid.uuid4().hex
     slotKey = None
 
-    for slot in range((2)):
+    for slot in range(2):
         key = f"photo-check-slot:{slot}"
 
         if resourceCache.add(key, token, TIMEOUT + 30):
@@ -394,11 +407,7 @@ def runChecks(photos):
             )
 
         if done.returncode != 0:
-            log.error(
-                "Photo check stopped with code %s: %s",
-                done.returncode,
-                done.stderr[-500:],
-            )
+            log.error("Photo check stopped with code %s: %s", done.returncode, done.stderr[-500:])
 
             return unseen
 
@@ -411,10 +420,7 @@ def runChecks(photos):
 
         return results
     except subprocess.TimeoutExpired:
-        log.error(
-            "Photo check took over %s seconds, so staff will check these photos.",
-            TIMEOUT,
-        )
+        log.error("Photo check took over %s seconds, so staff will check these photos.", TIMEOUT)
 
         if gpu is not None:
             disableGpu("a photo check timed out on the GPU")
@@ -437,8 +443,8 @@ def pickTags(chances):
     ranked = sorted(zip(chances, TAGS), reverse=True)
     tags = []
 
-    for chance, tag in ranked[:(4)]:
-        if chance >= (0.1):
+    for chance, tag in ranked[:4]:
+        if chance >= 0.1:
             tags.append(tag)
 
     return tags
@@ -451,11 +457,7 @@ def textFeatures(model, processor, prompts):
 
 
 def tagFeatures(model, processor):
-    templates = [
-        "a photo of a {}.",
-        "a photo of a room with a {}.",
-        "a {} in a home.",
-    ]
+    templates = ["a photo of a {}.", "a photo of a room with a {}.", "a {} in a home."]
 
     import torch
 
@@ -479,6 +481,7 @@ def loadScorer():
     if verifyModel(CLIP_NAME, ML, CLIP_REVISION) != "verified":
         warnGone(log, "Photo model unavailable: identity mismatch")
 
+
         return lambda paths: [
             {"identityStatus": "identity mismatch", "modelVersion": MODEL_VERSION} for path in paths
         ]
@@ -500,6 +503,8 @@ def loadScorer():
     with torch.inference_mode():
         labelFeatures = textFeatures(model, prep, [label[0] for label in LABELS])
         tagWords = tagFeatures(model, prep)
+
+
 
     room, ai = heads()
 
@@ -527,10 +532,12 @@ def loadScorer():
                     (model.logit_scale.exp() * traits @ labelFeatures.T).softmax(dim=-1).tolist()
                 )
 
+
                 tagOdds = (model.logit_scale.exp() * traits @ tagWords.T).softmax(dim=-1).tolist()
 
                 if device == "cuda":
                     traits = traits.cpu()
+
 
                 for index, image in enumerate(images):
                     vector = traits[index : index + 1]
@@ -546,6 +553,7 @@ def loadScorer():
                     result["reviewAt"] = room["thresholds"]["review"] if room else REVIEW_AT
 
                     result["aiReviewAt"] = ai["thresholds"]["review"] if ai else AI_REVIEW_AT
+
 
                     result["reviewReasons"] = reviewReasons(result)
                     results.append(result)
@@ -566,6 +574,8 @@ def frequencyFeatures(image):
     import numpy as np
 
     grey = np.asarray(image.resize((128, 128)).convert("L"), dtype=float) / 255
+
+
     power = np.abs(np.fft.fftshift(np.fft.fft2(grey - grey.mean()))) ** 2
     y_shifts, x_shifts = np.ogrid[-64:64, -64:64]
 
@@ -588,6 +598,9 @@ def decide(embedding, chances, image=None):
     best = int(np.argmax(chances))
     topName = LABELS[best][1]
     label = topName
+
+
+
     tagFrom = "clip"
     unfit = None
     roomTag = None
@@ -631,6 +644,7 @@ def decide(embedding, chances, image=None):
         except Exception:
             log.exception("AI-image check could not run")
 
+
     return {
         "irrelevant": unfit,
         "label": label,
@@ -643,9 +657,7 @@ def decide(embedding, chances, image=None):
 
 def manualQ(revision):
     return Q(
-        staffReviewedBy__isnull=False,
-        staffReviewedAt__isnull=False,
-        staffReviewedRevision=revision,
+        staffReviewedBy__isnull=False, staffReviewedAt__isnull=False, staffReviewedRevision=revision
     )
 
 
@@ -678,6 +690,7 @@ def doubtQ(prefix=""):
             prefix + "staffReviewedRevision": F(prefix + "listing__revision"),
         }
     )
+
 
     return (stale | (flagged & Q(**{prefix + "staffChecked": False}))) & ~manual
 

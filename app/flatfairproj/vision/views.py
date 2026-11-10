@@ -28,6 +28,7 @@ def pick_data(pick):
         "url": reverse("vision_pick_status", args=[pick.pk]),
     }
 
+
     if pick.status == "empty":
         data["message"] = (
             "We couldn’t find an item there. Try tapping the middle of a piece of furniture."
@@ -36,8 +37,15 @@ def pick_data(pick):
         data["message"] = "Sorry, that didn’t work. Please try again."
     elif pick.status == "done":
         label = pick.label if pick.confident else "item you picked"
+
+
+
         flat = pick.analysis.photo.listing
+
+
+
         similar = nearest(pick.label, pick.embedding, like_pool(flat.pk)) if pick.confident else []
+
 
         data.update(
             label=label[:1].upper() + label[1:],
@@ -59,6 +67,7 @@ def pick_data(pick):
                 for other in similar
             ],
         )
+
 
     return data
 
@@ -95,19 +104,24 @@ def pick(request, pk):
         PhotoAnalysis.objects.select_related("photo__listing"), pk=pk, status="done"
     )
 
+
+
     if not canSeeFlat(request.user, analysis.photo.listing):
         raise Http404
 
     point = readPoint(request)
 
+
     if point is None:
         return JsonResponse({"message": "Please tap inside the photo."}, status=400)
+
 
     if not picking():
         return JsonResponse(
             {"message": "Tap to search isn’t available right now. Please try again later."},
             status=503,
         )
+
 
     if not request.session.session_key:
         request.session.save()
@@ -128,13 +142,15 @@ def pick(request, pk):
         .first()
     )
 
+
     if earlier:
         return JsonResponse(pick_data(earlier))
 
-    if addTry(f"vision-pick:{key}", 3600) > (30):
+    if addTry(f"vision-pick:{key}", 3600) > 30:
         return JsonResponse(
             {"message": "You’ve looked up a lot of items. Please try again in an hour."}, status=429
         )
+
 
     ItemPick.objects.filter(createdAt__lt=timezone.now() - timedelta(days=1)).delete()
     made = ItemPick.objects.create(analysis=analysis, sessionKey=key, x=x_spot, y=y_spot)

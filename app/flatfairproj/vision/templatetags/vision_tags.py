@@ -11,8 +11,15 @@ def shop_look(context, listing):
     if not weights_ok():
         return {}
 
+
+
     scans = PhotoAnalysis.objects.filter(photo__listing=listing)
+
+
+
     scans = list(scans.select_related("photo__listing").prefetch_related("items"))
+
+
     stale = []
 
     for scan in scans:
@@ -24,6 +31,8 @@ def shop_look(context, listing):
     for scan in stale:
         stale_ids.append(scan.pk)
 
+
+
     PhotoAnalysis.objects.filter(pk__in=stale_ids, status="done").update(status="pending")
 
     for scan in stale:
@@ -34,6 +43,7 @@ def shop_look(context, listing):
 
         if not scans:
             return {}
+
 
     if not scans and not listing.photos.exists():
         return {}
@@ -50,9 +60,12 @@ def shop_look(context, listing):
     total = 0
     lens_enabled = False
 
+
     for scan in scans:
         pending = pending or scan.status in ("pending", "running")
         cards = []
+
+
 
         if scan.status == "done":
             done_items = scan.items.all()
@@ -63,6 +76,7 @@ def shop_look(context, listing):
             search, lens = links(item)
             lens_enabled = lens_enabled or bool(lens)
             total += 1
+
 
             cards.append(
                 {
@@ -93,6 +107,7 @@ def shop_look(context, listing):
 
     from vision.views import picking
 
+
     return {
         "panels": panels,
         "enabled": True,
@@ -108,11 +123,15 @@ def shop_look(context, listing):
 @register.filter
 def floor_words(flooring):
     flooring = flooring or {}
+
+
     made_of = (
         flooring.get("material") or str(flooring.get("label", "")).removeprefix("Possibly ").strip()
     )
 
     if not made_of:
         return "Not sure"
+
+
 
     return f"Probably {made_of}" if flooring.get("possible") else made_of.capitalize()

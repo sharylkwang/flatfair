@@ -22,6 +22,8 @@ def requeue(listingId=None):
     if listingId is not None:
         records = records.filter(photo__listing_id=listingId)
 
+
+
     return records.update(status="pending", error="")
 
 
@@ -51,6 +53,8 @@ def queue_flat(listing_id):
     waiting = ListingPhoto.objects.filter(
         listing_id=listing_id, listing__status="live", vision_analysis__isnull=True
     )
+
+
     PhotoAnalysis.objects.bulk_create(
         [PhotoAnalysis(photo=photo) for photo in waiting], ignore_conflicts=True
     )
@@ -58,6 +62,9 @@ def queue_flat(listing_id):
 
 def _waiting():
     from django.db import close_old_connections
+
+
+
     from .models import PhotoAnalysis
 
     close_old_connections()
@@ -80,7 +87,10 @@ def _duePicks():
     from django.utils import timezone
     from .models import ItemPick
 
+
     close_old_connections()
+
+
 
     try:
         fresh = timezone.now() - timedelta(minutes=5)
@@ -98,6 +108,8 @@ def _duePicks():
 def _give_up(pk):
     from pretrained import pipelineIdentity
     from django.db import close_old_connections
+
+
     from .models import PhotoAnalysis
 
     close_old_connections()
@@ -126,6 +138,8 @@ def _retry(pk):
 
 def recover():
     import fcntl
+
+
     from pathlib import Path
     from django.conf import settings
     from django.db import close_old_connections
@@ -145,6 +159,8 @@ def recover():
         try:
             from .models import ItemPick
 
+
+
             ItemPick.objects.filter(status="running").update(status="failed")
 
             return PhotoAnalysis.objects.filter(status="running").update(status="pending")
@@ -159,6 +175,7 @@ def _supervise(stopped=None):
         recover()
     except Exception:
         log.exception("Could not reset interrupted analyses")
+
 
     tries, idle_at = {}, time.monotonic()
 
@@ -178,6 +195,8 @@ def _supervise(stopped=None):
             idle_at = time.monotonic()
 
             continue
+
+
 
         try:
             waiting = [
@@ -216,6 +235,8 @@ def _supervise(stopped=None):
 
         if vision_up() and time.monotonic() - idle_at > VISION_IDLE_SECONDS:
             end_vision()
+
+
 
         _wake.wait(5)
         _wake.clear()

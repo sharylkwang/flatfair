@@ -836,6 +836,9 @@ def photo_status(request):
         ensureWorker()
 
     rooms = set(pending(request)) | set(refused(request))
+
+
+
     states = {room: photoState(request, room) for room in rooms}
 
     return JsonResponse({"photos": states})

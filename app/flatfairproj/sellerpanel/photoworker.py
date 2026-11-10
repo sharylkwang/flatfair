@@ -20,12 +20,16 @@ def capMemory():
     if os.name != "nt":
         from vision.worker import memory_cap
 
-        memory_cap(HARD_MB, (1500))
+
+
+        memory_cap(HARD_MB, 1500)
 
         return
 
     import ctypes
     from ctypes import wintypes
+
+
 
     class MemoryCounters(ctypes.Structure):
         _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD)] + [
@@ -41,6 +45,8 @@ def capMemory():
                 "PeakPagefileUsage",
             )
         ]
+
+
 
     getSelf = ctypes.windll.kernel32.GetCurrentProcess
     getSelf.restype = wintypes.HANDLE
@@ -78,6 +84,9 @@ def runWorker(
     from storefront.models import PhotoCheckJob
     from .photocheck import TIMEOUT, loadScorer
     from .device import modelLock
+
+
+
     from .photoqueue import (
         HEARTBEAT_KEY,
         STARTING_KEY,
@@ -99,9 +108,14 @@ def runWorker(
         fixStale(locked=True, heartbeat=oldBeat)
         fixedAt = time.monotonic()
         resourceCache.delete(STARTING_KEY)
+
+
+
         resourceCache.set(HEARTBEAT_KEY, time.time(), 180)
         stopped = threading.Event()
         until = [None]
+
+
 
         def heartbeat():
             try:
@@ -111,6 +125,7 @@ def runWorker(
                             disableGpu("a photo batch took too long on the GPU")
 
                         os._exit(4)
+
 
                     if time.monotonic() - started > maxLifetime:
                         os._exit(4)
@@ -132,13 +147,13 @@ def runWorker(
                     fixStale(locked=True, heartbeat=oldBeat)
                     fixedAt = time.monotonic()
 
-                jobs = claimJobs(min((6), maxJobs - done))
+                jobs = claimJobs(min(6, maxJobs - done))
 
                 if not jobs:
                     if once or time.monotonic() - idleAt >= idleSeconds:
                         break
 
-                    sleep(min((0.1), max(0, idleSeconds)))
+                    sleep(min(0.1, max(0, idleSeconds)))
 
                     continue
 
@@ -156,6 +171,8 @@ def runWorker(
                                 pk=job.pk, status="running"
                             ).exists():
                                 continue
+
+
 
                             path = Path(folder) / f"{index}.jpg"
 
@@ -176,6 +193,7 @@ def runWorker(
                                     "Could not read photo check job %s", job.pk, exc_info=True
                                 )
 
+
                                 continue
 
                             paths.append(str(path))
@@ -184,6 +202,7 @@ def runWorker(
                         if paths:
                             if scorer is None:
                                 scorer = (loader or loadScorer)()
+
 
                             results = scorer(paths)
                         else:
@@ -220,6 +239,8 @@ def runWorker(
                     until[0] = None
 
                 done += len(jobs)
+
+
                 idleAt = time.monotonic()
 
                 if once:
@@ -244,6 +265,9 @@ def main():
     args = parser.parse_args()
     signal.signal(signal.SIGTERM, signal.SIG_DFL)
     capMemory()
+
+
+
     runWorker(once=args.once, idleSeconds=max(0, args.idle_seconds), onGpu=gpuChosen())
 
     if gpuChosen():

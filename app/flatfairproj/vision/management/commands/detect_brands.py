@@ -30,6 +30,7 @@ class Command(BaseCommand):
         if options["listing"]:
             scans = scans.filter(photo__listing_id=options["listing"])
 
+
         if not options["force"]:
             scans = scans.filter(
                 Q(timings__brands__version__isnull=True)
@@ -38,6 +39,7 @@ class Command(BaseCommand):
 
         if options["limit"] is not None:
             scans = scans[: max(0, options["limit"])]
+
 
         named = checked = 0
 
@@ -51,7 +53,10 @@ class Command(BaseCommand):
                 continue
 
             started = time.monotonic()
+
+
             result = self.read_brands(scan)
+
 
             if result is None:
                 self.stdout.write(
@@ -73,6 +78,8 @@ class Command(BaseCommand):
     def read_brands(self, analysis):
         with ai_lock():
             analysis.refresh_from_db()
+
+
             batch = analysis.timings.get("publication_generation")
 
             if analysis.status != "done":
@@ -95,20 +102,30 @@ class Command(BaseCommand):
                 ):
                     return None
 
+
                 changed = []
 
                 for item, brand in zip(items, found):
                     details = brands.with_brand(item.attributes, brand)
+
 
                     if details != item.attributes or list(details) != list(item.attributes):
                         item.attributes = details
                         changed.append(item)
 
                 DetectedItem.objects.filter(analysis=current).bulk_update(changed, ["attributes"])
+
+
                 current.timings = dict(current.timings, brands=report)
+
+
+
                 current.save(update_fields=["timings"])
 
+
         named = []
+
+
 
         for item, brand in zip(items, found):
             if brand:

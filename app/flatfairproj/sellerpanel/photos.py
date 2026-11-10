@@ -38,6 +38,8 @@ def shrink(upload):
     upload.seek(0)
     img = Image.open(upload)
 
+
+
     if img.width * img.height > MAX_PIXELS:
         raise ValueError("Photo exceeds pixel limit")
 
@@ -94,6 +96,9 @@ def sweepPics():
     cutoff = timezone.now() - timedelta(hours=24)
     oldJobs = PhotoCheckJob.objects.filter(status__in=("done", "failed"), finishedAt__lt=cutoff)
     oldOnes = list(oldJobs.values_list("pendingPath", flat=True))
+
+
+
     oldJobs.delete()
     dropPaths(oldOnes)
     saves = pic_paths() | set(
@@ -133,6 +138,8 @@ def draft(request):
                     *[photo["path"] for photo in data.get("refused", {}).values()],
                 ]
             )
+
+
 
             del drafts[token]
 
@@ -193,6 +200,8 @@ def appealNum(request, room=None):
     token = draft(request)
     data = request.session[DRAFTS_KEY][token]
     total = sum(bool(result.get("appeal")) for key, result in data["checks"].items() if key != room)
+
+
     optional = {key for key, label, needs in OPTIONAL_ROOMS}
     replaced = [
         *data["photos"],
@@ -228,6 +237,7 @@ def appealPhoto(request, room):
     token = draft(request)
     data = request.session[DRAFTS_KEY][token]
     photo = data.get("refused", {}).get(room)
+
 
     if not photo:
         return "Please choose a refused room photo before asking our team to check it.", None
@@ -270,6 +280,8 @@ def appealAll(request):
 
 def clearHeld(request, token=None):
     token = token or draft(request)
+
+
     drafts = request.session.get(DRAFTS_KEY, {})
     data = drafts.pop(token, {})
     paths = [
@@ -295,6 +307,9 @@ def readPhoto(upload):
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
+
+
+
             photo = forms.ImageField().clean(upload)
 
             if photo.image.format not in ("JPEG", "PNG", "WEBP"):
@@ -313,6 +328,8 @@ def readPhoto(upload):
 
 def keepPhoto(request, room, data, result, appeal=False, pendingPath=None):
     result = dict(result) if result else result
+
+
 
     if (
         result
@@ -357,6 +374,8 @@ def keepPhoto(request, room, data, result, appeal=False, pendingPath=None):
             )
 
     token = draft(request)
+
+
     drafts = request.session[DRAFTS_KEY]
     kept = drafts[token]["photos"]
     path = pendingPath or default_storage.save(f"pending/{uuid.uuid4().hex}.jpg", ContentFile(data))
@@ -373,6 +392,8 @@ def keepPhoto(request, room, data, result, appeal=False, pendingPath=None):
 
     request.session[DRAFTS_KEY] = drafts
     forget_bad(request, room)
+
+
 
     return ""
 
@@ -400,6 +421,9 @@ def queueFiles(request, ready):
     for room, path in paths.items():
         old = data["photos"].get(room)
         data["photos"][room] = path
+
+
+
         data["checks"][room] = {"jobId": str(jobs[room].pk), "checking": True}
 
         if old:
@@ -429,6 +453,7 @@ def syncChecks(request):
             continue
 
         job = jobs.get(result.get("jobId"))
+
 
         if job is not None and job.room == room and data["photos"].get(room) == job.pendingPath:
             if job.status in ("queued", "running"):
@@ -474,6 +499,8 @@ def waitChecks(request, seconds=20):
 
     while busyRooms(request) and time.monotonic() < until:
         time.sleep(min(0.25, max(0, until - time.monotonic())))
+
+
         errors.update(syncChecks(request))
 
     errors.update(
@@ -517,6 +544,8 @@ def photoState(request, room):
         }
 
     state = roomState(request, room)
+
+
     source = data["checks"].get(room, {}).get("movedFrom")
 
     if source and room in data["photos"]:
@@ -550,6 +579,8 @@ def roomState(request, room):
             + " Please choose a photo of that room instead.",
             "appealable": True,
         }
+
+
 
     if reviewReasons(result):
         return {"verdict": "review", "message": reviewNote(result, room)}
@@ -586,6 +617,8 @@ def dropFiles(request):
 
         if room in drafts[token]["photos"] and not request.FILES.get(f"photo_{room}"):
             path = drafts[token]["photos"].pop(room)
+
+
 
             PhotoCheckJob.objects.filter(
                 owner=request.user, pendingPath=path, status__in=("queued", "running")
@@ -628,6 +661,8 @@ def keepFiles(request, syncResults=True):
 
     queueFiles(request, ready)
 
+
+
     if syncResults:
         syncChecks(request)
 
@@ -636,6 +671,7 @@ def keepFiles(request, syncResults=True):
     if syncResults:
         for room, error in syncChecks(request).items():
             errors.setdefault(room, error)
+
 
     return errors
 
@@ -673,6 +709,8 @@ def attachPics(request, listing, rooms, savedPhotos):
         if room in kept:
             result = results.get(room, {})
 
+
+
             photo = ListingPhoto(
                 listing=listing,
                 room=room,
@@ -705,6 +743,8 @@ def niceLabel(label):
         "floor_plan": "a floor plan",
         "outdoor": "an outdoor scene",
     }
+
+
 
     if label in names:
         return names[label]
@@ -758,6 +798,7 @@ def planRedo(listing):
 
     ready = []
 
+
     for photo in stale:
         try:
             with photo.image.open("rb") as image:
@@ -791,12 +832,16 @@ def redoStale(listing, prepared):
         photo.embedding = result.get("embedding")
         photo.modelVersion = result.get("modelVersion")
         warning = slotWarn(result, photo.room)
+
+
         appealReasons = [reason for reason in photo.photoReview if reason == appealWhy(photo.room)]
         photo.photoReview = list(
             dict.fromkeys(
                 appealReasons + result.get("reviewReasons", []) + ([warning] if warning else [])
             )
         )
+
+
 
         if result.get("identityStatus") == "identity mismatch":
             photo.photoReview.append("Photo model identity mismatch; staff must review it")
@@ -846,6 +891,8 @@ def photoType(result):
 
     kind = photo_types.get(result.get("roomLabel"))
     trust = result.get("roomConfidence")
+
+
 
     if kind is None or not isinstance(trust, Real) or not (0.98) <= trust <= 1:
         return None
@@ -897,6 +944,7 @@ def tallyShown(request, data):
 def picUrl(request, data, room):
     if not data.get("listingId"):
         return ""
+
 
     photo = ListingPhoto.objects.filter(
         listing_id=data["listingId"], listing__seller=request.user, room=room
@@ -955,6 +1003,7 @@ def sortPhoto(request, data, room):
     if room not in data["photos"] or not result or result.get("checking") or result.get("keptHere"):
         return None
 
+
     target = sortTarget(request, data, room, result)
 
     if not target:
@@ -963,6 +1012,9 @@ def sortPhoto(request, data, room):
     moved = withSlot(result, room, target)
     moved["movedFrom"] = room
     data["photos"][target] = data["photos"].pop(room)
+
+
+
     data["checks"][target] = moved
     data["checks"].pop(room)
     request.session.modified = True
@@ -1020,6 +1072,7 @@ def movedNote(photos, results, room):
         return ""
 
     kind = slot_type(target)
+
 
     return f"Your photo looks like {type_names[kind]}, so we moved it to {ROOM_LABELS[target]}. {ROOM_LABELS[room]} still needs its own photo."
 
