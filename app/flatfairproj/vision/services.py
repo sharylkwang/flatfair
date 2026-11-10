@@ -312,3 +312,47 @@ def nearest(label, embedding, candidates):
     ][:3]
 
 
+def item_words(item):
+    details = item.attributes or {}
+    words = []
+
+    if details.get("brand"):
+        words.append(str(details["brand"]))
+
+    for key, value in details.items():
+        if key != "brand":
+            words.append(str(value))
+
+    return words
+
+
+def find_words(item):
+    return " ".join(item_words(item) + [item.label])
+
+
+def links(item):
+    query = find_words(item)
+    search = "https://www.google.com/search?" + urlencode({"tbm": "isch", "q": query})
+    base = settings.PUBLIC_URL
+    host = urlparse(base).hostname or ""
+    public = (
+        urlparse(base).scheme == "https"
+        and "." in host
+        and host not in ("localhost", "127.0.0.1")
+        and not host.endswith((".localhost", ".local"))
+    )
+
+    import ipaddress
+
+    try:
+        public = public and ipaddress.ip_address(host).is_global
+    except ValueError:
+        pass
+
+    if public:
+        crop_url = base.rstrip("/") + reverse("vision_crop", args=[item.pk])
+        lens = "https://lens.google.com/uploadbyurl?" + urlencode({"url": crop_url})
+    else:
+        lens = ""
+
+    return search, lens

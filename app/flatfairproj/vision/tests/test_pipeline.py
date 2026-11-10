@@ -23,6 +23,192 @@ from vision.services import links, process, like_pool, like_items
 from vision.tests.helpers import listing, makeListing, output
 
 
+class PipelineTests(TestCase):
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.override = override_settings(MEDIA_ROOT=self.temp.name)
+        self.override.enable()
+        self.addCleanup(self.override.disable)
+        self.addCleanup(self.temp.cleanup)
+        self.flat = listing()
+        self.photo = ListingPhoto.objects.create(listing=self.flat, room="living", image="test.jpg")
+
+    @patch("vision.services.analyse", return_value=output())
+    def test_processing_saves_item_geometry(self, mocked):
+        with self.captureOnCommitCallbacks(execute=True):
+            analysis = process(self.photo)
+        self.assertEqual(analysis.status, "done")
+        item = analysis.items.get()
+        self.assertEqual(len(item.embedding), 512)
+        self.assertTrue(all((len(point) == 2 for point in item.polygon)))
+        self.assertEqual(item.attributes["colour"], "grey")
+        self.assertTrue(Path(item.crop.path).exists())
+        mocked.assert_called_once_with(self.photo.image.path, room=self.photo.room)
+        process(self.photo)
+        self.assertEqual(mocked.call_count, 1)
+
+    @override_settings(PUBLIC_URL="")
+    @patch("vision.services.analyse", return_value=output())
+    def test_item_links_panel_offer(self, mocked):
+        with self.captureOnCommitCallbacks(execute=True):
+            record = process(self.photo)
+        item = record.items.get()
+        search, lens = links(item)
+        self.assertIn("q=grey+fabric+sofa", search)
+        self.assertFalse(lens)
+        with patch("vision.templatetags.vision_tags.weights_ok", return_value=True):
+            html = Template("{% load vision_tags %}{% shop_look flat %}").render(Context({"flat": self.flat}))
+        self.assertIn("tbm=isch&amp;q=grey+fabric+sofa", html)
+        self.assertNotIn("needs a public image URL", html)
+        self.assertNotIn("disabled", html)
+        self.assertNotIn('<details class="panel vision-panel" open', html)
+        self.assertIn('role="tablist"', html)
+        self.assertIn("Search with Google Lens", html)
+        self.assertIn(f'data-lens-crop="{reverse('vision_crop', args=[item.pk])}"', html)
+        self.assertNotIn(item.crop.url, html)
+        self.assertIn('data-lens-words="grey fabric sofa"', html)
+        self.assertNotIn("Find similar online", html)
+        self.assertNotIn("lens.google.com/uploadbyurl", html)
+        with override_settings(PUBLIC_URL="https://flatfair.example.com"):
+            self.assertIn("https%3A%2F%2Fflatfair.example.com", links(item)[1])
+        with override_settings(PUBLIC_URL="https://192.168.1.1"):
+            self.assertFalse(links(item)[1])
+
+    @patch("vision.services.analyse", return_value=output())
+    def test_similar_items_exclude_photos(self, mocked):
+        with self.captureOnCommitCallbacks(execute=True):
+            record = process(self.photo)
+        item = record.items.get()
+        another = ListingPhoto.objects.create(listing=self.flat, room="kitchen", image="a.jpg")
+        with self.captureOnCommitCallbacks(execute=True):
+            process(another)
+        public_flat = listing()
+        public_flat.seller = User.objects.create_user("other-seller")
+        public_flat.save(update_fields=["seller"])
+        other = ListingPhoto.objects.create(listing=public_flat, room="living", image="b.jpg")
+        with self.captureOnCommitCallbacks(execute=True):
+            other_record = process(other)
+        expected = other_record.items.get()
+        self.assertEqual([x.pk for x in like_items(item)], [expected.pk])
+
+    def test_lens_public_url_empty(self):
+        item = DetectedItem(pk=123, label="sofa", attributes={"colour": "grey"})
+        with override_settings(PUBLIC_URL="https://flatfair.example.com/"):
+            search, lens = links(item)
+        self.assertEqual(
+            parse_qs(urlparse(lens).query)["url"],
+            ["https://flatfair.example.com" + reverse("vision_crop", args=[item.pk])],
+        )
+        with override_settings(PUBLIC_URL=""):
+            fallbackSearch, fallbackLens = links(item)
+        self.assertEqual(fallbackSearch, search)
+        self.assertEqual(parse_qs(urlparse(fallbackSearch).query)["q"], ["grey sofa"])
+        self.assertEqual(fallbackLens, "")
+
+    def test_completed_empty_panel_shows(self):
+        from django.template.loader import render_to_string
+
+        html = render_to_string("vision/panel.html", {"enabled": True, "total": 0})
+        self.assertIn('data-vision-state="complete"', html)
+        self.assertIn("We didn’t spot any furniture in these photos.", html)
+        self.assertNotIn("data-vision-pending", html)
+
+    def test_missing_weights_hide_shop(self):
+        with patch("vision.templatetags.vision_tags.weights_ok", return_value=False):
+            html = Template("{% load vision_tags %}{% shop_look flat %}").render(Context({"flat": self.flat}))
+        self.assertNotIn("Shop this look", html)
+
+    def test_publishing_listing_enqueues(self):
+        self.flat.status = "review"
+        self.flat.save()
+        PhotoAnalysis.objects.filter(photo=self.photo).delete()
+        with self.captureOnCommitCallbacks(execute=True):
+            self.flat.status = "live"
+            self.flat.save()
+        self.assertEqual(PhotoAnalysis.objects.get(photo=self.photo).status, "pending")
+
+    def test_enqueue_listing_idempotent(self):
+        from vision.queue import queue_flat
+
+        done = PhotoAnalysis.objects.get_or_create(photo=self.photo)[0]
+        PhotoAnalysis.objects.filter(pk=done.pk).update(status="done", pipelineIdentity=pipelineIdentity())
+        second = ListingPhoto.objects.create(listing=self.flat, room="kitchen", image="kitchen.jpg")
+        PhotoAnalysis.objects.filter(photo=second).delete()
+        queue_flat(self.flat.pk)
+        queue_flat(self.flat.pk)
+        self.assertEqual(PhotoAnalysis.objects.get(pk=done.pk).status, "done")
+        self.assertEqual(PhotoAnalysis.objects.get(photo=second).status, "pending")
+        self.assertEqual(PhotoAnalysis.objects.count(), 2)
+        hidden = listing()
+        Listing.objects.filter(pk=hidden.pk).update(status="review")
+        ListingPhoto.objects.create(listing=hidden, room="living", image="h.jpg")
+        queue_flat(hidden.pk)
+        self.assertFalse(PhotoAnalysis.objects.filter(photo__listing=hidden).exists())
+
+    @patch("vision.services.analyse", return_value=output())
+    def test_removed_crop_row_marks(self, mocked):
+        from django.core.files.storage import default_storage
+
+        save = default_storage.save
+
+        def removing(name, content, *args, **kwargs):
+            DetectedItem.objects.all().delete()
+            return save(name, content, *args, **kwargs)
+
+        with (
+            patch.object(default_storage, "save", side_effect=removing),
+            self.captureOnCommitCallbacks(execute=True),
+        ):
+            record = process(self.photo)
+        record.refresh_from_db()
+        self.assertEqual(record.status, "failed")
+        self.assertIn("Crop row removed during publication", record.error)
+        self.assertEqual(list(Path(self.temp.name).rglob("*.png")), [])
+
+    def test_polygon_coordinates_integers(self):
+        import numpy as np
+
+        points = polygon(np.ones((20, 30), dtype=bool))
+        self.assertTrue(all((isinstance(v, int) for p in points for v in p)))
+        self.assertEqual(polygon(np.zeros((10, 10), dtype=bool)), [])
+
+    @patch("huggingface_hub.snapshot_download")
+    def test_model_download_skips_complete(self, download):
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch("vision.management.commands.download_vision_models.ML", Path(directory)),
+        ):
+            call_command("download_vision_models", stdout=io.StringIO())
+            self.assertEqual(download.call_count, 4)
+            for name in ("vision/grounding_dino", "vision/slimsam", "vision/florence2", "depth"):
+                dest = Path(directory) / name
+                dest.mkdir(parents=True)
+                for f in ("config.json", "model.safetensors", "preprocessor_config.json"):
+                    (dest / f).touch()
+            call_command("download_vision_models", stdout=io.StringIO())
+            self.assertEqual(download.call_count, 4)
+
+    def test_analysis_exception_records(self):
+        with patch("vision.services.analyse", side_effect=RuntimeError("missing model")):
+            record = process(self.photo)
+        self.assertEqual(record.status, "failed")
+        self.assertIn("missing model", record.error)
+
+    @patch("vision.services.analyse", return_value=output())
+    def test_pending_panel_becomes(self, mocked):
+        template = Template("{% load vision_tags %}{% shop_look flat %}")
+        with patch("vision.templatetags.vision_tags.weights_ok", return_value=True):
+            pending = template.render(Context({"flat": self.flat}))
+            with self.captureOnCommitCallbacks(execute=True):
+                process(self.photo)
+            done = template.render(Context({"flat": self.flat}))
+        self.assertIn("data-vision-pending", pending)
+        self.assertNotIn('role="tablist"', pending)
+        self.assertIn('class="vision-card" tabindex="-1"', done)
+        self.assertIn('Search with Google Lens<span class="visually-hidden"> (opens in new tab)</span>', done)
+
+
 class RealTests(TestCase):
 
     def test_models_extract_items_embeddings(self):
