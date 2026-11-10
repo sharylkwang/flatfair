@@ -44,6 +44,8 @@
 }
 .staff-overview-links a { min-height: 44px; padding: 8px; font-size: 13px; }
 .photo-wait { display: none; }
+.photo-slot.checking .photo-wait { display: block; color: var(--muted); font-size: var(--fs-sm); }
+.photo-slot.checking .photo-status { display: none; }
 .dense-list { --fs-xs: 13px; }
 .admin-main.dense-list > * + * { margin-top: 12px; }
 .dense-list .panel { padding: 16px; border-radius: var(--r-m); }
@@ -2455,6 +2457,8 @@ summary > .s-toggle::after { content: ''; width: 7px; height: 7px; border: solid
 .admin-layout .pay-guide i { font-style: normal; font-weight: 600; }
 .flat-thumb-estate.flat-thumb--small > small { left: 4px; bottom: 4px; max-width: calc(100% - 8px); padding: 1px 6px; font-size: 10px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: clip; }
 .admin-layout .hold-tab--documents::before { background: var(--good); }
+.photo-slot.moved .photo-status { margin-top: 4px; padding: 10px 12px; border-radius: var(--r-m); background: var(--info-soft); color: var(--ink); line-height: 1.45; }
+.photo-slot.moved .photo-back { justify-self: start; }
 .next-steps { width: min(520px, calc(100vw - 32px)); padding: 24px; border: 0; border-radius: var(--r-xl); background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px -24px color-mix(in srgb, var(--deep) 60%, transparent); }
 .next-steps::backdrop { background: color-mix(in srgb, var(--deep) 45%, transparent); }
 .next-steps-tag { margin: 0; color: var(--good-ink); font-size: 13px; font-weight: 700; }

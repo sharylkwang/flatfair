@@ -77,6 +77,27 @@ def modelVersion():
 MODEL_VERSION = modelVersion()
 
 
+def get_cutoffs():
+    try:
+        metrics = json.loads((TRAINING / "photo_metrics.json").read_text())
+        block = metrics["thresholds"]["block"]
+        review = metrics["thresholds"]["review"]
+        ai_cutoff = metrics["ai"]["threshold"]
+
+        if (
+            not all(
+                isinstance(value, Real) and math.isfinite(value) and 0 <= value <= 1
+                for value in (block, review, ai_cutoff)
+            )
+            or review > block
+        ):
+            raise ValueError("Invalid photo thresholds")
+
+        return block, review, ai_cutoff
+    except (OSError, ValueError, KeyError, TypeError):
+        return BLOCK_AT, REVIEW_AT, AI_REVIEW_AT
+
+
 BLOCK_AT, REVIEW_AT, AI_REVIEW_AT = get_cutoffs()
 HOLD_AT = REVIEW_AT + (BLOCK_AT - REVIEW_AT) / 2
 AI_HOLD_AT = max(AI_REVIEW_AT, AI_CLEAR_AT)
@@ -449,6 +470,92 @@ def tagFeatures(model, processor):
         rows.append(unit(textFeatures(model, processor, prompts).mean(dim=0)))
 
     return torch.stack(rows)
+
+
+def loadScorer():
+    if not isOn():
+        return lambda paths: [None for path in paths]
+
+    if verifyModel(CLIP_NAME, ML, CLIP_REVISION) != "verified":
+        warnGone(log, "Photo model unavailable: identity mismatch")
+
+        return lambda paths: [
+            {"identityStatus": "identity mismatch", "modelVersion": MODEL_VERSION} for path in paths
+        ]
+
+    import torch
+    from PIL import Image
+    from transformers import CLIPModel, CLIPProcessor
+
+    device = startDevice()
+    log.info("The photo model runs on the %s", "GPU" if device == "cuda" else "CPU")
+    torch.set_num_threads(4)
+    model = CLIPModel.from_pretrained(ML, local_files_only=True).eval()
+
+    if device == "cuda":
+        model.to("cuda")
+
+    prep = CLIPProcessor.from_pretrained(ML, local_files_only=True)
+
+    with torch.inference_mode():
+        labelFeatures = textFeatures(model, prep, [label[0] for label in LABELS])
+        tagWords = tagFeatures(model, prep)
+
+    room, ai = heads()
+
+    def score(paths):
+        images = []
+
+        try:
+            for path in paths:
+                with Image.open(path) as source:
+                    images.append(source.convert("RGB"))
+
+            results = []
+
+            with torch.inference_mode():
+                pixels = prep(images=images, return_tensors="pt")["pixel_values"]
+
+                if device == "cuda":
+                    pixels = pixels.to("cuda")
+
+                traits = unit(
+                    model.visual_projection(model.vision_model(pixel_values=pixels).pooler_output)
+                )
+
+                chances = (
+                    (model.logit_scale.exp() * traits @ labelFeatures.T).softmax(dim=-1).tolist()
+                )
+
+                tagOdds = (model.logit_scale.exp() * traits @ tagWords.T).softmax(dim=-1).tolist()
+
+                if device == "cuda":
+                    traits = traits.cpu()
+
+                for index, image in enumerate(images):
+                    vector = traits[index : index + 1]
+                    result = decide(vector.numpy(), chances[index], image)
+                    result["tags"] = pickTags(tagOdds[index])
+
+                    result["embedding"] = [round(number, 4) for number in vector[0].tolist()]
+
+                    result["modelVersion"] = MODEL_VERSION
+
+                    result["blockAt"] = room["thresholds"]["block"] if room else BLOCK_AT
+
+                    result["reviewAt"] = room["thresholds"]["review"] if room else REVIEW_AT
+
+                    result["aiReviewAt"] = ai["thresholds"]["review"] if ai else AI_REVIEW_AT
+
+                    result["reviewReasons"] = reviewReasons(result)
+                    results.append(result)
+
+            return results
+        finally:
+            for image in images:
+                image.close()
+
+    return score
 
 
 def scoreFiles(paths):

@@ -1334,3 +1334,29 @@ class ActivityNotice(models.Model):
         indexes = [models.Index(fields=["user", "read"])]
 
 
+class PhotoCheckJob(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="photoCheckJobs", null=True, blank=True
+    )
+    room = models.CharField(max_length=30, choices=ROOM_CHOICES)
+    pendingPath = models.CharField(max_length=500)
+    status = models.CharField(
+        max_length=10,
+        default="queued",
+        choices=[
+            ("queued", "Queued"),
+            ("running", "Running"),
+            ("done", "Done"),
+            ("failed", "Failed"),
+        ],
+    )
+    result = models.JSONField(default=dict)
+    error = models.TextField(blank=True)
+    createdAt = models.DateTimeField(auto_now_add=True)
+    startedAt = models.DateTimeField(null=True, blank=True)
+    finishedAt = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        indexes = [models.Index(fields=["status", "createdAt"], name="photo_job_queue_idx")]

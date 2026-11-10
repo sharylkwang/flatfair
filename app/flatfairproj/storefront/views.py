@@ -766,6 +766,8 @@ def findHints(request):
         guess = {"kind": "town", "label": address.town_label(town), "value": town}
         results = [guess] + results[: address.SEARCH_LIMIT - 1]
 
+
+
     estate = hintEstate(query)
 
     if estate:

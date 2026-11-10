@@ -377,6 +377,115 @@ def keepPhoto(request, room, data, result, appeal=False, pendingPath=None):
     return ""
 
 
+def queueFiles(request, ready):
+    if not ready:
+        return
+
+    token = draft(request)
+    data = request.session[DRAFTS_KEY][token]
+    keepRooms(request, data)
+    paths = {
+        room: default_storage.save(f"pending/{uuid.uuid4().hex}.jpg", ContentFile(image))
+        for room, image in ready.items()
+    }
+    previousPaths = {room: data["photos"].get(room) for room in paths}
+
+    try:
+        jobs = queuePics(request.user, paths, previousPaths=previousPaths)
+    except Exception:
+        dropPaths(paths.values())
+
+        raise
+
+    for room, path in paths.items():
+        old = data["photos"].get(room)
+        data["photos"][room] = path
+        data["checks"][room] = {"jobId": str(jobs[room].pk), "checking": True}
+
+        if old:
+            dropPaths([old])
+
+        forget_bad(request, room)
+
+    request.session.modified = True
+
+
+def syncChecks(request):
+    token = draft(request)
+    data = request.session[DRAFTS_KEY][token]
+    ids = []
+
+    for result in data["checks"].values():
+        if result.get("checking") and result.get("jobId"):
+            ids.append(result["jobId"])
+
+    jobs = {
+        str(job.pk): job for job in PhotoCheckJob.objects.filter(owner=request.user, pk__in=ids)
+    }
+    errors = {}
+
+    for room, result in list(data["checks"].items()):
+        if not result.get("checking"):
+            continue
+
+        job = jobs.get(result.get("jobId"))
+
+        if job is not None and job.room == room and data["photos"].get(room) == job.pendingPath:
+            if job.status in ("queued", "running"):
+                continue
+
+            found = job.result if job.status == "done" else {"unchecked": True}
+            error = keepPhoto(request, room, None, found, pendingPath=job.pendingPath)
+
+            if error:
+                errors[room] = error
+            else:
+                sortPhoto(request, data, room)
+        else:
+            data["checks"][room] = {"unchecked": True}
+            request.session.modified = True
+
+    for room, photo in data.get("refused", {}).items():
+        errors.setdefault(
+            room,
+            blockNote(photo["result"]["label"], ROOM_LABELS[room].lower())
+            + " Please choose a photo of that room instead.",
+        )
+
+    return errors
+
+
+def busyRooms(request):
+    rooms = []
+
+    for room, result in checks(request).items():
+        if result.get("checking") and room in pending(request):
+            rooms.append(room)
+
+    return rooms
+
+
+def waitChecks(request, seconds=20):
+    until = time.monotonic() + seconds
+    errors = syncChecks(request)
+
+    if busyRooms(request):
+        ensureWorker()
+
+    while busyRooms(request) and time.monotonic() < until:
+        time.sleep(min(0.25, max(0, until - time.monotonic())))
+        errors.update(syncChecks(request))
+
+    errors.update(
+        {
+            room: "Still checking… refresh to see the result, then submit again. Your listing hasn’t been published yet."
+            for room in busyRooms(request)
+        }
+    )
+
+    return errors
+
+
 def reviewNote(result, room):
     warning = slotWarn(result, room)
 
@@ -392,6 +501,33 @@ def reviewNote(result, room):
         return "We’re not sure this photo shows the flat. Our team will take a quick look at it. Pro photography in Packages can retake it for you."
 
     return "Our team will take a quick look at this photo."
+
+
+def photoState(request, room):
+    data = request.session[DRAFTS_KEY][draft(request)]
+    target = movedTo(data["photos"], data["checks"], room)
+
+    if target:
+        return {
+            "verdict": "moved",
+            "message": movedNote(data["photos"], data["checks"], room),
+            "movedTo": target,
+            "target": photoState(request, target),
+            "url": picUrl(request, data, room),
+        }
+
+    state = roomState(request, room)
+    source = data["checks"].get(room, {}).get("movedFrom")
+
+    if source and room in data["photos"]:
+        state["url"] = reverse("draft_photo", kwargs={"path": data["photos"][room]})
+
+    if source and room in data["photos"] and source not in data["photos"]:
+        state["movedFrom"] = source
+        state["movedNote"] = movedNote(data["photos"], data["checks"], source)
+        state["movedFromUrl"] = picUrl(request, data, source)
+
+    return state
 
 
 def roomState(request, room):

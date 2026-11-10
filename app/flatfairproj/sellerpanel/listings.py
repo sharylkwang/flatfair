@@ -811,6 +811,36 @@ def photo_check(request):
     return JsonResponse(photoState(request, room))
 
 
+@never_cache
+@login_required
+@require_GET
+@needEmail
+def photo_status(request):
+    if not hasRole(request.user, "seller"):
+        return JsonResponse({"error": "Sign in with a seller account to add photos."}, status=403)
+
+    token = request.GET.get("draftToken")
+
+    if token not in request.session.get(DRAFTS_KEY, {}):
+        return JsonResponse({"error": "Please reload the page to see your photos."}, status=400)
+
+    if not cache.add(f"photo-status:{request.user.pk}", 1, 1):
+        return JsonResponse({"error": "Please wait a moment."}, status=429)
+
+    request._photoDraft = token
+    syncChecks(request)
+
+    if busyRooms(request):
+        from .photoqueue import ensureWorker
+
+        ensureWorker()
+
+    rooms = set(pending(request)) | set(refused(request))
+    states = {room: photoState(request, room) for room in rooms}
+
+    return JsonResponse({"photos": states})
+
+
 @login_required
 @needEmail
 def cost_check(request):
