@@ -181,6 +181,15 @@ def townPhotos(slug):
     return tuple(found)
 
 
+def estatePic(flat):
+    photos = townPhotos(slugify(str(flat.town).replace("/", " ")))
+
+    if not photos:
+        return FALLBACK_COVER
+
+    return photos[(flat.pk or 0) % len(photos)]
+
+
 def regionName(value):
     wanted = str(value or "").strip().casefold()
 
