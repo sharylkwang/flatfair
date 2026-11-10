@@ -370,6 +370,21 @@ def showWorth(request, context):
     return render(request, "storefront/valuation.html", context)
 
 
+def filledForm(answers):
+    form = ValuationForm(answers)
+
+    try:
+        form.is_valid()
+    except Exception:
+        log.exception("Address check failed")
+        answers = answers.copy()
+        answers["postal"] = ""
+        form = ValuationForm(answers)
+        form.is_valid()
+
+    return form
+
+
 def fairRange(data, address):
     return band(
         data["town"],
