@@ -37,6 +37,311 @@ from storefront.tests.helpers import (
 )
 
 
+class AutoPriceTests(CompletedPhotoQueueMixin, TestCase):
+
+    def setUp(self):
+        media = TemporaryDirectory()
+        self.addCleanup(media.cleanup)
+        setting = override_settings(MEDIA_ROOT=media.name)
+        setting.enable()
+        self.addCleanup(setting.disable)
+        self.seller = makeUser("seller@test.com", "seller")
+        self.staff = makeStaff("admin@test.com")
+        self.client.force_login(self.seller)
+        checker = patch(
+            "sellerpanel.photos.checkPics", side_effect=lambda photos: [dict(CLEAN)] * len(photos)
+        )
+        checker.start()
+        self.addCleanup(checker.stop)
+        price = patch("sellerpanel.listings.band", return_value=(500000, 550000, 600000))
+        price.start()
+        self.addCleanup(price.stop)
+
+    def submit(self, price):
+        token = self.client.get(reverse("sell")).context["draftToken"]
+        return self.client.post(
+            reverse("sell"),
+            {
+                **FLAT,
+                "askingPrice": str(price),
+                "draftToken": token,
+                "confirm": "1",
+                **{f"photo_{room}": jpeg() for room in ROOMS},
+            },
+        )
+
+    def test_submit_five_percent_edge(self):
+        self.assertEqual(str(AUTO_APPROVE_PRICE_GAP), "0.05")
+        for price, status in ((630000, "live"), (630060, "review"), (299999, "review")):
+            with self.subTest(price=price):
+                response = self.submit(price)
+                flat = Listing.objects.get()
+                self.assertEqual(flat.status, status)
+                self.assertEqual(
+                    Decision.objects.filter(listing=flat, staff=None).count(), int(status == "live")
+                )
+                if status == "live":
+                    self.assertIn("above the usual range", str(list(response.wsgi_request._messages)))
+                    self.assertTrue(
+                        AuditLog.objects.filter(actor=None, action="listing auto-approved").exists()
+                    )
+                    self.assertContains(
+                        self.client.get(reverse("seller_listing", args=[flat.publicId])),
+                        "Listing history",
+                    )
+                    self.assertContains(
+                        self.client.get(reverse("seller_listing", args=[flat.publicId])),
+                        "Automatic check",
+                    )
+                    self.assertContains(
+                        self.client.get(reverse("listing_detail", args=[flat.publicId])),
+                        "This price is on the high side",
+                    )
+                flat.delete()
+
+    def test_small_gap_preview_confirm(self):
+        response = self.client.get(reverse("sell_price_check"), {**FLAT, "askingPrice": "630000"})
+        self.assertIn("can go live at this price", response.json()["html"])
+        token = self.client.get(reverse("sell")).context["draftToken"]
+        response = self.client.post(
+            reverse("sell"),
+            {
+                **FLAT,
+                "askingPrice": "630000",
+                "draftToken": token,
+                **{f"photo_{room}": jpeg() for room in ROOMS},
+            },
+        )
+        self.assertTrue(response.context["needsConfirm"])
+        self.assertContains(
+            response,
+            "With clear photos and no documents to check, your listing can go live at this price.",
+        )
+        self.assertFalse(Listing.objects.exists())
+
+    def test_edit_price_small_gaps(self):
+        self.submit(700000)
+        flat = Listing.objects.get()
+        self.client.post(
+            reverse("edit_listing", args=[flat.publicId]),
+            {**FLAT, "askingPrice": "630000", "confirm": "1", "revision": flat.revision},
+        )
+        flat.refresh_from_db()
+        self.assertEqual(flat.status, "live")
+        self.client.post(reverse("update_price", args=[flat.publicId]), {"askingPrice": "630060"})
+        flat.refresh_from_db()
+        self.assertEqual(flat.status, "review")
+        self.client.post(reverse("update_price", args=[flat.publicId]), {"askingPrice": "630000"})
+        flat.refresh_from_db()
+        self.assertEqual(flat.status, "live")
+        self.assertEqual(AuditLog.objects.filter(action="listing auto-approved").count(), 2)
+
+    def test_photo_document_holds(self):
+        flat = makeListing(self.seller, status="review", askingPrice=630000)
+        photo = ListingPhoto.objects.create(
+            listing=flat,
+            room="kitchen",
+            image="room.jpg",
+            modelVersion=CLEAN["modelVersion"],
+            aiIrrelevant=0.95,
+            aiGenerated=0.01,
+        )
+        self.assertFalse(passPrice(flat))
+        photo.aiIrrelevant = 0.01
+        photo.modelVersion = None
+        photo.save()
+        self.assertFalse(passPrice(flat))
+        photo.modelVersion = CLEAN["modelVersion"]
+        photo.save()
+        document = DocumentRequest.objects.create(listing=flat, requestedBy=self.staff, message="Proof")
+        self.assertFalse(passPrice(flat))
+        document.status = "submitted"
+        document.save()
+        self.assertFalse(passPrice(flat))
+        self.assertFalse(AuditLog.objects.exists())
+
+    def test_corrections_share_publication(self):
+        for route in ("edit_listing", "update_price"):
+            for price, status in (
+                (550000, "live"),
+                (630000, "live"),
+                (630060, "review"),
+                (450000, "review"),
+            ):
+                with self.subTest(route=route, price=price):
+                    self.submit(700000)
+                    flat = Listing.objects.get()
+                    response = self.client.post(
+                        reverse(route, args=[flat.publicId]),
+                        {
+                            **FLAT,
+                            "askingPrice": str(price),
+                            "confirm": "1",
+                            "revision": flat.revision,
+                        },
+                    )
+                    flat.refresh_from_db()
+                    self.assertEqual((flat.askingPrice, flat.status), (price, status))
+                    self.assertEqual(
+                        Decision.objects.filter(listing=flat, staff=None).count(),
+                        int(status == "live"),
+                    )
+                    if price == 630000:
+                        self.assertIn("above the usual range", str(list(response.wsgi_request._messages)))
+                        self.assertContains(
+                            self.client.get(reverse("listing_detail", args=[flat.publicId])),
+                            "This price is on the high side",
+                        )
+                    flat.delete()
+
+    def test_other_holds_survive_both(self):
+        for route in ("edit_listing", "update_price"):
+            for hold in ("photo", "document", "reactivation", "staff", "low"):
+                for price in (550000, 630000):
+                    with self.subTest(route=route, hold=hold, price=price):
+                        self.submit(299999 if hold == "low" else 700000)
+                        flat = Listing.objects.get()
+                        if hold == "photo":
+                            flat.photos.filter(room="kitchen").update(aiIrrelevant=0.95)
+                        elif hold == "document":
+                            DocumentRequest.objects.create(
+                                listing=flat, requestedBy=self.staff, message="Proof"
+                            )
+                        elif hold == "reactivation":
+                            self.seller.profile.reactivatedAt = timezone.now()
+                            self.seller.profile.save(update_fields=["reactivatedAt"])
+                        elif hold == "staff":
+                            AuditLog.objects.create(
+                                actor=self.staff,
+                                action="listing sent to review",
+                                target=f"Listing #{flat.pk} ({flat.town.title()})",
+                                detail="Check ownership",
+                            )
+                        self.client.post(
+                            reverse(route, args=[flat.publicId]),
+                            {
+                                **FLAT,
+                                "askingPrice": str(price),
+                                "confirm": "1",
+                                "revision": flat.revision,
+                            },
+                        )
+                        flat.refresh_from_db()
+                        self.assertEqual((flat.askingPrice, flat.status), (price, "review"))
+                        self.assertFalse(Decision.objects.filter(listing=flat, staff=None).exists())
+                        flat.delete()
+                        self.seller.profile.reactivatedAt = None
+                        self.seller.profile.save(update_fields=["reactivatedAt"])
+
+    def test_full_edit_changed_facts(self):
+        for change in ("facts", "photo"):
+            for price in (550000, 630000):
+                with self.subTest(change=change, price=price):
+                    self.submit(700000)
+                    flat = Listing.objects.get()
+                    changes = {"storey": "9"} if change == "facts" else {"photo_kitchen": jpeg()}
+                    self.client.post(
+                        reverse("edit_listing", args=[flat.publicId]),
+                        {
+                            **FLAT,
+                            "askingPrice": str(price),
+                            "confirm": "1",
+                            "revision": flat.revision,
+                            **changes,
+                        },
+                    )
+                    flat.refresh_from_db()
+                    self.assertEqual((flat.askingPrice, flat.status), (price, "review"))
+                    self.client.post(reverse("update_price", args=[flat.publicId]), {"askingPrice": "630000"})
+                    flat.refresh_from_db()
+                    self.assertEqual(flat.status, "review")
+                    self.assertFalse(Decision.objects.filter(listing=flat, staff=None).exists())
+                    self.client.force_login(self.staff)
+                    self.client.post(
+                        reverse("admin_decide", args=[flat.pk]),
+                        {"revision": flat.revision, "status": flat.status, "decision": "approved"},
+                    )
+                    flat.refresh_from_db()
+                    self.assertEqual(flat.status, "live")
+                    self.client.force_login(self.seller)
+                    flat.delete()
+
+    def test_low_hold_survives_high(self):
+        for route in ("edit_listing", "update_price"):
+            with self.subTest(route=route):
+                self.submit(299999)
+                flat = Listing.objects.get()
+                self.client.post(
+                    reverse(route, args=[flat.publicId]),
+                    {**FLAT, "askingPrice": "700000", "confirm": "1", "revision": flat.revision},
+                )
+                self.client.post(reverse("update_price", args=[flat.publicId]), {"askingPrice": "630000"})
+                flat.refresh_from_db()
+                self.assertEqual(flat.status, "review")
+                self.assertFalse(Decision.objects.filter(listing=flat, staff=None).exists())
+                flat.delete()
+
+    def test_reactivated_seller_edits(self):
+        self.submit(700000)
+        flat = Listing.objects.get()
+        self.client.force_login(self.staff)
+        url = reverse("admin_customer_suspend", args=[self.seller.pk])
+        self.client.post(url, {"action": "suspend", "reason": "Check account"})
+        self.client.post(url, {"action": "reactivate", "reason": "Account checked"})
+        self.client.force_login(self.seller)
+        flat.refresh_from_db()
+        self.client.post(
+            reverse("edit_listing", args=[flat.publicId]),
+            {**FLAT, "askingPrice": "630000", "confirm": "1", "revision": flat.revision},
+        )
+        flat.refresh_from_db()
+        self.assertEqual(flat.status, "review")
+        self.assertFalse(heldByCost(flat))
+        self.client.post(reverse("update_price", args=[flat.publicId]), {"askingPrice": "620000"})
+        flat.refresh_from_db()
+        self.assertEqual(flat.status, "review")
+        self.assertFalse(Decision.objects.filter(listing=flat, staff=None).exists())
+
+    def test_staff_account_holds_prevent(self):
+        flat = makeListing(self.seller, status="review", askingPrice=630000)
+        for decision in ("rejected", "documents", "takendown"):
+            row = Decision.objects.create(
+                listing=flat,
+                staff=self.staff,
+                decision=decision,
+                reason="Staff hold",
+                askingPrice=flat.askingPrice,
+            )
+            self.assertFalse(passPrice(flat))
+            self.assertFalse(heldByCost(flat))
+            row.delete()
+        self.seller.is_active = False
+        self.seller.save()
+        self.assertFalse(passPrice(flat))
+        self.seller.is_active = True
+        self.seller.save()
+        EmailCheck.objects.filter(user=self.seller).update(verifiedAt=None)
+        self.assertFalse(passPrice(flat))
+        self.assertFalse(Decision.objects.exists())
+        flat.refresh_from_db()
+        self.assertEqual(flat.status, "review")
+
+    def test_staff_review_audit(self):
+        flat = makeListing(self.seller, askingPrice=630000)
+        self.client.force_login(self.staff)
+        self.client.post(
+            reverse("admin_listing_action", args=[flat.pk]),
+            {"action": "review", "reason": "Check ownership"},
+        )
+        flat.refresh_from_db()
+        self.assertEqual(flat.status, "review")
+        self.client.force_login(self.seller)
+        self.client.post(reverse("update_price", args=[flat.publicId]), {"askingPrice": "620000"})
+        flat.refresh_from_db()
+        self.assertEqual(flat.status, "review")
+        self.assertFalse(passPrice(flat))
+
+
 class PriceMonitoringTests(TestCase):
 
     def test_automatic_approvals_separate(self):

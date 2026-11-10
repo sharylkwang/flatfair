@@ -58,6 +58,114 @@ def liveIssue(flat, expectedRevision, expectedStatus, staffAccepted=False, accep
     return ""
 
 
+def heldByCost(flat):
+    from accounts.verification import emailVerified
+    from adminpanel.models import AuditLog
+    from .models import Profile
+    from .valuation import flagReason
+
+    if flat.status != "review" or not all((flat.bandLow, flat.estimatedPrice, flat.bandHigh)):
+        return False
+
+    if flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh) != "above":
+        return False
+
+    profile = (
+        Profile.objects.select_related("user").filter(user_id=flat.seller_id, canSell=True).first()
+    )
+
+    if (
+        not profile
+        or not profile.user.is_active
+        or profile.user.is_staff
+        or not emailVerified(profile.user)
+    ):
+        return False
+
+    if liveIssue(flat, flat.revision, "review"):
+        return False
+
+    if flat.documentRequests.exclude(status="accepted").exists():
+        return False
+
+    latest = flat.decisions.order_by("-createdAt", "-pk").first()
+
+    if latest and latest.decision != "approved":
+        return False
+
+    if latest:
+        seenAt = latest.createdAt
+    else:
+        seenAt = flat.createdAt
+
+    if AuditLog.objects.filter(
+        action="listing sent to review",
+        target__startswith=f"Listing #{flat.pk} (",
+        createdAt__gte=seenAt,
+    ).exists():
+        return False
+
+    return not profile.reactivatedAt or profile.reactivatedAt < seenAt
+
+
+def smallPriceGap(flat):
+    if not all((flat.bandLow, flat.estimatedPrice, flat.bandHigh)):
+        return False
+
+    return (
+        flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh) == "above"
+        and 0 < flat.askingPrice - flat.bandHigh <= Decimal(flat.bandHigh) * AUTO_APPROVE_PRICE_GAP
+    )
+
+
+def passPrice(flat, wasHeld=None):
+    from adminpanel.models import AuditLog, Decision
+
+    if flat.status != "review" or not all((flat.bandLow, flat.estimatedPrice, flat.bandHigh)):
+        return False
+
+    flag = flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+
+    if flat.askingPrice < flat.bandLow or (flag and not smallPriceGap(flat)):
+        return False
+
+    if wasHeld is None:
+        wasHeld = heldByCost(flat)
+
+    if not wasHeld or liveIssue(flat, flat.revision, "review"):
+        return False
+
+    flat.status = "live"
+    flat.save(update_fields=["status"])
+
+    reason = (
+        "Price is at most 5% above the usual range; photo and document checks passed."
+        if flag
+        else "Price hold cleared; price is within the usual range and photo and document checks passed."
+    )
+
+    Decision.objects.create(
+        listing=flat,
+        staff=None,
+        decision="approved",
+        reason=reason,
+        askingPrice=flat.askingPrice,
+        estimatedPrice=flat.estimatedPrice,
+        bandLow=flat.bandLow,
+        bandHigh=flat.bandHigh,
+        modelVersion=flat.modelVersion,
+    )
+
+    AuditLog.objects.create(
+        actor=None,
+        action="listing auto-approved",
+        target=f"Listing #{flat.pk} ({flat.town.title()})",
+        detail=reason,
+    )
+
+    return True
+
+
 @transaction.atomic
 def closeOrder(orderId, seller=None):
     from adminpanel.models import AuditLog

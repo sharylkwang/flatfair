@@ -1070,3 +1070,98 @@ def lockMyFlat(request, publicId):
     return seller, flat, None
 
 
+@login_required
+@transaction.atomic
+@needEmail
+def update_price(request, publicId):
+    seller, flat, refused = lockMyFlat(request, publicId)
+
+    if refused:
+        return refused
+
+    try:
+        newAsk = forms.IntegerField(min_value=50000, max_value=3000000).clean(
+            request.POST.get("askingPrice", "")
+        )
+    except forms.ValidationError:
+        if request.POST.get("back") == "flat":
+            messages.error(
+                request, "Please enter a price from $50,000 to $3,000,000, with no cents."
+            )
+
+            return redirect(reverse("seller_listing", args=[flat.publicId]) + "#change-price")
+
+        request.session["priceError"] = {
+            "pk": flat.pk,
+            "value": request.POST.get("askingPrice", "")[:12],
+            "message": "Please enter a price from $50,000 to $3,000,000, with no cents.",
+        }
+
+        return backToFlat(request, flat, "-price")
+
+    if request.POST.get("preview") == "1":
+        return redirect(
+            reverse("seller_listing", args=[flat.publicId]) + f"?try={newAsk}#change-price"
+        )
+
+    try:
+        low_cost, fair_cost, top_cost = flatBand(flat)
+    except ValueError as error:
+        messages.error(request, str(error))
+
+        return backToFlat(request, flat)
+
+    flag = flagReason(newAsk, low_cost, fair_cost, top_cost)
+    wasHeld = heldByCost(flat)
+    priceOk = flat.status == "live" or wasHeld
+    flat.askingPrice = newAsk
+    flat.estimatedPrice = fair_cost
+    flat.bandLow = low_cost
+    flat.bandHigh = top_cost
+    flat.modelVersion = VERSION
+    sellState(flat, "price", bool(flag))
+
+    if flat.status in OPEN_LISTING_STATUSES and otherOpen(seller, flat):
+        messages.info(request, ONE_FLAT_MESSAGE)
+
+        return backToFlat(request, flat)
+
+    flat.save(
+        update_fields=[
+            "askingPrice",
+            "estimatedPrice",
+            "bandLow",
+            "bandHigh",
+            "modelVersion",
+            "status",
+            "statusBeforeSold",
+        ]
+    )
+
+    if flat.status == "review" and not priceOk:
+        AuditLog.objects.create(
+            actor=seller,
+            action="listing sent to review",
+            target=f"Listing #{flat.pk} ({flat.town.title()})",
+            detail="Price changed while another review hold was active.",
+        )
+
+    passPrice(flat, wasHeld=priceOk)
+
+    if flat.status == "live" and smallPriceGap(flat):
+        messages.success(
+            request, "Your price is saved and your listing is live. " + ABOVE_RANGE_NOTE
+        )
+    elif flat.status == "review":
+        messages.success(request, "Your price is saved. " + hold_note(flat))
+    elif wasHeld and flat.status == "live":
+        messages.success(
+            request, "Your price is saved and your listing is live. Buyers can see it now."
+        )
+    else:
+        messages.success(request, "Your price is saved.")
+
+    if request.POST.get("back") == "flat":
+        return redirect(reverse("seller_listing", args=[flat.publicId]) + "#change-price")
+
+    return backToFlat(request, flat)
