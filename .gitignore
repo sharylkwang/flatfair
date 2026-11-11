@@ -3,20 +3,30 @@ __pycache__/
 *.py[cod]
 .vscode/
 *.pyc
+app/flatfairproj/media/pending/
 app/flatfairproj/assets/ml/clip
 app/flatfairproj/assets/ml/depth
 app/flatfairproj/assets/ml/vision
 app/flatfairproj/assets/ml/gpu_disabled_until.txt
 .DS_Store
 
+app/flatfairproj/media/
+app/flatfairproj/media-private-documents/
 *.sqlite3-journal
 *.sqlite3-wal
 *.sqlite3-shm
 
 
+# Local secrets
+.env
+app/flatfairproj/.env
+**/.playwright-cli/
 
+app/flatfairproj/sent_emails/
 app/flatfairproj/assets/training/photo_data
 app/flatfairproj/assets/training/photo_embeddings.npz
 app/flatfairproj/assets/training/__pycache__/
 app/flatfairproj/assets/training/check_runs/
 
+# Private local notes
+style_ownership*
