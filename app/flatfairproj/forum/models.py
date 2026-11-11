@@ -41,7 +41,11 @@ REASONS = [
 
 
 class Post(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="forumPosts")
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="forumPosts"
+    )
+
+
     question = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies"
     )
@@ -63,6 +67,7 @@ class Post(models.Model):
                 + f"?post={self.pk}#post-{self.pk}"
             )
 
+
         return reverse("community_question", args=[self.pk])
 
 
@@ -71,17 +76,26 @@ class Vote(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="votes")
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=["user", "post"], name="forum_one_vote")]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "post"], name="forum_one_vote")
+        ]
 
 
 class Report(models.Model):
-    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="forumReports")
+    reporter = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="forumReports"
+    )
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="reports")
     reason = models.CharField(max_length=10, choices=REASONS)
     resolved = models.BooleanField(default=False)
+
+
+
     createdAt = models.DateTimeField(default=timezone.now)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["reporter", "post"], name="forum_one_report")
+            models.UniqueConstraint(
+                fields=["reporter", "post"], name="forum_one_report"
+            )
         ]

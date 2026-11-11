@@ -30,6 +30,8 @@ def emailTaken(email, exclude=None):
     if exclude:
         users = users.exclude(pk=exclude)
 
+
+
     return users.exists()
 
 
@@ -63,6 +65,7 @@ def knownModel(form, data, notSure):
 class AddressChecksMixin:
     address_fields = {}
 
+
     def check_address(self, data):
         from . import address
 
@@ -71,8 +74,10 @@ class AddressChecksMixin:
         names = self.address_fields
         postal = data.get(names["postal"])
 
+
         if postal:
             given = {}
+
 
             for check, field in names.items():
                 if check != "postal" and field not in self.errors:
@@ -103,6 +108,8 @@ class AddressChecksMixin:
             for check, message in warns.items():
                 if names[check] in self.fields and names[check] not in self.errors:
                     self.warnings[names[check]] = message
+
+
                     self.fields[names[check]].warning = message
 
         if (
@@ -115,6 +122,8 @@ class AddressChecksMixin:
                 ("Pick your town, or enter your postal code and we'll fill it in."),
             )
 
+
+
         if "block" in names and not data.get(names["block"]):
             if names["block"] not in self.errors and names["postal"] not in self.errors:
                 self.add_error(
@@ -125,14 +134,16 @@ class AddressChecksMixin:
         return data
 
 
-class RegisterForm(ErrorAttrsMixin, forms.Form):
+class RegisterForm(forms.Form):
     fullName = forms.CharField(
         max_length=60,
         error_messages={
             "required": "Enter your full name.",
             "max_length": "Keep your name to 60 characters or fewer.",
         },
-        widget=forms.TextInput(attrs={"autocomplete": "name", "placeholder": "e.g. Tan Wei Ling"}),
+        widget=forms.TextInput(
+            attrs={"autocomplete": "name", "placeholder": "e.g. Tan Wei Ling"}
+        ),
     )
     email = NormalizedEmailField(
         max_length=150,
@@ -177,17 +188,25 @@ class RegisterForm(ErrorAttrsMixin, forms.Form):
         },
     )
 
+
     def clean_email(self):
         email = tidyEmail(self.cleaned_data["email"])
 
         if emailTaken(email):
-            raise forms.ValidationError("This email already has an account. Sign in instead.")
+            raise forms.ValidationError(
+                "This email already has an account. Sign in instead."
+            )
 
         return email
 
     def clean(self):
         data = super().clean()
+
+
         checkPass(self, data)
+
+        if "role" in self.errors:
+            self.fields["role"].widget.attrs["aria-describedby"] = f"{self['role'].auto_id}_error"
 
         if (
             data.get("password")
@@ -205,6 +224,7 @@ class RegisterForm(ErrorAttrsMixin, forms.Form):
 def bad_range(required, low, high, words):
     between = f"Enter {words} from {low} to {high}."
 
+
     return {
         "required": required,
         "invalid": required or between,
@@ -213,7 +233,7 @@ def bad_range(required, low, high, words):
     }
 
 
-class ValuationForm(ErrorAttrsMixin, AddressChecksMixin, forms.Form):
+class ValuationForm(AddressChecksMixin, forms.Form):
     postal = forms.RegexField(
         r"^[0-9]{6}$",
         required=False,
@@ -302,6 +322,8 @@ class ValuationForm(ErrorAttrsMixin, AddressChecksMixin, forms.Form):
         "leaseCommenceYear": "lease",
     }
 
+
+
     def __init__(self, *args, **kwargs):
         from .valuation import TOWNS, FLAT_MODELS
 
@@ -309,6 +331,7 @@ class ValuationForm(ErrorAttrsMixin, AddressChecksMixin, forms.Form):
 
         if self.is_bound:
             self.data = self.data.copy()
+
 
             for old, new in self.aliases.items():
                 if old in self.data and new not in self.data:
@@ -318,6 +341,8 @@ class ValuationForm(ErrorAttrsMixin, AddressChecksMixin, forms.Form):
                 self.data["postal"] = self.data["postal"].replace(" ", "")
 
         self.fields["town"].choices = [("", "Choose…")] + [(town, town.title()) for town in TOWNS]
+
+
         self.fields["flatType"].choices = [(kind, flat_label(kind)) for kind in FLAT_TYPES]
         self.fields["flatModel"].choices = [("", "Not sure")] + [
             (model, model) for model in FLAT_MODELS
@@ -332,6 +357,8 @@ class ValuationForm(ErrorAttrsMixin, AddressChecksMixin, forms.Form):
 
     def clean(self):
         data = super().clean()
+
+
         notSure = not data.get("flatModel") and data.get("flatType") in FLAT_RULES
 
         if notSure:
@@ -339,5 +366,9 @@ class ValuationForm(ErrorAttrsMixin, AddressChecksMixin, forms.Form):
 
         data = self.check_address(data)
         knownModel(self, data, notSure)
+
+        for name in self.errors:
+            if name in self.fields:
+                self.fields[name].widget.attrs["aria-describedby"] = f"{self[name].auto_id}_error"
 
         return data

@@ -124,42 +124,57 @@ QUESTIONS = [
 
 
 class Command(BaseCommand):
-    help = (
-        "Add demo community questions with replies, votes, one edited reply and one reported reply."
-    )
+    help = "Add demo community questions with replies, votes, one edited reply and one reported reply."
 
     @transaction.atomic
     def handle(self, *args, **options):
         now = timezone.now()
+
+
+
         people = {}
 
-        for user in User.objects.filter(username__endswith="@demo.flatfair.sg").order_by(
-            "username"
-        ):
+
+        for user in User.objects.filter(
+            username__endswith="@demo.flatfair.sg"
+        ).order_by("username"):
             people[user.username.split("@")[0]] = user
+
 
         for topic, asker, days, votes, title, body, replies in QUESTIONS:
             author = people.get(asker)
 
+
             if author is None:
                 continue
 
+
             question = Post.objects.filter(question=None, title=title).first()
+
+
 
             if question is None:
                 asked = now - timedelta(days=days)
+
 
                 question = Post.objects.create(
                     author=author, topic=topic, title=title, body=body, createdAt=asked
                 )
 
+
                 voters = [user for user in people.values() if user != author][:votes]
 
-                Vote.objects.bulk_create([Vote(user=user, post=question) for user in voters])
+                Vote.objects.bulk_create(
+                    [Vote(user=user, post=question) for user in voters]
+                )
+
+
 
             for i, (name, text) in enumerate(replies):
                 if name in people and not question.replies.filter(body=text).exists():
                     replied = question.createdAt + timedelta(hours=3 + i * 5)
+
+
 
                     Post.objects.create(
                         author=people[name],
@@ -174,9 +189,13 @@ class Command(BaseCommand):
 
         scam = Post.objects.filter(body=SCAM).first()
 
+
+
         if scam and "buyer1" in people:
             Report.objects.get_or_create(
                 reporter=people["buyer1"], post=scam, defaults={"reason": "scam"}
             )
+
+
 
         self.stdout.write(self.style.SUCCESS("Community demo ready."))

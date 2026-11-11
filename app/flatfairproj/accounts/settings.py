@@ -25,21 +25,17 @@ DELETION_MESSAGE = (
     "Please delete my FlatFair account. I confirmed this request with my password."
 )
 PASSWORD_ATTEMPTS = 5
+PASSWORD_LOCKED = "Too many failed attempts. Please wait 15 minutes, then try again."
+
+
 def triesKey(user):
     return f"account-password:{user.pk}"
 
 
-class AccountForm(ErrorAttrsMixin, forms.Form):
+class AccountForm(forms.Form):
     def __init__(self, user, *args, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
-
-    def full_clean(self):
-        super().full_clean()
-
-        for name in self.errors:
-            if name in self.fields:
-                self.fields[name].widget.attrs["aria-describedby"] = f"{self[name].auto_id}_error"
 
 class AccountNameForm(AccountForm):
     fullName = forms.CharField(
@@ -72,6 +68,8 @@ class PasswordConfirmationForm(AccountForm):
                 )
             )
 
+
+
         key = triesKey(self.user)
 
         if cache.get(key, 0) >= PASSWORD_ATTEMPTS:
@@ -80,14 +78,19 @@ class PasswordConfirmationForm(AccountForm):
         password = self.cleaned_data["currentPassword"]
 
         if not self.user.check_password(password):
-            tries = addTry(key, (900))
+            tries = addTry(key, 900)
 
             if tries >= PASSWORD_ATTEMPTS:
                 raise forms.ValidationError(PASSWORD_LOCKED)
 
-            raise forms.ValidationError("That isn’t your current password. Please try again.")
+            raise forms.ValidationError(
+                "That isn’t your current password. Please try again."
+            )
+
 
         cache.delete(key)
+
+
 
         return password
 
@@ -102,7 +105,9 @@ class AccountEmailForm(PasswordConfirmationForm):
     email = NormalizedEmailField(
         label="New email",
         max_length=150,
-        widget=forms.EmailInput(attrs={"autocomplete": "email", "autocapitalize": "off"}),
+        widget=forms.EmailInput(
+            attrs={"autocomplete": "email", "autocapitalize": "off"}
+        ),
     )
 
     def clean_email(self):
@@ -110,9 +115,14 @@ class AccountEmailForm(PasswordConfirmationForm):
 
         if (
             emailTaken(email, exclude=self.user.pk)
-            or User.objects.filter(username__iexact=email).exclude(pk=self.user.pk).exists()
+            or User.objects.filter(username__iexact=email)
+            .exclude(pk=self.user.pk)
+            .exists()
         ):
-            raise forms.ValidationError("That email is already registered. Please use another one.")
+            raise forms.ValidationError(
+                "That email is already registered. Please use another one."
+            )
+
 
         if email == self.user.email and email == self.user.username:
             raise forms.ValidationError("Enter a different email address.")
@@ -139,6 +149,8 @@ class AccountPasswordForm(PasswordConfirmationForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(user, *args, **kwargs)
 
+
+
         if not user.has_usable_password():
             del self.fields["currentPassword"]
 
@@ -151,7 +163,12 @@ class AccountPasswordForm(PasswordConfirmationForm):
             {**data, "email": self.user.email, "fullName": self.user.first_name},
         )
 
-        if password and data.get("confirmPassword") and password != data["confirmPassword"]:
+
+        if (
+            password
+            and data.get("confirmPassword")
+            and password != data["confirmPassword"]
+        ):
             self.add_error(
                 "confirmPassword",
                 "Passwords don't match. Type the same password twice.",
@@ -193,10 +210,15 @@ def save_form(request, user, action, form):
         user.set_password(form.cleaned_data["password"])
         user.save(update_fields=["password"])
 
-        ResetCode.objects.filter(user=user, usedAt__isnull=True).update(usedAt=timezone.now())
+        ResetCode.objects.filter(user=user, usedAt__isnull=True).update(
+            usedAt=timezone.now()
+        )
 
         update_session_auth_hash(request, user)
         transaction.on_commit(lambda: tellChange(request, user))
+
+
+
         messages.success(request, "Your password was changed. You are still signed in.")
     else:
         _, created = Ticket.objects.get_or_create(
@@ -206,6 +228,8 @@ def save_form(request, user, action, form):
             status="open",
             defaults={"email": user.email},
         )
+
+
 
         messages.success(
             request,
@@ -225,6 +249,7 @@ def myAccount(request):
     if request.user.is_staff:
         return notAllowed(request, "buyer or seller")
 
+
     if not any(hasRole(request.user, role) for role in ("buyer", "seller")):
         return notAllowed(request, "buyer or seller")
 
@@ -237,6 +262,7 @@ def myAccount(request):
         messages.error(request, "Please choose an account setting to update.")
 
         return redirect("account_settings")
+
 
     with transaction.atomic():
         if request.method == "POST":
@@ -256,6 +282,8 @@ def myAccount(request):
 
         if action:
             form = forms[action]
+
+
 
             if form.is_valid():
                 try:
@@ -293,8 +321,11 @@ def myAccount(request):
         "hasPassword": user.has_usable_password(),
         "emailVerified": emailVerified(user),
         "pendingEmail": getattr(getattr(user, "emailCheck", None), "pendingEmail", ""),
-        "totpEnabled": getattr(getattr(user, "totpDevice", None), "enabledAt", None) is not None,
+        "totpEnabled": getattr(getattr(user, "totpDevice", None), "enabledAt", None)
+        is not None,
         "rules": PASSWORD_RULES,
     }
+
+
 
     return render(request, "accounts/settings.html", context)

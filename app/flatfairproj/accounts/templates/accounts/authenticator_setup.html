@@ -1,0 +1,32 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Set up Microsoft Authenticator · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+<div class="auth-layout auth-solo">
+<div class="auth-form authenticator-setup">
+  <h1>Set up Microsoft Authenticator</h1>
+  <p class="hint">In the app, choose <strong>Add account</strong>, then scan this code.</p>
+  <img class="authenticator-qr" src="{{ qrCode }}" alt="Microsoft Authenticator setup QR code" width="220" height="220">
+  <details class="fold">
+    <summary>Can’t scan the code?</summary>
+    <div class="fold-body">
+      <p>Type in this setup key instead:</p>
+      <p><code>{{ secret }}</code></p>
+    </div>
+  </details>
+  {% if recoveryCodes %}
+    <div class="recovery-codes">
+      <h2>Save your recovery codes</h2>
+      <p class="hint">Keep these somewhere safe. Each code works once.</p>
+      <ul>{% for code in recoveryCodes %}<li><code>{{ code }}</code></li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+  <form class="authenticator-form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-brand btn-block">Verify and continue</button>
+  </form>
+  <p class="auth-switch"><a href="{% url 'account_settings' %}">Back to account settings</a></p>
+</div>
+</div>
+{% endblock %}

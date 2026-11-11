@@ -25,7 +25,7 @@ REPLIES_PER_PAGE = 20
 STAFF_NOTE = "Staff accounts can read the community but cannot post."
 
 
-class QuestionForm(ErrorAttrsMixin, forms.ModelForm):
+class QuestionForm(forms.ModelForm):
     topic = forms.ChoiceField(
         label="Topic",
         choices=[("", "Choose…")] + TOPICS,
@@ -62,7 +62,7 @@ class QuestionForm(ErrorAttrsMixin, forms.ModelForm):
         }
 
 
-class ReplyForm(ErrorAttrsMixin, forms.ModelForm):
+class ReplyForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = ["body"]
@@ -88,7 +88,9 @@ def with_votes(posts, user):
     posts = posts.select_related("author").annotate(voteCount=Count("votes"))
 
     if user.is_authenticated:
-        posts = posts.annotate(myVote=Exists(Vote.objects.filter(post=OuterRef("pk"), user=user)))
+        posts = posts.annotate(
+            myVote=Exists(Vote.objects.filter(post=OuterRef("pk"), user=user))
+        )
 
     return posts
 
@@ -99,7 +101,9 @@ def userFame(request):
 
     now = timezone.now()
 
-    firstDay = timezone.localtime(now).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    firstDay = timezone.localtime(now).replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    )
 
     members = {}
 
@@ -117,7 +121,9 @@ def userFame(request):
                 distinct=True,
             ),
             monthVotes=Count("votes", filter=Q(createdAt__gte=firstDay), distinct=True),
-            weekPosts=Count("pk", filter=Q(createdAt__gte=now - timedelta(days=7)), distinct=True),
+            weekPosts=Count(
+                "pk", filter=Q(createdAt__gte=now - timedelta(days=7)), distinct=True
+            ),
             monthPosts=Count(
                 "pk", filter=Q(createdAt__gte=now - timedelta(days=30)), distinct=True
             ),
@@ -128,6 +134,9 @@ def userFame(request):
     for row in stats:
         row["id"] = row.pop("author_id")
         row["name"] = row.pop("author__first_name") or "A member"
+
+
+
         row["initial"] = row["name"][0].upper()
         row["tone"] = ("sky", "mint", "lilac")[row["id"] % 3]
         row["points"] = row["voteCount"] + 2 * row["replyCount"]
@@ -142,7 +151,9 @@ def userFame(request):
     else:
         score = "points"
 
-    ranked = sorted(members.values(), key=lambda row: (-row[score], -row["points"], row["id"]))
+    ranked = sorted(
+        members.values(), key=lambda row: (-row[score], -row["points"], row["id"])
+    )
 
     leaders = [row for row in ranked if row[score] > 0][:3]
 
@@ -186,6 +197,8 @@ def userFame(request):
     else:
         activePeriod = "monthPosts"
 
+
+
     active = sorted(
         members.values(),
         key=lambda row: (-row[activePeriod], -row["points"], row["id"]),
@@ -194,12 +207,15 @@ def userFame(request):
     for row in active:
         row["activeCount"] = row[activePeriod]
 
+
     request.forumReputation = {
         "members": members,
         "topContributors": [row for row in ranked if row[score] > 0][:5],
         "contributorPeriod": "Posts made this month" if monthly else "Overall",
         "activeMembers": [row for row in active if row["activeCount"] > 0][:5],
-        "activePeriod": ("Last 7 days" if activePeriod == "weekPosts" else "Last 30 days"),
+        "activePeriod": (
+            "Last 7 days" if activePeriod == "weekPosts" else "Last 30 days"
+        ),
     }
 
     return request.forumReputation
@@ -208,8 +224,13 @@ def userFame(request):
 def showPosts(posts, reputation):
     now = timezone.now()
 
+
+
     for post in posts:
         post.member = reputation["members"].get(post.author_id)
+
+
+
         seconds = max(0, int((now - post.createdAt).total_seconds()))
         post.relativeDate = "Just now"
 
@@ -257,6 +278,8 @@ def community(request):
 
     sort = request.GET.get("sort")
 
+
+
     if sort not in dict(SORTS):
         sort = "new"
 
@@ -268,7 +291,9 @@ def community(request):
         voteCount=Count("votes", distinct=True),
         replyCount=Count("replies", filter=Q(replies__hidden=False), distinct=True),
         answered=Exists(
-            Post.objects.filter(question=OuterRef("pk"), hidden=False, votes__isnull=False)
+            Post.objects.filter(
+                question=OuterRef("pk"), hidden=False, votes__isnull=False
+            )
         ),
     )
 
@@ -283,12 +308,21 @@ def community(request):
     else:
         asks = asks.order_by("-createdAt", "-pk")
 
-    chips = [{"label": "All topics", "url": listUrl("", sort, query), "on": topic == ""}]
+    chips = [
+        {"label": "All topics", "url": listUrl("", sort, query), "on": topic == ""}
+    ]
+
+
 
     for value, label in TOPICS:
-        chips.append({"label": label, "url": listUrl(value, sort, query), "on": topic == value})
+        chips.append(
+            {"label": label, "url": listUrl(value, sort, query), "on": topic == value}
+        )
 
     fame = userFame(request)
+
+
+
     rows = Paginator(asks, 10).get_page(request.GET.get("page"))
     showPosts(rows, fame)
 
@@ -324,7 +358,9 @@ def community(request):
 
 
 def question(request, pk):
-    item = get_object_or_404(with_votes(Post.objects.filter(question=None), request.user), pk=pk)
+    item = get_object_or_404(
+        with_votes(Post.objects.filter(question=None), request.user), pk=pk
+    )
 
     if item.hidden and not request.user.is_staff:
         raise Http404
@@ -346,6 +382,9 @@ def question(request, pk):
             reply = form.save(commit=False)
             reply.author = request.user
             reply.question = item
+
+
+
             reply.save()
 
             if item.author_id != request.user.pk:
@@ -359,6 +398,7 @@ def question(request, pk):
                 )
 
             messages.success(request, "Your reply is posted.")
+
 
             return redirect(reply.url())
 
@@ -388,6 +428,8 @@ def replyPage(request, item):
     if request.GET.get("page"):
         return request.GET["page"]
 
+
+
     postId = request.GET.get("post", "")
 
     if len(postId) > 19 or not postId.isdecimal():
@@ -415,10 +457,15 @@ def ask(request):
 
         return redirect("community")
 
-    form = QuestionForm(request.POST or None, initial={"topic": request.GET.get("topic")})
+    form = QuestionForm(
+        request.POST or None, initial={"topic": request.GET.get("topic")}
+    )
 
     if request.method == "POST" and form.is_valid():
         item = form.save(commit=False)
+
+
+
         item.author = request.user
         item.save()
         messages.success(request, "Your question is posted.")
@@ -449,6 +496,8 @@ def edit(request, pk):
             post.save()
             messages.success(request, "Your changes are saved.")
 
+
+
         return redirect(post.url())
 
     return render(request, "forum/edit.html", {"form": form, "post": post})
@@ -461,7 +510,11 @@ def member(request, pk):
         "-createdAt", "-pk"
     )
 
-    replies = live_posts().filter(author=person, question__isnull=False).select_related("question")
+    replies = (
+        live_posts()
+        .filter(author=person, question__isnull=False)
+        .select_related("question")
+    )
 
     replies = replies.order_by("-createdAt", "-pk")
     fame = userFame(request)
@@ -495,6 +548,7 @@ def member(request, pk):
 
     showPosts(newPosts, fame)
 
+
     context = {
         "person": person,
         "memberStats": stats,
@@ -505,6 +559,7 @@ def member(request, pk):
         "replyCount": replyNum,
         "voteCount": stats["voteCount"],
     }
+
 
     return render(request, "forum/member.html", context)
 
@@ -531,6 +586,9 @@ def vote(request, pk):
 @require_POST
 def report(request, pk):
     post = get_object_or_404(live_posts(), pk=pk)
+
+
+
     reason = request.POST.get("reason")
 
     if not canPost(request.user) or post.author_id == request.user.pk:
@@ -538,7 +596,11 @@ def report(request, pk):
     elif reason not in dict(REASONS):
         messages.error(request, "Choose what is wrong with the post.")
     else:
-        Report.objects.get_or_create(reporter=request.user, post=post, defaults={"reason": reason})
+        Report.objects.get_or_create(
+            reporter=request.user, post=post, defaults={"reason": reason}
+        )
+
+
 
         messages.success(request, "Thanks. Our team will check this post.")
 
@@ -552,18 +614,23 @@ def moderation(request):
     if show != "hidden":
         show = "reported"
 
-    reports = Report.objects.filter(resolved=False).select_related("reporter").order_by("createdAt")
+    reports = (
+        Report.objects.filter(resolved=False)
+        .select_related("reporter")
+        .order_by("createdAt")
+    )
 
     rows = Post.objects.select_related("author", "question").prefetch_related(
         Prefetch("reports", queryset=reports, to_attr="openReports")
     )
 
+
     if show == "hidden":
         rows = rows.filter(hidden=True)
     else:
-        rows = rows.annotate(waiting=Count("reports", filter=Q(reports__resolved=False))).filter(
-            hidden=False, waiting__gt=0
-        )
+        rows = rows.annotate(
+            waiting=Count("reports", filter=Q(reports__resolved=False))
+        ).filter(hidden=False, waiting__gt=0)
 
     context = {
         "rows": rows.order_by("-createdAt", "-pk"),
@@ -581,7 +648,12 @@ def moderation(request):
 
 @staffPage("admin_community")
 def judge_post(request, pk):
-    reports = Report.objects.filter(resolved=False).select_related("reporter").order_by("createdAt")
+    reports = (
+        Report.objects.filter(resolved=False)
+        .select_related("reporter")
+        .order_by("createdAt")
+    )
+
 
     post = (
         Post.objects.select_related("author", "question")
@@ -595,7 +667,9 @@ def judge_post(request, pk):
 
         return redirect("admin_community")
 
-    return page(request, "forum/moderation_post.html", {"p": post}, section="admin_community")
+    return page(
+        request, "forum/moderation_post.html", {"p": post}, section="admin_community"
+    )
 
 
 @staffPage("admin_community")
@@ -619,6 +693,8 @@ def moderate(request, pk):
     if post.hidden:
         back += "?show=hidden"
 
+
+
     if action not in actions:
         return redirect(back)
 
@@ -630,6 +706,8 @@ def moderate(request, pk):
     if action == "hide":
         post.hidden = True
         post.hiddenReason = reason
+
+
         post.save(update_fields=["hidden", "hiddenReason"])
 
         from storefront.notices import notify
@@ -649,6 +727,9 @@ def moderate(request, pk):
     if action == "show":
         post.hidden = False
         post.hiddenReason = ""
+
+
+
         post.save(update_fields=["hidden", "hiddenReason"])
 
     post.reports.filter(resolved=False).update(resolved=True)

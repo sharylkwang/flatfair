@@ -922,6 +922,35 @@ main {
   font-size: var(--fs-sm);
   text-decoration: none;
 }
+.panel,
+.card,
+.row,
+.pkg,
+.kpi,
+.dash-stat,
+.rich-kpi,
+.mini-listing,
+.save-pop,
+.coll-pop,
+.listing-summary,
+.auth-form,
+.ticket-row,
+.ticket-msg,
+.buyer-offer-card,
+.booking-timeline-card,
+.offer-row,
+.past-offers > summary,
+.dashboard-flat,
+.agenda-tile,
+.plan-card,
+.qrow,
+.tcard {
+  border: 0;
+  border-radius: var(--r-m);
+  background: var(--tile, var(--tint));
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
 .panel dd, .panel a[href^='mailto:'], .card dd, .row small { overflow-wrap: anywhere; }
 .card, .mini-listing { background: none; }
 .save-pop,
@@ -929,6 +958,10 @@ main {
 .listing-summary {
   background: var(--surface);
   box-shadow: var(--shadow-float);
+}
+.panel, .auth-form, .listing-summary, .tint-panel {
+  --tile: var(--surface);
+  border-radius: var(--r-xl);
 }
 .panel, .tint-panel {
   padding: 24px;

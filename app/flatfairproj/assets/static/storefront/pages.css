@@ -2001,12 +2001,40 @@ a.order-file {
   color: var(--ink-2);
   font-size: var(--fs-sm);
 }
+.password-wrap {
+  position: relative;
+  display: block;
+}
+.password-wrap input { width: 100%; padding-right: 48px; }
+.password-eye {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-ink);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.password-eye:hover { background: var(--mist); }
+.password-eye svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.password-eye .eye-lid { transform-origin: 12px 12px; }
+.password-eye .eye-slash { stroke-dasharray: 23; stroke-dashoffset: 23; }
+.password-eye.is-shown { background: var(--mist); }
+.password-eye.is-shown .eye-slash { stroke-dashoffset: 0; }
 @media (prefers-reduced-motion: no-preference) {
   .password-eye .eye-slash { transition: stroke-dashoffset .28s ease .12s; }
   .password-eye.blink .eye-lid { animation: eye-blink .3s ease; }
   .password-eye:active { transform: translateY(-50%) scale(.92); }
 }
 @keyframes eye-blink { 0%, 100% { transform: scaleY(1); } 45% { transform: scaleY(.1); } }
+.password-eye:focus-visible { outline: 3px solid var(--primary-ink); outline-offset: 2px; }
 [data-lightbox] { cursor: zoom-in; }
 .image-viewer {
   width: 100vw;
@@ -2071,6 +2099,42 @@ a.order-file {
   font-weight: 700;
   text-decoration: none;
 }
+.reset-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+.reset-steps li::before {
+  content: '';
+  display: block;
+  height: 4px;
+  margin-bottom: 6px;
+  border-radius: 4px;
+  background: var(--line);
+}
+.reset-steps li.is-done::before { background: var(--primary); }
+.reset-steps li[aria-current] { color: var(--ink); }
+.auth-form input.reset-code {
+  height: 60px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  text-align: center;
+}
+.reset-resend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  font-size: var(--fs-sm);
+}
+.reset-resend a { color: var(--primary-ink); font-weight: 600; }
 .link-button {
   padding: 0;
   border: 0;
@@ -2082,6 +2146,28 @@ a.order-file {
   cursor: pointer;
 }
 .link-button:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+.password-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.password-rules li {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+.password-rules li.is-met {
+  border-color: var(--good);
+  background: var(--good-soft);
+  color: var(--good-ink);
+}
+.password-rules li.is-met::before { content: ''; display: inline-block; width: 5px; height: 9px; margin: 0 7px 1px 2px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 .photo-slot.good .photo-status { color: var(--good-ink); }
 .photo-slot.bad .photo-status { color: var(--bad); }
 .photo-slot.checking .photo-status { color: var(--muted); }
@@ -2248,6 +2334,8 @@ a.order-file {
 .card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
 .card-fields .card-name, .card-fields .card-number, .card-fields .err, .card-note { grid-column: 1 / -1; }
 .card-note { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+.auth-ways, .auth-email { display: grid; gap: 14px; }
+.auth-email[hidden], .auth-ways[hidden] { display: none; }
 .btn-way {
   display: grid;
   text-decoration: none;
@@ -2270,6 +2358,19 @@ a.order-file {
 .btn-way span { text-align: center; }
 .btn-way:hover { border-color: var(--field-line); background: var(--mist); }
 .btn-way:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.auth-back {
+  justify-self: center;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--primary-ink);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+.auth-terms { color: var(--muted); font-size: var(--fs-sm); }
+.auth-terms a { color: var(--primary-ink); font-weight: 600; text-decoration: underline; }
 
 .calm-details.panel {
   display: block;

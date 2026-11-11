@@ -36,6 +36,7 @@ class ListingValidationMixin(AddressChecksMixin):
         "storey": "storey",
     }
 
+
     def clean(self):
         data = super().clean()
 
@@ -55,10 +56,12 @@ class ListingValidationMixin(AddressChecksMixin):
                 if field == "area":
                     field = "floorAreaSqm"
 
+
                 self.add_error(field if field in self.fields else None, message)
 
         data = self.check_address(data)
         knownModel(self, data, notSure)
+
 
         return data
 
@@ -68,7 +71,7 @@ class ListingForm(ListingValidationMixin, forms.ModelForm):
     town = forms.ChoiceField(
         required=False,
         choices=[("", "Choose…")] + [(town, town.title()) for town in TOWNS],
-        error_messages={"invalid_choice": ("Choose a town from the list.")},
+        error_messages={"invalid_choice": "Choose a town from the list."},
     )
     askingPrice = forms.IntegerField(
         label="Asking price ($)",
@@ -236,6 +239,9 @@ class ListingForm(ListingValidationMixin, forms.ModelForm):
             )
 
         today = timezone.localdate()
+
+
+
         self.fields["intentToSellDate"].widget.attrs["max"] = today.isoformat()
 
         if not self.instance.intentToSellDate:
@@ -261,6 +267,7 @@ class ListingForm(ListingValidationMixin, forms.ModelForm):
     def clean_postalCode(self):
         code = self.cleaned_data["postalCode"].strip()
 
+
         if not re.fullmatch(r"\d{6}", code):
             raise forms.ValidationError(POSTAL_HELP)
 
@@ -268,6 +275,8 @@ class ListingForm(ListingValidationMixin, forms.ModelForm):
 
     def clean_intentToSellDate(self):
         date = self.cleaned_data["intentToSellDate"]
+
+
         today = timezone.localdate()
 
         if date > today:
@@ -275,6 +284,8 @@ class ListingForm(ListingValidationMixin, forms.ModelForm):
 
         if date == self.instance.intentToSellDate:
             return date
+
+
 
         if date < today - timedelta(days=INTENT_DAYS):
             raise forms.ValidationError(
@@ -291,6 +302,7 @@ class ListingForm(ListingValidationMixin, forms.ModelForm):
             raise forms.ValidationError(
                 f"Type a year from {LEASE_MIN} to {yearNow}. It’s on your HDB lease papers."
             )
+
 
         if year > yearNow - MOP_YEARS:
             raise forms.ValidationError(
@@ -316,6 +328,8 @@ class PriceCheckForm(forms.Form):
 
     def clean(self):
         data = super().clean()
+
+
 
         if not data.get("town") and data.get("postalCode"):
             record = get_postal(data["postalCode"])
@@ -386,6 +400,8 @@ def cardBrand(number):
         ),
     ]
 
+
+
     for name, pattern, lengths, cvcSize in card_brands:
         if re.match(pattern, number) and len(number) in lengths:
             return name, cvcSize
@@ -435,6 +451,7 @@ class CardForm(forms.Form):
         if not re.fullmatch(r"[0-9]+", number):
             raise forms.ValidationError("Please enter the card number using digits only.")
 
+
         brand, cvcSize = cardBrand(number)
 
         if brand is None:
@@ -463,6 +480,8 @@ class CardForm(forms.Form):
 
         today = timezone.localdate()
 
+
+
         if (year, month) < (today.year, today.month):
             raise forms.ValidationError("This card has expired.")
 
@@ -482,6 +501,8 @@ class CardForm(forms.Form):
             self.add_error("cvc", f"Enter the {cvcSize}-digit code on the card.")
 
             return data
+
+
 
         if number in DECLINED_CARDS:
             raise forms.ValidationError(DECLINED_CARDS[number])

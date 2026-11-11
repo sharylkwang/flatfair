@@ -1,0 +1,10 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Authenticator verification · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+<div class="auth-layout auth-solo"><form class="auth-form" method="post">
+{% csrf_token %}<h1>Verify your sign-in</h1><p class="hint">Enter the 6-digit code from Microsoft Authenticator, or a recovery code.</p>
+{% if form.non_field_errors %}<div class="form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}{% for field in form %}<label class="mini-field">{{ field.label }}{{ field }}{% for error in field.errors %}<span class="err">{{ error }}</span>{% endfor %}</label>{% endfor %}
+<button class="btn btn-brand btn-block">Continue</button>
+<p class="auth-switch">Not you? <a href="{% url 'signin' %}">Sign in again</a></p></form></div>
+{% endblock %}

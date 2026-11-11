@@ -44,6 +44,23 @@ class CodeForm(forms.Form):
         return code
 
 
+class TotpForm(forms.Form):
+    code = forms.CharField(max_length=12, label="Authenticator code")
+
+    def clean_code(self):
+        code = "".join(self.cleaned_data["code"].split()).replace("-", "").upper()
+
+        if len(code) == 6 and code.isdigit():
+            return code
+
+        if len(code) == 8 and all(char in "0123456789ABCDEF" for char in code):
+            return code
+
+        raise ValidationError(
+            "Type the 6-digit code from Microsoft Authenticator, or one of your recovery codes."
+        )
+
+
 class NewPasswordForm(forms.Form):
     password = forms.CharField(
         strip=False, max_length=128, error_messages={"required": "Type a new password."}
@@ -54,20 +71,33 @@ class NewPasswordForm(forms.Form):
         error_messages={"required": "Type your new password again."},
     )
 
+
+
     def __init__(self, user, *args, **kwargs):
         self.user = user
+
+
         super().__init__(*args, **kwargs)
 
     def clean(self):
         data = super().clean()
+
+
+
         password = data.get("password")
+
+
         confirm = data.get("confirm")
+
+
 
         if not password or not confirm:
             return data
 
         if password != confirm:
-            self.add_error("confirm", "Passwords don't match. Type the same password twice.")
+            self.add_error(
+                "confirm", "Passwords don't match. Type the same password twice."
+            )
 
             return data
 
@@ -75,6 +105,8 @@ class NewPasswordForm(forms.Form):
             validate_password(password, self.user)
         except ValidationError as error:
             self.add_error("password", error)
+
+
 
             return data
 
@@ -85,8 +117,13 @@ class NewPasswordForm(forms.Form):
 
     def save(self):
         keepPass(self.user)
+
+
         self.user.set_password(self.cleaned_data["password"])
+
+
         self.user.save(update_fields=["password"])
+
 
         return self.user
 
@@ -94,7 +131,11 @@ class NewPasswordForm(forms.Form):
 class ChangePasswordForm(PasswordChangeForm):
     def clean(self):
         data = super().clean()
+
+
+
         password = data.get("new_password2")
+
 
         if password and wasUsed(self.user, password):
             self.add_error("new_password2", REUSED)
@@ -103,5 +144,7 @@ class ChangePasswordForm(PasswordChangeForm):
 
     def save(self, commit=True):
         keepPass(self.user)
+
+
 
         return super().save(commit)

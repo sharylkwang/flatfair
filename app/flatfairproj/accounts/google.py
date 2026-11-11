@@ -47,7 +47,12 @@ def google_ok(request):
 
 def googleButton(request):
     relay = not google_ok(request) and bool(settings.PUBLIC_URL)
+
+
     url = reverse("google_start")
+
+
+
     query = {}
     nextUrl = nextPath(request)
 
@@ -57,6 +62,8 @@ def googleButton(request):
     if relay:
         url = settings.PUBLIC_URL.rstrip("/") + url
         query["return"] = request.build_absolute_uri("/").rstrip("/")
+
+
 
     if request.resolver_match and request.resolver_match.url_name == "register":
         mode = "register"
@@ -77,6 +84,8 @@ def relaySite(value):
     try:
         origin = urlsplit(value)
         host = origin.hostname
+
+
         address = ipaddress.ip_address(host)
         origin.port
     except (ValueError, TypeError):
@@ -126,6 +135,8 @@ def googleGo(request):
     if request.POST.get("role") == "seller":
         role = "seller"
 
+
+
     if mode not in ("signin", "register"):
         mode = "register"
 
@@ -154,7 +165,7 @@ def googleGo(request):
         }
     )
 
-    return redirect(("https://accounts.google.com/o/oauth2/v2/auth") + "?" + query)
+    return redirect("https://accounts.google.com/o/oauth2/v2/auth" + "?" + query)
 
 
 def googleInfo(request, code):
@@ -166,15 +177,18 @@ def googleInfo(request, code):
         "grant_type": "authorization_code",
     }
 
-    tokens = requests.post(("https://oauth2.googleapis.com/token"), data=tokenData, timeout=10)
+    tokens = requests.post(
+        "https://oauth2.googleapis.com/token", data=tokenData, timeout=10
+    )
     tokens.raise_for_status()
     access = tokens.json()["access_token"]
+
 
     if not isinstance(access, str) or not access:
         raise ValueError
 
     info = requests.get(
-        ("https://openidconnect.googleapis.com/v1/userinfo"),
+        "https://openidconnect.googleapis.com/v1/userinfo",
         headers={"Authorization": "Bearer " + access},
         timeout=10,
     )
@@ -191,11 +205,17 @@ def googleBack(request):
     if not googleOn():
         raise Http404
 
+
+
     saved = request.session.pop(SESSION_KEY, None)
     state = request.GET.get("state", "")
     code = request.GET.get("code", "")
 
-    if not saved or not state or not hmac.compare_digest(saved["state"].encode(), state.encode()):
+    if (
+        not saved
+        or not state
+        or not hmac.compare_digest(saved["state"].encode(), state.encode())
+    ):
         return refuse(request, FAILED)
 
     if not code:
@@ -220,7 +240,10 @@ def googleBack(request):
     except ValidationError:
         return refuse(request, FAILED)
 
-    users = User.objects.filter(Q(username__iexact=email) | Q(email__iexact=email)).order_by("pk")
+    users = User.objects.filter(
+        Q(username__iexact=email) | Q(email__iexact=email)
+    ).order_by("pk")
+
 
     user = users.first()
 
@@ -273,6 +296,8 @@ def googleBack(request):
 
         return redirect(saved["next"] or homeFor(user))
 
+
+
     if saved.get("return"):
         nonce = secrets.token_urlsafe(24)
 
@@ -289,8 +314,13 @@ def googleBack(request):
 
         relayCache.set("google-relay:" + nonce, True, timeout=seconds)
 
+
+
         return redirect(
-            saved["return"] + reverse("google_relay") + "?" + urlencode({"token": token})
+            saved["return"]
+            + reverse("google_relay")
+            + "?"
+            + urlencode({"token": token})
         )
 
     if created:
@@ -302,6 +332,8 @@ def googleBack(request):
 
     if not created and totpEnabled(user):
         request.session[PENDING_KEY] = {"userId": user.pk, "path": nextUrl}
+
+
         request.session["totpAttempts"] = 0
 
         return redirect("authenticator")
@@ -346,10 +378,14 @@ def googleRelay(request):
     request.session.cycle_key()
     markHuman(request)
 
+
+
     if saved.get("emailPending"):
         request.session[RETURN_KEY] = reverse("account_settings")
 
         return redirect("email_check")
+
+
 
     nextUrl = saved["next"]
 

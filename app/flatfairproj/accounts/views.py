@@ -38,7 +38,9 @@ def client_Ip(request):
 
 
 def hashCode(userId, code):
-    return hmac.new(settings.SECRET_KEY.encode(), f"{userId}:{code}".encode(), sha256).hexdigest()
+    return hmac.new(
+        settings.SECRET_KEY.encode(), f"{userId}:{code}".encode(), sha256
+    ).hexdigest()
 
 
 def find_user(email):
@@ -70,6 +72,8 @@ def mailBody(template, user, context):
             "notes": ["If you made this change, you don’t need to do anything."],
         }
 
+
+
     return {
         "heading": "Your sign-in email was changed",
         "lines": ["You now sign in to FlatFair with your new email."],
@@ -92,6 +96,8 @@ def deliver(subject, user, template, context):
         **mailBody(template, user, context),
     )
 
+
+
     try:
         message.send()
     except Exception as error:
@@ -103,6 +109,8 @@ def tellChange(request, user):
         "when": timezone.localtime(),
         "resetUrl": request.build_absolute_uri(reverse("forgot_password")),
     }
+
+
 
     deliver("Your FlatFair password was changed", user, "password_changed", context)
 
@@ -122,24 +130,30 @@ def sendCode(request, user):
         ResetIssuanceLock.objects.select_for_update().get(pk=codeLock.pk)
 
     now = timezone.now()
+
+
     dayAgo = now - timedelta(days=1)
 
-    if ResetCode.objects.filter(user=user, createdAt__gte=dayAgo).count() >= (2):
+    if ResetCode.objects.filter(user=user, createdAt__gte=dayAgo).count() >= 2:
         return False
 
     hourAgo = now - timedelta(hours=1)
 
-    if ResetCode.objects.filter(user=user, createdAt__gte=hourAgo).count() >= (3):
+    if ResetCode.objects.filter(user=user, createdAt__gte=hourAgo).count() >= 3:
         return False
 
-    if from_ip and ResetCode.objects.filter(requestIp=from_ip, createdAt__gte=hourAgo).count() >= (
-        10
+
+    if (
+        from_ip
+        and ResetCode.objects.filter(requestIp=from_ip, createdAt__gte=hourAgo).count()
+        >= 10
     ):
         return False
 
     ResetCode.objects.filter(createdAt__lt=now - timedelta(days=1)).delete()
     ResetCode.objects.filter(user=user, usedAt__isnull=True).update(expiresAt=now)
     code = f"{secrets.randbelow(10 ** 6):06d}"
+
 
     ResetCode.objects.create(
         user=user,
@@ -192,13 +206,18 @@ def forgot(request):
     state = request.session.get(SESSION_KEY, {})
     form = EmailForm(request.POST or None, initial={"email": state.get("email", "")})
 
+
+
     if request.method == "POST" and not formPasses(request):
         form.add_error(None, CHECK_FAILED)
 
     if request.method == "POST" and form.is_valid():
         email = form.cleaned_data["email"]
 
-        if email == state.get("email") and time.time() - state["sentAt"] < RESEND_SECONDS:
+        if (
+            email == state.get("email")
+            and time.time() - state["sentAt"] < RESEND_SECONDS
+        ):
             return redirect("forgot_code")
 
         user = find_user(email)
@@ -222,6 +241,7 @@ def forgotCode(request):
     tries = "Too many wrong tries. Please ask for a new code."
     state = request.session.get(SESSION_KEY)
 
+
     if not state:
         return redirect("forgot_password")
 
@@ -242,12 +262,16 @@ def forgotCode(request):
                 state["wrong"] = 0
                 request.session[SESSION_KEY] = state
 
-                messages.success(request, "We sent a new code. Only the newest code works.")
+                messages.success(
+                    request, "We sent a new code. Only the newest code works."
+                )
 
         return redirect("forgot_code")
 
     if request.method == "POST":
         form = CodeForm(request.POST)
+
+
 
         if state["wrong"] >= WRONG_PER_CODE:
             form.add_error(None, tries)
@@ -255,7 +279,9 @@ def forgotCode(request):
             code = activeCode(state["email"])
             typed = form.cleaned_data["code"]
 
-            if code and hmac.compare_digest(code.codeHash, hashCode(code.user_id, typed)):
+            if code and hmac.compare_digest(
+                code.codeHash, hashCode(code.user_id, typed)
+            ):
                 claimed = ResetCode.objects.filter(
                     pk=code.pk,
                     usedAt__isnull=True,
@@ -268,6 +294,7 @@ def forgotCode(request):
                 if claimed:
                     state["codeId"] = code.pk
                     request.session[SESSION_KEY] = state
+
 
                     return redirect("forgot_new")
 
@@ -309,6 +336,8 @@ def forgotNew(request):
 
             messages.error(request, "Your code has expired. Ask for a new one.")
 
+
+
         return redirect("forgot_password")
 
     user = code.user
@@ -341,11 +370,15 @@ def forgotNew(request):
         ).hexdigest()
 
         cache.delete("signin:" + signKey)
+
+
         tellChange(request, user)
 
         del request.session[SESSION_KEY]
 
         messages.success(request, "Password changed. Sign in with your new password.")
+
+
 
         return redirect("signin")
 
@@ -390,6 +423,7 @@ def register(request):
     if request.user.is_authenticated:
         return landing(request, request.user)
 
+
     if request.method == "POST":
         form = RegisterForm(request.POST)
 
@@ -422,6 +456,8 @@ def register(request):
                 if not backUrl and data["role"] == "seller":
                     backUrl = reverse("dashboard")
 
+
+
                 waitEmail(request, user, backUrl or reverse("account_settings"))
 
                 if not makeCode(request, user):
@@ -436,6 +472,8 @@ def register(request):
 
 
 def signin(request):
+    from .verification import emailVerified, totpEnabled
+
     if request.user.is_authenticated:
         return landing(request, request.user)
 
@@ -460,6 +498,8 @@ def signin(request):
         if tries >= 5:
             error = "Too many failed attempts. Please wait 15 minutes, then try again."
 
+
+
             return render(
                 request,
                 "storefront/signin.html",
@@ -477,6 +517,7 @@ def signin(request):
                     "path": nextPath(request) or homeFor(user),
                 }
                 request.session["totpAttempts"] = 0
+
 
                 return redirect("authenticator")
 
@@ -524,6 +565,8 @@ def nextPath(request):
 
 def signinNote(request):
     nextUrl = nextPath(request)
+
+
 
     if not nextUrl:
         return ""

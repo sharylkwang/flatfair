@@ -23,9 +23,24 @@ def turnstileField(request):
     }
 
 
+def tokenOk(token, ip):
+    if not token or len(token) > (2048):
+        return False
+
+    data = {"secret": settings.TURNSTILE_SECRET_KEY, "response": token, "remoteip": ip}
+
+    try:
+        result = requests.post(VERIFY_URL, data=data, timeout=5).json()
+    except (requests.RequestException, ValueError):
+        return False
+
+    return isinstance(result, dict) and result.get("success") is True
+
+
 def formPasses(request):
     if not settings.TURNSTILE_ENABLED:
         return True
+
 
     token = request.POST.get("cf-turnstile-response", "")
     passed = tokenOk(token, request.META.get("REMOTE_ADDR", ""))
@@ -43,7 +58,7 @@ def markHuman(request):
 def human_ok(request):
     stamp = request.session.get(FORM_KEY, 0)
 
-    return isinstance(stamp, (int, float)) and 0 <= time.time() - stamp < (600)
+    return isinstance(stamp, (int, float)) and 0 <= time.time() - stamp < 600
 
 
 def has_pass(request):
@@ -54,6 +69,8 @@ def has_pass(request):
     except (KeyError, BadSignature):
         return False
 
+
+
     return value == "1"
 
 
@@ -61,11 +78,21 @@ def isVisit(request):
     if request.method not in ("GET", "HEAD"):
         return False
 
-    if request.path == ("/check"):
+    if request.path == "/check":
         return False
 
+
     return not request.path.startswith(
-        (("/static/", "/media/", "/api/", "/accounts/google", "/favicon.ico", "/robots.txt"))
+        (
+            (
+                "/static/",
+                "/media/",
+                "/api/",
+                "/accounts/google",
+                "/favicon.ico",
+                "/robots.txt",
+            )
+        )
     )
 
 
@@ -79,9 +106,17 @@ class TurnstileGate:
         if gateOn and isVisit(request) and not has_pass(request):
             query = urlencode({"next": request.get_full_path()})
 
+
+
             return redirect(reverse("human_check") + "?" + query)
 
         return self.get_response(request)
+
+
+def checkUrl(request, nextUrl):
+    query = urlencode({"next": nextUrl, "force": "1"})
+
+    return reverse("human_check") + "?" + query
 
 
 def safeNext(request):
@@ -91,6 +126,7 @@ def safeNext(request):
         nextUrl, allowed_hosts={request.get_host()}, require_https=request.is_secure()
     ):
         return nextUrl
+
 
     return "/"
 
@@ -104,6 +140,7 @@ def joinError(request, nextUrl, forced):
     if makeCode(request, request.user):
         request.session.pop("pendingSignupEmailCheck", None)
 
+
         return None
 
     context = {
@@ -112,12 +149,15 @@ def joinError(request, nextUrl, forced):
         "error": "Sorry, we couldn’t send your code just now. Please try again in a minute.",
     }
 
+
     return render(request, "accounts/check.html", context, status=503)
 
 
 @never_cache
 def humanCheck(request):
     nextUrl = safeNext(request)
+
+
     forced = request.GET.get("force") == "1" or request.POST.get("force") == "1"
 
     if not settings.TURNSTILE_ENABLED:
@@ -128,8 +168,11 @@ def humanCheck(request):
 
         return redirect(nextUrl)
 
-    if (not settings.TURNSTILE_GATE and not forced) or (has_pass(request) and not forced):
+    if (not settings.TURNSTILE_GATE and not forced) or (
+        has_pass(request) and not forced
+    ):
         return redirect(nextUrl)
+
 
     if (request.method == "POST" and formPasses(request)) or (
         request.method == "GET" and human_ok(request)
@@ -146,6 +189,7 @@ def humanCheck(request):
 
         if request.session.pop("welcomeAfterCloudflare", False):
             from django.contrib import messages
+
 
             messages.success(request, f"Welcome back, {request.user.first_name}.")
 
@@ -164,9 +208,13 @@ def humanCheck(request):
 
     context = {"next": nextUrl, "force": forced}
 
+
+
     if request.method == "POST":
         context["error"] = CHECK_FAILED
 
+
         return render(request, "accounts/check.html", context, status=403)
+
 
     return render(request, "accounts/check.html", context)

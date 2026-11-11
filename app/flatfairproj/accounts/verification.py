@@ -50,7 +50,9 @@ def waitEmail(request, user, path):
 
 def liveCode(user):
     return (
-        EmailCheck.objects.filter(user=user, verifiedAt__isnull=True, expiresAt__gt=timezone.now())
+        EmailCheck.objects.filter(
+            user=user, verifiedAt__isnull=True, expiresAt__gt=timezone.now()
+        )
         .exclude(codeHash="")
         .exists()
     )
@@ -61,10 +63,11 @@ def held_user(request):
 
     data = request.session.get(WAITING_KEY)
 
+
     if not isinstance(data, dict) or not isinstance(data.get("userId"), int):
         return None
 
-    if not isinstance(data.get("at"), (int, float)) or time.time() - data["at"] > (3600):
+    if not isinstance(data.get("at"), (int, float)) or time.time() - data["at"] > 3600:
         request.session.pop(WAITING_KEY, None)
 
         return None
@@ -74,6 +77,37 @@ def held_user(request):
 
 def emailVerified(user):
     return EmailCheck.objects.filter(user=user, verifiedAt__isnull=False).exists()
+
+
+def totpEnabled(user):
+    try:
+        device = user.totpDevice
+    except ObjectDoesNotExist:
+        return False
+
+    return bool(device.enabledAt)
+
+
+def needsTotp(user):
+    try:
+        device = user.totpDevice
+    except ObjectDoesNotExist:
+        return False
+
+    return bool(device.setupRequired and not device.enabledAt)
+
+
+def end_login(request, user, path="/"):
+    from django.contrib.auth import login
+
+    if totpEnabled(user):
+        request.session[PENDING_KEY] = {"userId": user.pk, "path": path}
+
+        return redirect("authenticator")
+
+    login(request, user)
+
+    return redirect(reverse("human_check") + "?" + urlencode({"next": path, "force": "1"}))
 
 
 def setEmailOk(user):
@@ -92,13 +126,17 @@ def demoMode():
 
 
 def demoCode(userId, nonce):
-    digest = hmac.new(settings.SECRET_KEY.encode(), f"email:{userId}:{nonce}".encode(), sha256)
+    digest = hmac.new(
+        settings.SECRET_KEY.encode(), f"email:{userId}:{nonce}".encode(), sha256
+    )
 
     return f"{int(digest.hexdigest(), 16) % 10 ** 6:06d}"
 
 
 def sendCode(user, code, to=None):
     from storefront.notices import buildEmail
+
+
 
     target = to or user.email
 
@@ -119,61 +157,92 @@ def sendCode(user, code, to=None):
     if sent != 1:
         raise RuntimeError("Email backend did not accept the verification email")
 
-    return True
-
-
-@transaction.atomic
-def makeCode(request, user):
-    user = lock_user(user.pk)
-
-    if not user or not user.is_active:
-        return False
-
-    check, created = EmailCheck.objects.get_or_create(user=user)
-
-    if check.verifiedAt and not check.pendingEmail:
-        return False
-
-    now = timezone.now()
-
-    if check.sentAt and (now - check.sentAt).total_seconds() < RESEND_SECONDS:
-        return False
-
-    if addTry(f"email-check:user:{user.pk}", 3600) > 3:
-        return False
-
-    mail_hash = sha256(request.META.get("REMOTE_ADDR", "").encode()).hexdigest()
-
-    if addTry("email-check:ip:" + mail_hash, 3600) > 10:
-        return False
-
-    nonce = secrets.token_hex(32)
-
-    if demoMode():
-        code = demoCode(user.pk, nonce)
-    else:
-        code = f"{secrets.randbelow(10 ** 6):06d}"
-
-    # If sending the email fails, keep the old data.
-    try:
-        sendCode(user, code, check.pendingEmail or None)
-    except Exception:
-        log.error("Could not send the email_check email")
-
-        return False
-
-    check.codeHash = hashCode(user.pk, "email:" + code)
-    check.expiresAt = now + timedelta(minutes=CODE_MINUTES)
-    check.attempts = 0
-    check.sentCount += 1
-    check.sentAt = now
-    check.save()
-    request.session.pop(DEMO_KEY, None)
-
-    if demoMode() or settings.DEBUG:
-        request.session[DEMO_KEY] = {"userId": user.pk, "nonce": nonce, "code": code}
 
     return True
+
+
+def makeCode(request, user, notify=False):
+    deferred = transaction.get_connection().in_atomic_block
+    delivery = {"ok": True}
+
+    with transaction.atomic():
+        user = lock_user(user.pk)
+
+        if not user or not user.is_active:
+            return False
+
+        check, created = EmailCheck.objects.get_or_create(user=user)
+
+        if check.verifiedAt and not check.pendingEmail:
+            return False
+
+
+        now = timezone.now()
+
+        if check.sentAt and (now - check.sentAt).total_seconds() < RESEND_SECONDS:
+            return False
+
+        if addTry(f"email-check:user:{user.pk}", 3600) > 3:
+            return False
+
+        mail_hash = sha256(request.META.get("REMOTE_ADDR", "").encode()).hexdigest()
+
+        if addTry("email-check:ip:" + mail_hash, 3600) > 10:
+            return False
+
+        nonce = secrets.token_hex(32)
+
+        if demoMode():
+            code = demoCode(user.pk, nonce)
+        else:
+            code = f"{secrets.randbelow(10 ** 6):06d}"
+
+        old = {
+            field: getattr(check, field)
+            for field in ("codeHash", "expiresAt", "attempts", "sentCount", "sentAt")
+        }
+        pending = check.pendingEmail
+        digest = hashCode(user.pk, "email:" + code)
+        check.codeHash = digest
+
+
+
+        check.expiresAt = now + timedelta(minutes=CODE_MINUTES)
+        check.attempts = 0
+        check.sentCount += 1
+        check.sentAt = now
+        check.save()
+
+        def send():
+            try:
+                sendCode(user, code, pending or None)
+            except Exception:
+                delivery["ok"] = False
+                log.error("Could not send the email_check email")
+
+                if deferred:
+                    messages.error(request, SEND_FAILED)
+
+                EmailCheck.objects.filter(
+                    pk=check.pk, codeHash=digest, sentAt=now, pendingEmail=pending
+                ).update(**old)
+
+
+                return
+
+            request.session.pop(DEMO_KEY, None)
+
+            if demoMode() or settings.DEBUG:
+                request.session[DEMO_KEY] = {
+                    "userId": user.pk, "nonce": nonce, "code": code
+                }
+
+            if notify:
+                messages.success(request, "We sent a new code. Only the newest code works.")
+
+        transaction.on_commit(send, robust=True)
+
+    return delivery["ok"]
 
 
 def mailStart(request, user, newEmail):
@@ -182,9 +251,13 @@ def mailStart(request, user, newEmail):
     check.codeHash = ""
     check.expiresAt = timezone.now()
     check.attempts = 0
+
+
     check.sentAt = None
 
-    check.save(update_fields=["pendingEmail", "codeHash", "expiresAt", "attempts", "sentAt"])
+    check.save(
+        update_fields=["pendingEmail", "codeHash", "expiresAt", "attempts", "sentAt"]
+    )
 
     request.session.pop(DEMO_KEY, None)
 
@@ -205,6 +278,8 @@ def mailDone(request, user, check):
         or User.objects.filter(username__iexact=newMail).exclude(pk=user.pk).exists()
     ):
         check.pendingEmail = ""
+
+
         check.codeHash = ""
         check.save(update_fields=["pendingEmail", "codeHash"])
 
@@ -224,7 +299,11 @@ def mailDone(request, user, check):
     check.verifiedAt = timezone.now()
     check.save(update_fields=["pendingEmail", "codeHash", "verifiedAt"])
 
-    ResetCode.objects.filter(user=user, usedAt__isnull=True).update(usedAt=timezone.now())
+
+
+    ResetCode.objects.filter(user=user, usedAt__isnull=True).update(
+        usedAt=timezone.now()
+    )
 
     context = {
         "newEmail": newMail,
@@ -232,7 +311,9 @@ def mailDone(request, user, check):
     }
 
     transaction.on_commit(
-        lambda: deliver("Your FlatFair email was changed", oldUser, "email_changed", context)
+        lambda: deliver(
+            "Your FlatFair email was changed", oldUser, "email_changed", context
+        )
     )
 
     return True
@@ -262,6 +343,7 @@ def saveBack(request):
         else:
             path = ""
 
+
     path = safePath(request, path)
 
     if path:
@@ -273,6 +355,7 @@ def saveBack(request):
 def checkEmail(request):
     code = 5
     tries = "Too many wrong tries. Please ask for a new code."
+
 
     if request.user.is_authenticated:
         userId, signIn = request.user.pk, False
@@ -290,6 +373,9 @@ def checkEmail(request):
 
     with transaction.atomic():
         user = lock_user(userId)
+
+
+
         check, created = EmailCheck.objects.get_or_create(user=user)
         change = bool(check.pendingEmail) and not signIn
 
@@ -313,13 +399,13 @@ def checkEmail(request):
 
         if request.method == "POST" and "resend" in request.POST:
             if retryIn:
-                messages.error(request, "Please wait a minute before asking for another code.")
-            elif makeCode(request, user):
-                messages.success(request, "We sent a new code. Only the newest code works.")
-            else:
+                messages.error(
+                    request, "Please wait a minute before asking for another code."
+                )
+            elif not makeCode(request, user, notify=True):
                 messages.error(
                     request,
-                    ("You’ve asked for too many codes. Please wait an hour, then try again."),
+                    "You’ve asked for too many codes. Please wait an hour, then try again.",
                 )
 
             return redirect("email_check")
@@ -342,11 +428,15 @@ def checkEmail(request):
 
                         return redirect("account_settings")
 
+
+
                     check.verifiedAt = now
                     check.codeHash = ""
                     check.save(update_fields=["verifiedAt", "codeHash"])
 
-                    goTo = safePath(request, request.session.pop(RETURN_KEY, "")) or reverse("home")
+                    goTo = safePath(
+                        request, request.session.pop(RETURN_KEY, "")
+                    ) or reverse("home")
 
                     if signIn:
                         request.session.pop(WAITING_KEY, None)
@@ -368,6 +458,7 @@ def checkEmail(request):
                             user,
                             backend="django.contrib.auth.backends.ModelBackend",
                         )
+
 
                         messages.success(
                             request,
@@ -407,8 +498,12 @@ def checkEmail(request):
         ):
             option = demo.get("code") or demoCode(user.pk, demo["nonce"])
 
-            if hmac.compare_digest(check.codeHash, hashCode(user.pk, "email:" + option)):
+            if hmac.compare_digest(
+                check.codeHash, hashCode(user.pk, "email:" + option)
+            ):
                 shown = option
+
+
 
     context = {
         "form": form,
@@ -422,3 +517,110 @@ def checkEmail(request):
     return render(request, "accounts/email_check.html", context)
 
 
+@never_cache
+@require_http_methods(["GET", "POST"])
+def authenticator(request):
+    from django.contrib.auth import login
+    from django.contrib.auth.models import User
+
+    pending = request.session.get(PENDING_KEY)
+
+    if not pending:
+        return redirect("signin")
+
+    user = User.objects.filter(pk=pending.get("userId"), is_active=True).first()
+
+    if not user or not totpEnabled(user):
+        request.session.pop(PENDING_KEY, None)
+
+        return redirect("signin")
+
+    form = TotpForm(request.POST or None)
+    tries = request.session.get("totpAttempts", 0)
+
+    if request.method == "POST" and form.is_valid():
+        if tries >= 5:
+            form.add_error(None, "Too many attempts. Please start signing in again.")
+        else:
+            code = form.cleaned_data["code"]
+
+            valid = validCode(user.totpDevice.secret, code) or useSpare(user.totpDevice, code)
+
+            if valid:
+                login(request, user)
+                request.session["welcomeAfterCloudflare"] = True
+                path = safePath(request, pending.get("path", "")) or "/"
+                request.session.pop(PENDING_KEY, None)
+                request.session.pop("totpAttempts", None)
+
+                return redirect(
+                    reverse("human_check") + "?" + urlencode({"next": path, "force": "1"})
+                )
+
+            request.session["totpAttempts"] = tries + 1
+
+            form.add_error("code", "That code isn’t right, or it has already been used.")
+
+    return render(request, "accounts/authenticator.html", {"form": form, "recovery": True})
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET", "POST"])
+def totpSetup(request):
+    needed = request.session.get(SETUP_KEY, {}).get("required") is True
+    device, codes = addDevice(request.user, required=needed)
+    image = qrcode.make(setupLink(request.user, device.secret))
+    output = BytesIO()
+    image.save(output, format="PNG")
+    qrCode = "data:image/png;base64," + base64.b64encode(output.getvalue()).decode()
+    form = TotpForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        if validCode(device.secret, form.cleaned_data["code"]):
+            device.enabledAt = timezone.now()
+            device.setupRequired = False
+            device.save(update_fields=["enabledAt", "setupRequired"])
+            request.session.pop(SETUP_KEY, None)
+
+            messages.success(request, "Microsoft Authenticator is now required when you sign in.")
+
+            return redirect("account_settings")
+
+        form.add_error("code", "That code isn’t valid yet. Please check your Authenticator app.")
+
+    return render(
+        request,
+        "accounts/authenticator_setup.html",
+        {
+            "form": form,
+            "uri": setupLink(request.user, device.secret),
+            "secret": device.secret,
+            "qrCode": qrCode,
+            "recoveryCodes": codes,
+        },
+    )
+
+
+class RequiredTotpSetupMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        needed = request.session.get(SETUP_KEY, {}).get("required")
+
+        needed = needed or (request.user.is_authenticated and needsTotp(request.user))
+
+        if needed and request.user.is_authenticated:
+            allowed = {
+                "authenticator_setup",
+                "signout",
+                "static",
+                "human_check",
+                "account_settings",
+            }
+
+            if request.resolver_match and request.resolver_match.url_name not in allowed:
+                return redirect("authenticator_setup")
+
+        return self.get_response(request)

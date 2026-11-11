@@ -324,3 +324,252 @@ def payloadOf(token):
     return json.loads(base64.urlsafe_b64decode(text + "=" * (-len(text) % 4)))
 
 
+class TokenTests(TestCase):
+
+    def claims(self, **changes):
+        now = int(time.time())
+        claims = {
+            "iss": "flatfair",
+            "aud": "asdf",
+            "iat": now,
+            "exp": now + 60,
+            "jti": "qwer",
+            "userId": 7,
+        }
+        claims.update(changes)
+        return {name: value for name, value in claims.items() if value is not None}
+
+    def test_reads_back_standard_claims(self):
+        before = int(time.time())
+        token = issueToken("asdf", {"userId": 7}, 60)
+        saved = readToken("asdf", token)
+        for name, value in {"userId": 7, "iss": "flatfair", "aud": "asdf"}.items():
+            with self.subTest(name=name):
+                self.assertEqual(saved[name], value)
+        self.assertEqual(saved["exp"] - saved["iat"], 60)
+        self.assertGreaterEqual(saved["iat"], before)
+        self.assertEqual(len(saved["jti"]), 32)
+        self.assertEqual(jwt.get_unverified_header(token), {"alg": "HS256", "typ": "JWT"})
+        self.assertNotEqual(saved["jti"], readToken("asdf", issueToken("asdf", {"userId": 7}, 60))["jti"])
+
+    def test_expired_token_is_refused(self):
+        with patch("accounts.tokens.time.time", return_value=time.time() - 61):
+            token = issueToken("asdf", {"userId": 7}, 60)
+        self.assertIsNone(readToken("asdf", token))
+        with patch("accounts.tokens.time.time", return_value=time.time() - 30):
+            token = issueToken("asdf", {"userId": 7}, 60)
+        self.assertEqual(readToken("asdf", token)["userId"], 7)
+
+    def test_wrong_purpose_is_refused(self):
+        token = issueToken("asdf", {"userId": 7}, 60)
+        for purpose in ("qwer", "ASDF", "asdf ", "", None):
+            with self.subTest(purpose=purpose):
+                self.assertIsNone(readToken(purpose, token))
+
+    def test_tampered_payload_is_refused(self):
+        token = issueToken("asdf", {"userId": 7}, 60)
+        header, payload, signature = token.split(".")
+        changed = payloadOf(token)
+        changed["userId"] = 8
+        for bad in [
+            [header, part(changed), signature],
+            [header, payload, signature[:-2] + "AA"],
+            [header, payload, ""],
+        ]:
+            with self.subTest(token=bad):
+                self.assertIsNone(readToken("asdf", ".".join(bad)))
+        self.assertEqual(readToken("asdf", token)["userId"], 7)
+
+    def test_alg_none_is_refused(self):
+        token = issueToken("asdf", {"userId": 7}, 60)
+        payload = token.split(".")[1]
+        for alg in ("none", "None", "NONE"):
+            with self.subTest(alg=alg):
+                header = part({"alg": alg, "typ": "JWT"})
+                self.assertIsNone(readToken("asdf", header + "." + payload + "."))
+                self.assertIsNone(readToken("asdf", header + "." + payload + "." + token.split(".")[2]))
+        self.assertIsNone(readToken("asdf", signed(self.claims(), None, "none")))
+
+    def test_other_keys_algorithms_refused(self):
+        self.assertEqual(readToken("asdf", signed(self.claims(), tokenKey()))["userId"], 7)
+        for key, kind in [
+            (tokenKey(), "HS512"),
+            (settings.SECRET_KEY, "HS256"),
+            ("a" * 32, "HS256"),
+        ]:
+            with self.subTest(kind=kind):
+                self.assertIsNone(readToken("asdf", signed(self.claims(), key, kind)))
+        token = issueToken("asdf", {"userId": 7}, 60)
+        with override_settings(SECRET_KEY="another secret key for this test only"):
+            self.assertIsNone(readToken("asdf", token))
+
+    def test_missing_wrong_standard_claims(self):
+        for changes in (
+            {"exp": None},
+            {"iat": None},
+            {"jti": None},
+            {"iss": None},
+            {"aud": None},
+            {"iss": "someone else"},
+            {"aud": ["qwer"]},
+            {"exp": "soon"},
+            {"iat": int(time.time()) + 600, "exp": int(time.time()) + 900},
+        ):
+            with self.subTest(changes=changes):
+                token = signed(self.claims(**changes), tokenKey())
+                self.assertIsNone(readToken("asdf", token))
+
+    def test_caller_blocks_replace_standard(self):
+        token = issueToken(
+            "asdf",
+            {"aud": "qwer", "iss": "someone else", "exp": 9999999999, "iat": 1, "jti": "zxcv"},
+            60,
+        )
+        saved = readToken("asdf", token)
+        self.assertEqual(saved["exp"] - saved["iat"], 60)
+        self.assertEqual(saved["jti"], "zxcv")
+        self.assertIsNone(readToken("qwer", token))
+
+    def test_values_not_refused(self):
+        for value in (
+            None,
+            "",
+            "asdf",
+            "a.b.c",
+            7,
+            b"asdf",
+            signing.dumps({"userId": 7}, salt="asdf"),
+        ):
+            with self.subTest(value=value):
+                self.assertIsNone(readToken("asdf", value))
+
+
+@override_settings(
+    GOOGLE_CLIENT_ID="asdf",
+    GOOGLE_CLIENT_SECRET="qwer",
+    PUBLIC_URL="https://flatfair.example.com",
+    ALLOWED_HOSTS=["flatfair.example.com", "192.168.0.253"],
+)
+class RelayTokenTests(TestCase):
+    public = {"HTTP_HOST": "flatfair.example.com", "secure": True}
+    lan = {"HTTP_HOST": "192.168.0.253:8765"}
+
+    def setUp(self):
+        caches["resources"].clear()
+        self.user = makeUser("relay@example.com")
+
+    def relayToken(self):
+        response = self.client.get(
+            reverse("google_start"),
+            {"return": "http://192.168.0.253:8765", "next": "/saved"},
+            **self.public,
+        )
+        state = parse_qs(urlsplit(response.url).query)["state"][0]
+        with (
+            patch("accounts.google.requests.post") as post,
+            patch("accounts.google.requests.get") as get,
+        ):
+            post.return_value.json.return_value = {"access_token": "test-token"}
+            get.return_value.json.return_value = {
+                "email": self.user.email,
+                "email_verified": True,
+                "name": "Asdf",
+            }
+            response = self.client.get(
+                reverse("google_callback"), {"state": state, "code": "test-code"}, **self.public
+            )
+        self.assertTrue(response.url.startswith("http://192.168.0.253:8765" + reverse("google_relay")))
+        return parse_qs(urlsplit(response.url).query)["token"][0]
+
+    def made(self, purpose="google-relay", seconds=60, **changes):
+        claims = {"userId": self.user.pk, "next": "/saved", "emailPending": False}
+        claims.update(changes)
+        token = issueToken(purpose, claims, seconds)
+        caches["resources"].set("google-relay:" + payloadOf(token)["jti"], True, timeout=60)
+        return token
+
+    def refused(self, token):
+        browser = Client()
+        response = browser.get(reverse("google_relay"), {"token": token}, **self.lan)
+        self.assertRedirects(response, reverse("signin"), fetch_redirect_response=False)
+        self.assertContains(
+            browser.get(response.url, **self.lan),
+            "That Google sign-in link has expired. Please try again.",
+        )
+        self.assertNotIn("_auth_user_id", browser.session)
+
+    def accepted(self, token):
+        browser = Client()
+        response = browser.get(reverse("google_relay"), {"token": token}, **self.lan)
+        self.assertRedirects(response, "/saved", fetch_redirect_response=False)
+        self.assertEqual(browser.session["_auth_user_id"], str(self.user.pk))
+
+    def test_sixty_second_jwt_purpose(self):
+        token = self.relayToken()
+        self.assertEqual(jwt.get_unverified_header(token)["alg"], "HS256")
+        saved = readToken("google-relay", token)
+        for name, value in {
+            "userId": self.user.pk,
+            "aud": "google-relay",
+            "iss": "flatfair",
+        }.items():
+            with self.subTest(name=name):
+                self.assertEqual(saved[name], value)
+        self.assertEqual(saved["exp"] - saved["iat"], 60)
+        self.assertTrue(caches["resources"].get("google-relay:" + saved["jti"]))
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_signs_in_end_reused(self):
+        token = self.relayToken()
+        self.accepted(token)
+        self.assertIsNone(caches["resources"].get("google-relay:" + payloadOf(token)["jti"]))
+        self.refused(token)
+
+    def test_expired_refused(self):
+        with patch("accounts.tokens.time.time", return_value=time.time() - 61):
+            token = self.made()
+        self.refused(token)
+        self.accepted(self.made())
+
+    def test_another_purpose_refused(self):
+        self.refused(self.made(purpose="download"))
+
+    def test_tampered_unsigned_refused(self):
+        other = makeUser("other@example.com")
+        token = self.made()
+        header, payload, signature = token.split(".")
+        changed = payloadOf(token)
+        changed["userId"] = other.pk
+        self.refused(".".join([header, part(changed), signature]))
+        self.refused(part({"alg": "none", "typ": "JWT"}) + "." + part(changed) + ".")
+        self.refused(signed(changed, settings.SECRET_KEY))
+        self.accepted(token)
+
+    def test_old_format_token_is_refused(self):
+        nonce = "a" * 32
+        caches["resources"].set("google-relay:" + nonce, True, timeout=60)
+        old = signing.dumps(
+            {"userId": self.user.pk, "nonce": nonce, "next": "/saved", "emailPending": False},
+            salt="google-relay",
+        )
+        self.refused(old)
+
+    def test_payload_checks_kept(self):
+        for changes in (
+            {"userId": str(self.user.pk)},
+            {"next": None},
+            {"jti": "short"},
+            {"jti": 7},
+            {"userId": self.user.pk + 1000},
+        ):
+            with self.subTest(changes=changes):
+                token = issueToken("google-relay", {"userId": self.user.pk, "next": "/saved", **changes}, 60)
+                caches["resources"].set("google-relay:" + str(payloadOf(token)["jti"]), True, timeout=60)
+                self.refused(token)
+
+    def test_missing_waiting_nonce_refused(self):
+        token = issueToken("google-relay", {"userId": self.user.pk, "next": "/saved"}, 60)
+        self.refused(token)
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        self.refused(self.made())

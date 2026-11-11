@@ -14,20 +14,35 @@ class ResetCode(models.Model):
     codeHash = models.CharField(max_length=64)
     requestIp = models.GenericIPAddressField(null=True, blank=True)
     createdAt = models.DateTimeField(auto_now_add=True)
+
+
     expiresAt = models.DateTimeField()
+
+
     attempts = models.PositiveSmallIntegerField(default=0)
+
+
+
     verifiedAt = models.DateTimeField(null=True, blank=True)
     usedAt = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [
             models.Index(fields=["user", "createdAt"]),
+
+
+
             models.Index(fields=["requestIp", "createdAt"]),
         ]
 
 
 class PasswordHistory(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="passwordHistory")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="passwordHistory"
+    )
+
+
+
     passwordHash = models.CharField(max_length=128)
     createdAt = models.DateTimeField(auto_now_add=True)
 
@@ -36,13 +51,37 @@ class PasswordHistory(models.Model):
 
 
 class EmailCheck(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="emailCheck")
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="emailCheck"
+    )
+
+
     codeHash = models.CharField(max_length=64, blank=True)
+
+
+
     expiresAt = models.DateTimeField(default=timezone.now)
+
+
+
     attempts = models.PositiveSmallIntegerField(default=0)
     sentCount = models.PositiveIntegerField(default=0)
     sentAt = models.DateTimeField(null=True, blank=True)
+
+
+
     verifiedAt = models.DateTimeField(null=True, blank=True)
     pendingEmail = models.EmailField(max_length=150, blank=True)
 
 
+class TotpDevice(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="totpDevice")
+    secret = EncryptedTextField()
+    setupRequired = models.BooleanField(default=False)
+    enabledAt = models.DateTimeField(null=True, blank=True)
+
+
+class RecoveryCode(models.Model):
+    device = models.ForeignKey(TotpDevice, on_delete=models.CASCADE, related_name="recoveryCodes")
+    codeHash = models.CharField(max_length=128)
+    usedAt = models.DateTimeField(null=True, blank=True)

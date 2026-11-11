@@ -82,14 +82,20 @@ class ProductForm(forms.ModelForm):
                 "invalid_choice": "Choose package or service.",
             },
             "tier": {"invalid_choice": "Choose a place in search from the list."},
-            "description": {"max_length": "Keep the description to 120 characters or fewer."},
+            "description": {
+                "max_length": "Keep the description to 120 characters or fewer."
+            },
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.packageType = ""
         self.packageEffect = ""
+
+
         self.fields["kind"].choices = [("", "Choose a type")] + Product.KIND_CHOICES
+
+
 
         if not self.instance.pk:
             self.fields["tier"].required = False
@@ -98,7 +104,9 @@ class ProductForm(forms.ModelForm):
                 ("", "No change (add-on services)")
             ] + Product.TIER_CHOICES[1:]
 
-            self.fields["tier"].help_text = "Packages only. It sets where the flat shows in search."
+            self.fields["tier"].help_text = (
+                "Packages only. It sets where the flat shows in search."
+            )
 
             return
 
@@ -106,13 +114,16 @@ class ProductForm(forms.ModelForm):
 
         del self.fields["tier"]
 
+
         self.fields["kind"].disabled = True
         self.fields["kind"].help_text = "The type can’t change once a product is made."
 
         if self.instance.kind == "package":
             self.packageType = tierOf(self.instance.tier)
 
-            self.packageEffect = PACKAGE_TYPES.get(self.packageType, "Changes nothing in search.")
+            self.packageEffect = PACKAGE_TYPES.get(
+                self.packageType, "Changes nothing in search."
+            )
 
     def clean(self):
         data = super().clean()
@@ -121,8 +132,16 @@ class ProductForm(forms.ModelForm):
             data["durationDays"] = None
             data["tier"] = 0
 
-        if not self.instance.pk and data.get("kind") == "package" and not data.get("tier"):
-            self.add_error("tier", "Choose where a flat with this package shows in search.")
+
+        if (
+            not self.instance.pk
+            and data.get("kind") == "package"
+            and not data.get("tier")
+        ):
+            self.add_error(
+                "tier", "Choose where a flat with this package shows in search."
+            )
+
 
         if data.get("kind") == "package":
             product = SimpleNamespace(
@@ -130,19 +149,24 @@ class ProductForm(forms.ModelForm):
                 name=data.get("name", ""),
                 tier=self.instance.tier if self.instance.pk else data.get("tier"),
                 durationDays=(
-                    self.instance.durationDays if self.instance.pk else data.get("durationDays")
+                    self.instance.durationDays
+                    if self.instance.pk
+                    else data.get("durationDays")
                 ),
             )
+
+
 
             problem = packIssue(product)
 
             if problem:
                 self.add_error(None, problem)
 
+
         return data
 
 
-class ListingDetailsForm(ErrorAttrsMixin, ListingValidationMixin, forms.ModelForm):
+class ListingDetailsForm(ListingValidationMixin, forms.ModelForm):
     revision = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
 
     def __init__(self, *args, **kwargs):
@@ -230,6 +254,8 @@ class ContactForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
+
+
         user.username = user.email
 
         if commit:
@@ -265,6 +291,8 @@ class StaffForm(forms.Form):
     def clean_email(self):
         email = tidyEmail(self.cleaned_data["email"])
 
+
+
         if emailTaken(email):
             raise forms.ValidationError("An account with this email already exists.")
 
@@ -277,7 +305,7 @@ class StaffForm(forms.Form):
         return data
 
 
-class TicketForm(ErrorAttrsMixin, forms.ModelForm):
+class TicketForm(forms.ModelForm):
     order = forms.CharField(required=False, widget=forms.HiddenInput)
 
     class Meta:
@@ -317,8 +345,12 @@ class TicketForm(ErrorAttrsMixin, forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
 
+
+
         if "message" in self.data:
             self.data = self.data.copy()
+
+
             self.data["message"] = self.data["message"].replace("\r\n", "\n")
 
         self.user = None
@@ -351,6 +383,8 @@ class TicketForm(ErrorAttrsMixin, forms.ModelForm):
         data = super().clean()
         order = data.get("order")
 
+
+
         if data.get("topic") == "refund" and order and not order.canRefund():
             self.add_error(
                 "topic",
@@ -375,7 +409,7 @@ class TicketForm(ErrorAttrsMixin, forms.ModelForm):
         return ticket
 
 
-class ReplyForm(ErrorAttrsMixin, forms.Form):
+class ReplyForm(forms.Form):
     body = forms.CharField(
         label="Your reply",
         max_length=2000,
