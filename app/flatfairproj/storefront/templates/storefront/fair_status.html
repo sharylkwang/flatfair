@@ -1,0 +1,1 @@
+{% if f.status == 'sold' %}Sold{% elif not f.bandLow or not f.bandHigh %}No estimate{% elif f.fairPrice %}Within range{% elif f.askingPrice > f.bandHigh %}Above range{% else %}Below range{% endif %}

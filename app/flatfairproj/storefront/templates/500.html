@@ -1,0 +1,25 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Something went wrong · FlatFair</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..112,400..800&family=Lexend:wght@300..700&display=swap">
+    <link rel="stylesheet" href="{% static 'storefront/site.css' %}?v=54">
+  </head>
+  <body class="estate-theme">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header">
+      <div class="wrap header-inner"><a class="site-logo" href="/" aria-label="FlatFair home">{% include 'storefront/logo.html' %}</a></div>
+    </header>
+    <main id="main-content" class="wrap">{% include 'storefront/page_hero.html' with tier="task" title='Something went wrong' lead='Sorry, that’s our fault. Please reload the page in a minute.' photo="storefront/photos/error-500.jpg" photo_width=1600 photo_height=1067 photo_small="storefront/photos/error-500-960.jpg" hide_default_action=True extra_template="storefront/error_actions.html" %}</main>
+    <footer class="site-footer">
+      <div class="wrap footer-bottom">© 2026 FlatFair · IS2108 Team 22</div>
+    </footer>
+  </body>
+</html>

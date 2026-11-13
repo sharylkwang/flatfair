@@ -1,0 +1,21 @@
+{% load humanize estate_tags %}
+<article class="buyer-flat saved-row" id="save-{{ flat.publicId }}{% if saveScope %}-{{ saveScope }}{% endif %}" tabindex="-1">
+  <div class="buyer-flat-main">
+    <h3>{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</h3>
+    <p class="buyer-flat-facts">${{ flat.askingPrice|floatformat:0|intcomma }} · {{ flat.flatType|flat_label }} · {{ flat.floorAreaSqm|floatformat:'-1' }} sqm · {{ flat.storey|ordinal }} floor{% if flat.fairPrice and flat.status != 'sold' %} · Fair price{% endif %}</p>
+    {% if flat.recommendationReason %}<p class="buyer-flat-facts">{{ flat.recommendationReason }}</p>{% endif %}
+    {% if flat.status == 'sold' %}{% include "sellerpanel/status_badge.html" with tone="final" icon="check" label="Sold" %}{% elif flat.acceptedCount %}{% include "sellerpanel/status_badge.html" with tone="warn" icon="clock" label="Under offer" %}{% else %}{% include "sellerpanel/status_badge.html" with tone="good" icon="dot" label="Live" %}{% endif %}
+  </div>
+  <div class="buyer-flat-photo">{% include "storefront/ui/flat_thumb.html" with size="small" %}</div>
+  <div class="saved-row-end">
+    <a class="btn btn-ghost btn-sm" href="{% url 'listing_detail' flat.publicId %}" aria-label="View flat, Blk {{ flat.block }} {{ flat.town|title }}">View flat</a>
+    {% if savedIds is not None %}{% if flat.pk not in savedIds and flat.status == 'live' %}{% include 'storefront/save_menu.html' %}{% elif flat.pk in savedIds %}
+      <form class="saved-heart" method="post" action="{% url 'toggle_save' flat.publicId %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}#save-{{ flat.publicId }}{% if saveScope %}-{{ saveScope }}{% endif %}">
+        {% if current and flat.pk in current.listingIds %}<input type="hidden" name="collection" value="{{ current.pk }}">{% endif %}
+        <button class="saved-heart-btn" aria-pressed="{% if flat.pk in savedIds %}true{% else %}false{% endif %}" aria-label="Save Blk {{ flat.block }} {{ flat.town|title }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 5c-2.2 4.6-9.2 9-9.2 9z"/></svg></button>
+      </form>
+    {% endif %}{% endif %}
+  </div>
+</article>

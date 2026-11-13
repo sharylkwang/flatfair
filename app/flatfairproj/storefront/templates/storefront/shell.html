@@ -1,0 +1,18 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlatFair · Sell your HDB flat yourself</title>
+<link rel="icon" type="image/svg+xml" href="{% static 'storefront/favicon.svg' %}?v=5">
+<style>
+html, body { height: 100%; margin: 0; background: #ffffff; }
+iframe { display: block; width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<iframe id="app" title="FlatFair" data-start="{{ path }}" allow="clipboard-write; web-share; fullscreen"></iframe>
+<noscript><iframe title="FlatFair" src="{{ path }}"></iframe></noscript>
+<script src="{% static 'storefront/shell.js' %}?v=2"></script>
+</body>
+</html>

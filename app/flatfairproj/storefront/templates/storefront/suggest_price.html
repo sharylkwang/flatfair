@@ -1,0 +1,15 @@
+{% load humanize offer_tags %}
+{% suggest_room offer as room %}
+{% if room.open %}
+  <details class="offer-extra offer-suggest">
+    <summary>Suggest another price</summary>
+    <form method="post" action="{% url 'activity_action' %}" class="offer-counter">
+      {% csrf_token %}<input type="hidden" name="id" value="{{ offer.pk }}">
+      <label class="mini-field">Your price ($)<input inputmode="numeric" autocomplete="off" enterkeyhint="send" name="amount" type="number" step="1" min="{{ room.low }}" max="{{ room.high }}" required data-money aria-describedby="suggest-{{ offer.pk }}-hint"></label>
+      <button class="btn btn-ghost btn-sm" name="action" value="suggest">Send my price</button>
+      <p class="meta" id="suggest-{{ offer.pk }}-hint">Pick a price between your ${{ offer.amount|floatformat:0|intcomma }} offer and the seller’s ${{ offer.counterAmount|floatformat:0|intcomma }}. {% if room.left == room.limit %}You can suggest up to {{ room.limit }} prices on this offer.{% else %}You have {{ room.left }} suggestion{{ room.left|pluralize }} left on this offer.{% endif %}</p>
+    </form>
+  </details>
+{% elif not room.left %}
+  <p class="meta">You’ve suggested {{ room.limit }} prices, which is the most for one offer. You can agree on ${{ offer.counterAmount|floatformat:0|intcomma }} or close your offer.</p>
+{% endif %}

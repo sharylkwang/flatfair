@@ -1,0 +1,5 @@
+<div class="calm-summary-strip" data-ui="summary-strip" aria-label="Summary">
+  <div class="dash-stat"><span aria-hidden="true">{% include "storefront/ui_icon.html" with name=icon_one|default:"home" %}</span><b>{{ value_one }}</b><span>{% if url_one %}<a href="{{ url_one }}">{{ label_one }}</a>{% else %}{{ label_one }}{% endif %}</span></div>
+  {% if label_two %}<div class="dash-stat"><span aria-hidden="true">{% include "storefront/ui_icon.html" with name=icon_two|default:"offer" %}</span><b>{{ value_two }}</b><span>{% if url_two %}<a href="{{ url_two }}">{{ label_two }}</a>{% else %}{{ label_two }}{% endif %}</span></div>{% endif %}
+  {% if label_three %}<div class="dash-stat"><span aria-hidden="true">{% include "storefront/ui_icon.html" with name=icon_three|default:"calendar" %}</span><b>{{ value_three }}</b><span>{% if url_three %}<a href="{{ url_three }}">{{ label_three }}</a>{% else %}{{ label_three }}{% endif %}</span></div>{% endif %}
+</div>

@@ -1,0 +1,34 @@
+{% load humanize estate_tags %}
+
+      <p>Asking ${{ offer.listing.askingPrice|intcomma }}</p>
+            <p class="offer-gap">{% asking_gap offer.amount offer.listing.askingPrice %}</p>
+            {% if offer.reply %}<p class="offer-reply"><b>The seller replied:</b> {{ offer.reply }}</p>{% endif %}
+            {% if offer.status == 'countered' %}
+              <p class="offer-next">The seller suggested ${{ offer.counterAmount|floatformat:0|intcomma }}. Agree or close your offer below.</p>
+            {% elif offer.status == 'accepted' %}
+              <p class="offer-contact"><b>Seller:</b> {{ offer.listing.seller.get_full_name|default:offer.listing.seller.email }} · <a href="mailto:{{ offer.listing.seller.email }}">{{ offer.listing.seller.email }}</a></p>
+              {% if offer.listing.status != 'sold' %}<details class="evidence-method"><summary>Next steps with HDB · arrange OTP, prepare HFE</summary><p>Email the seller to arrange the Option to Purchase, which holds the flat for you. Have your HFE letter ready: HDB’s letter confirming you can buy a resale flat and your loan amount.</p></details>{% endif %}
+            {% endif %}
+          <div class="buyer-offer-position">
+            {% if offer.listing.bandLow and offer.listing.bandHigh %}
+              {% evidence_scale offer.listing.bandLow offer.listing.estimatedPrice offer.listing.bandHigh offer.amount as scale %}
+              {% price_gap offer.amount offer.listing.bandLow offer.listing.estimatedPrice offer.listing.bandHigh 'Your offer' as gap %}
+              {% if gap %}<p>{{ gap }}</p>{% endif %}
+              {% include 'storefront/position_bar.html' with scale=scale label='Your offer compared with similar sales' low=offer.listing.bandLow|range_money high=offer.listing.bandHigh|range_money %}
+            {% else %}<p class="meta">We can’t compare this flat’s price yet.</p>{% endif %}
+          </div>
+          {% if offer.status == 'countered' or offer.status == 'pending' %}
+            <div class="buyer-offer-actions">
+              {% if offer.status == 'countered' %}
+                {% if offer.agreedElsewhere %}<p class="meta">You’ve already agreed a price on another flat. Ask that seller to undo it first.</p>{% endif %}
+                {% with amount=offer.counterAmount|floatformat:0|intcomma %}
+                  {% include 'storefront/activity_form.html' with id=offer.pk action='decline_counter' label='Close my offer' ask='Decline $'|add:amount|add:' and close your offer?' %}
+                {% endwith %}
+              {% else %}
+                {% with where=offer.listing.town|title %}
+                  {% include 'storefront/activity_form.html' with id=offer.pk action='withdraw' label='Withdraw offer' ask='Withdraw your offer on Blk '|add:offer.listing.block|add:' '|add:where|add:'? You can make a new one later.' %}
+                {% endwith %}
+              {% endif %}
+            </div>
+          {% endif %}
+    

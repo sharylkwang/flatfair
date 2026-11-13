@@ -1,0 +1,32 @@
+{% load humanize estate_tags %}
+{% if not providedSales %}{% recent_sales town flat_type area block lease storey as sales %}{% endif %}
+{% if sales %}
+  {% if collapsible %}
+  <details class="panel calm-details recent-sales">
+    <summary>{% include "storefront/ui_icon.html" with name="receipt" only %}<span>Recent sales nearby · {{ sales|length }} sale{{ sales|length|pluralize }} · median {{ sales|sales_median|short_money }}</span><span class="disclosure-label">Show more</span></summary>
+    <div class="disclosure-body">
+  {% else %}
+  <section class="recent-sales">
+    {% if not bare %}<h3>Recent sales like this</h3>{% endif %}
+  {% endif %}
+    {% if not bare %}<p class="muted" title="Real HDB resale prices of similar size and age, for reference.">Same town and flat type, nearby floors first.</p>{% endif %}
+    <div class="table-scroll">
+      <table class="tbl">
+        <caption class="visually-hidden">Recent sales like this</caption>
+        <thead><tr><th>Block</th><th>Sold</th><th>Floor</th><th class="num">Size</th><th class="num">Lease from</th><th class="num">Price</th></tr></thead>
+        <tbody>
+          {% for s in sales %}
+            <tr>
+              <td data-label="Block">Blk {{ s.block }} {{ s.street|title }}</td>
+              <td data-label="Sold">{{ s.month|date:"M Y" }}</td>
+              <td data-label="Floor">{{ s.storeyRange|lower }}</td>
+              <td class="num" data-label="Size">{{ s.floorAreaSqm|floatformat:0 }} sqm</td>
+              <td class="num" data-label="Lease from">{{ s.leaseCommenceYear }}</td>
+              <td class="num" data-label="Price">${{ s.price|intcomma }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% if collapsible %}</div></details>{% else %}</section>{% endif %}
+{% endif %}

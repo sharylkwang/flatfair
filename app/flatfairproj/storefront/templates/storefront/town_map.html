@@ -1,0 +1,41 @@
+{% load humanize static %}
+<div class="townmap townmap-{{ mode }}" data-mode="{{ mode }}"{% if field %} data-field="{{ field }}"{% endif %} data-prompt="{{ prompt }}" data-prompt-small="Pick a sector first" data-prompt-zoom="Now pick your town" data-chosen=" selected"{% if mode == 'pick' %} hidden{% endif %}>
+  {% if mode == 'link' %}
+  <nav class="townmap-chips" aria-label="Regions">
+    {% for group in regions %}<a class="townmap-chip" href="{{ group.href }}" data-region="{{ group.slug }}" data-caption="{{ group.caption }}"{% if group.current %} aria-current="true"{% endif %}>{{ group.name }}</a>{% endfor %}
+    <a class="townmap-chip" href="{{ allHref }}"{% if allCurrent %} aria-current="true"{% endif %}>All</a>
+  </nav>
+  {% if showList %}
+  <form class="townmap-list" method="get" action="{% url 'listings' %}">
+    {% for key, value in kept.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+    <label class="mini-field">Town
+      <select name="town">
+        <option value="">All of Singapore</option>
+        {% for group in regions %}<optgroup label="{{ group.name }}">{% for town in group.towns %}<option value="{{ town.town }}"{% if town.selected %} selected{% endif %}>{{ town.label }} ({{ town.count|intcomma }})</option>{% endfor %}</optgroup>{% endfor %}
+      </select>
+    </label>
+    <noscript><button class="btn btn-ghost">Show flats</button></noscript>
+  </form>
+  {% endif %}
+  {% else %}
+  <div class="townmap-chips" role="group" aria-label="Sectors">
+    {% for group in regions %}<button class="townmap-chip" type="button" data-region="{{ group.slug }}" data-caption="{{ group.caption }}" aria-pressed="false">{{ group.name }}</button>{% endfor %}
+    <button class="townmap-chip" type="button" data-region="" aria-pressed="true">Whole island</button>
+  </div>
+  <span class="townmap-status visually-hidden" aria-live="polite"></span>
+  {% endif %}
+  <p class="townmap-caption" data-rest="{{ rest }}">{{ rest }}</p>
+  <div class="townmap-stage">
+    <svg class="townmap-svg" viewBox="{{ view|join:' ' }}" style="aspect-ratio: {{ view.2 }} / {{ view.3 }}" role="group" aria-label="Map of Singapore by HDB town">
+      <g class="townmap-rest" aria-hidden="true">{% for path in others %}<path d="{{ path }}"/>{% endfor %}</g>
+      {% for group in regions %}{% for town in group.towns %}<a class="townmap-area region-{{ town.slug }}{% if town.selected %} is-selected{% endif %}{% if town.inRegion %} is-region{% endif %}" {% if mode == 'link' %}href="{{ town.href }}"{% if town.selected %} aria-current="true"{% endif %}{% else %}href="#" role="button" data-town="{{ town.town }}" aria-pressed="{{ town.selected|yesno:'true,false' }}"{% endif %} aria-label="{{ town.spoken }}" data-caption="{{ town.caption }}" data-x="{{ town.x|stringformat:'.1f' }}" data-y="{{ town.y|stringformat:'.1f' }}"><title>{{ town.caption }}</title>{% for path in town.paths %}<path d="{{ path }}"/>{% endfor %}{% for path in town.near %}<path class="townmap-near" d="{{ path }}"/>{% endfor %}</a>{% endfor %}{% endfor %}
+      <g class="townmap-names" aria-hidden="true">{% for group in regions %}{% for town in group.towns %}<text class="townmap-name" x="{{ town.x|stringformat:'.1f' }}" y="{{ town.y|stringformat:'.1f' }}">{% for line in town.lines %}<tspan x="{{ town.x|stringformat:'.1f' }}" dy="{{ line.dy }}">{{ line.text }}</tspan>{% endfor %}</text>{% endfor %}{% endfor %}</g>
+    </svg>
+    <span class="townmap-label townmap-hover" aria-hidden="true" hidden><span></span></span>
+    <span class="townmap-label townmap-pin" aria-hidden="true" hidden>{% if mode == 'pick' %}{% include "storefront/ui_icon.html" with name="check" %}{% endif %}<span></span></span>
+  </div>
+  {% if mode == 'pick' %}
+  {% for group in regions %}<div class="townmap-towns" role="group" aria-label="Towns in {{ group.name }}" data-towns="{{ group.slug }}" hidden>{% for town in group.towns %}<button class="townmap-town" type="button" data-town="{{ town.town }}" data-label="{{ town.label }}" aria-pressed="{{ town.selected|yesno:'true,false' }}">{{ town.label }}</button>{% endfor %}</div>{% endfor %}
+  {% endif %}
+</div>
+<script src="{% static 'storefront/town-map.js' %}?v=4" defer></script>

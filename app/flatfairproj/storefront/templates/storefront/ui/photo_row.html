@@ -1,0 +1,12 @@
+{% load humanize %}
+<article class="calm-photo-row {{ row_class }}"{% if row_id %} id="{{ row_id }}"{% endif %} data-ui="photo-row" tabindex="-1">
+  <div class="calm-row-visual">{% include "storefront/ui/thumbnail.html" %}</div>
+  <div class="calm-row-main">
+    {% if selection_template %}{% include selection_template %}{% endif %}
+    <h3>{% if row_title %}{{ row_title }}{% else %}{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}{% endif %}</h3>
+    <p>{% if meta_template %}{% include meta_template %}{% elif row_meta %}{{ row_meta }}{% elif flat %}${{ flat.askingPrice|floatformat:0|intcomma }}{% endif %}</p>
+    <span class="st{% if flat %} st-{{ flat.status }}{% endif %}">{% if status_template %}{% include status_template %}{% elif row_status %}{{ row_status }}{% else %}{{ flat.get_status_display }}{% endif %}</span>
+  </div>
+  <div class="calm-row-action">{% if action_template %}{% include action_template %}{% elif action_url %}{% include "storefront/ui/row_action.html" %}{% endif %}</div>
+  {% if details_template %}<details class="role-item-more calm-row-details"{% if details_open %} open{% endif %}><summary>Details <span class="visually-hidden">for {% if row_title %}{{ row_title }}{% else %}Blk {{ flat.block }} {{ flat.town|title }}{% endif %}</span></summary><div class="role-item-body">{% include details_template %}</div></details>{% endif %}
+</article>

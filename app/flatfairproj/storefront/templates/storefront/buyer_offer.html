@@ -1,0 +1,23 @@
+{% load humanize l10n offer_tags %}
+<li class="buyer-line" id="offer-{{ offer.pk }}" tabindex="-1">
+  <span class="buyer-line-name">Your offer</span>
+  <span class="buyer-line-facts">${{ offer.amount|floatformat:0|intcomma }}{% if offer.status == 'countered' %} · seller asks ${{ offer.counterAmount|floatformat:0|intcomma }}{% elif offer.status == 'accepted' %} · <a href="mailto:{{ offer.listing.seller.email }}">{{ offer.listing.seller.email }}</a>{% endif %}</span>
+  {% include "storefront/buyer_badge.html" with booking=None %}
+  {% offer_steps offer 'buyer' as steps %}{% if steps %}<span class="buyer-line-note buyer-line-steps">{{ steps }}</span>{% endif %}
+  {% if offer.reply or offer.messages.exists %}
+    <div class="buyer-line-thread">
+      {% include "storefront/offer_thread.html" with viewer='buyer' %}
+      {% if offer.status == 'pending' or offer.status == 'countered' or offer.status == 'accepted' %}
+        <form method="post" action="{% url 'activity_action' %}" class="offer-answer">{% csrf_token %}<input type="hidden" name="id" value="{{ offer.pk }}"><label class="mini-field">Reply to the seller<textarea name="reply" rows="2" maxlength="300" required></textarea></label><button class="btn btn-ghost btn-sm" name="action" value="buyer_reply">Send reply</button></form>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if offer.status == 'accepted' %}{% deal_progress offer as dp %}{% if dp %}<a class="buyer-line-deal" href="{% url 'deal_page' dp.deal.pk %}">Deal {{ dp.done }} of {{ dp.total }}{% if dp.next %} · next: {{ dp.next|lower }}{% endif %}</a>{% endif %}{% endif %}
+  {% if offer.status == 'countered' %}
+    <span class="buyer-line-answer">
+      {% if offer.agreedElsewhere %}<span class="buyer-line-note">You agreed a price on another flat.</span>{% else %}<form method="post" action="{% url 'activity_action' %}">{% csrf_token %}<input type="hidden" name="id" value="{{ offer.pk }}"><input type="hidden" name="counterAmount" value="{{ offer.counterAmount|unlocalize }}"><button class="btn btn-brand btn-sm" name="action" value="accept_counter">Agree on ${{ offer.counterAmount|floatformat:0|intcomma }}</button></form>{% endif %}
+      {% with amount=offer.counterAmount|floatformat:0|intcomma %}{% include 'storefront/activity_form.html' with id=offer.pk action='decline_counter' label='Close my offer' ask='Close your offer and turn down $'|add:amount|add:'?' %}{% endwith %}
+    </span>
+    {% if not offer.agreedElsewhere and offer.listing.status == 'live' %}<div class="buyer-line-suggest">{% include 'storefront/suggest_price.html' %}</div>{% endif %}
+  {% endif %}
+</li>

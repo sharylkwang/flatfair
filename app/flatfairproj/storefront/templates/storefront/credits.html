@@ -1,0 +1,68 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Photo credits · FlatFair{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with plain=True tier="task" title='Photo credits' lead='The estate photos on FlatFair are real photos of Singapore, shared by their photographers.' hide_default_action=True %}
+{% endblock %}
+{% block content %}
+  <div class="credits">
+    <section>
+      <h2>How we use these photos</h2>
+      <p>The photos come from Wikimedia Commons and Flickr. We cropped them and lightly corrected their colour, and we use each one under its licence. Photos under a CC BY-SA licence remain under that licence.</p>
+    </section>
+    <section aria-label="Photo credits">
+      <div class="table-scroll">
+        <table class="tbl credits-table">
+          <caption class="visually-hidden">Photo credits</caption>
+          <thead>
+            <tr>
+              <th>Where used</th>
+              <th>Photo</th>
+              <th>Author</th>
+              <th>Licence</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for photo in photos|slice:':8' %}
+              <tr data-photo="{{ photo.file }}">
+                <td data-label="Where used">{{ photo.usedOn }}</td>
+                <td data-label="Photo"><a href="{{ photo.sourceUrl }}" rel="noopener">{{ photo.title }}</a></td>
+                <td data-label="Author">{{ photo.author }}</td>
+                <td data-label="Licence"><a href="{{ photo.licenceUrl }}" rel="noopener license">{{ photo.licence }}</a></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4">No photo credits yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if photos|length > 8 %}
+        <details class="fold credits-more">
+          <summary>Show all {{ photos|length }} credits</summary>
+          <div class="fold-body table-scroll">
+            <table class="tbl credits-table">
+              <caption class="visually-hidden">More photo credits</caption>
+              <thead>
+                <tr>
+                  <th>Where used</th>
+                  <th>Photo</th>
+                  <th>Author</th>
+                  <th>Licence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for photo in photos|slice:'8:' %}
+                  <tr data-photo="{{ photo.file }}">
+                    <td data-label="Where used">{{ photo.usedOn }}</td>
+                    <td data-label="Photo"><a href="{{ photo.sourceUrl }}" rel="noopener">{{ photo.title }}</a></td>
+                    <td data-label="Author">{{ photo.author }}</td>
+                    <td data-label="Licence"><a href="{{ photo.licenceUrl }}" rel="noopener license">{{ photo.licence }}</a></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

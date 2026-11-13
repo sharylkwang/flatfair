@@ -1,0 +1,12 @@
+{% load humanize %}
+<fieldset class="budget-range mini-field" data-budget-range>
+  <legend><span>Budget</span><output class="budget-readout" aria-live="polite" aria-atomic="true">${{ budgetMin|intcomma }} – ${{ budgetMax|intcomma }}</output></legend>
+  <div class="budget-row">
+    <span class="budget-end">${{ budgetFloor|intcomma }}</span>
+    <div class="budget-track">
+      <input type="range" name="minPrice" min="{{ budgetFloor }}" max="{{ budgetCap }}" step="10000" value="{{ budgetMin }}" aria-label="Lowest price">
+      <input type="range" name="maxPrice" min="{{ budgetFloor }}" max="{{ budgetCap }}" step="10000" value="{{ budgetMax }}" aria-label="Highest price">
+    </div>
+    <span class="budget-end">${{ budgetCap|intcomma }}</span>
+  </div>
+</fieldset>

@@ -1,0 +1,6 @@
+<article class="calm-task-card" data-ui="task-card">
+  <div class="calm-task-visual">{% include "storefront/ui/thumbnail.html" with decorative=True %}</div>
+  <div class="calm-task-copy"><h3>{{ title }}</h3><p>{{ text }}</p>{% if status %}<span class="st">{{ status }}</span>{% endif %}</div>
+  {% if count != None %}<span class="calm-count"><span class="visually-hidden">Count: </span>{{ count }}</span>{% endif %}
+  {% include "storefront/ui/row_action.html" %}
+</article>

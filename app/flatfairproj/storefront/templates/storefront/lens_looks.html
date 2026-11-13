@@ -1,0 +1,4 @@
+{% if popularLooks %}
+<p class="lens-label" id="lens-popular-title">Or pick a look</p>
+<ul class="lens-pills" aria-labelledby="lens-popular-title">{% for look in popularLooks %}<li><a class="chip" href="{% url "lens" %}?photo={{ look.photo.pk }}#results">{{ look.label }}</a></li>{% endfor %}</ul>
+{% endif %}

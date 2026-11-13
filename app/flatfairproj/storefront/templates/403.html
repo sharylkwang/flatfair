@@ -1,0 +1,6 @@
+{% extends 'storefront/base.html' %}
+{% block title %}This page is private · FlatFair{% endblock %}
+{% block page_header %}
+  {% include 'storefront/page_hero.html' with tier="task" title='This page is private' lead='Sign in with a different account, or browse flats.' photo="storefront/photos/error-403.jpg" photo_width=1600 photo_height=1067 photo_small="storefront/photos/error-403-960.jpg" hide_default_action=True extra_template="storefront/error_actions.html" %}
+{% endblock %}
+{% block content %}{% endblock %}

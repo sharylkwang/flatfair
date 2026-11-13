@@ -1,0 +1,23 @@
+{% load humanize %}
+{% if recommendedFlats %}
+<section class="flat-recommendations" aria-labelledby="recommended-flats-title">
+  <div class="recommend-head">
+    <h2 id="recommended-flats-title">Recommended for you</h2>
+    <details class="recommend-why"><summary>Why these?</summary><div class="recommend-why-body">{% include "storefront/recommendation_explanation.html" %}</div></details>
+  </div>
+  <ul class="recommend-row">
+    {% for flat in recommendedFlats %}
+      <li class="recommend-item">
+        <a class="recommend-link" href="{% url 'listing_detail' flat.publicId %}"{% if flat.recommendationReason %} title="{{ flat.recommendationReason }}"{% endif %}>
+          <span class="recommend-photo">{% include "storefront/ui/flat_thumb.html" with size="small" %}</span>
+          <strong>${{ flat.askingPrice|intcomma }}</strong>
+          <span class="recommend-place">{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</span>
+          {% if flat.acceptedCount %}<span class="badge-offer">Under offer</span>{% endif %}
+          {% if flat.recommendationReason %}<span class="visually-hidden">{{ flat.recommendationReason }}</span>{% endif %}
+        </a>
+        {% if savedIds is not None and flat.status == 'live' %}{% include 'storefront/save_menu.html' %}{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}

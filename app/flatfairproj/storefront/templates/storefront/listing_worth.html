@@ -1,0 +1,38 @@
+{% load humanize estate_tags %}
+{% evidence_scale lo est hi flat.askingPrice as scale %}
+<section class="listing-fair{% if est and scale %}{% if flat.askingPrice < lo %} is-low{% elif flat.askingPrice > hi %} is-high{% endif %}{% endif %}" id="listing-worth" aria-labelledby="listing-worth-title">
+{% if est and scale %}
+ <h2 id="listing-worth-title" class="listing-price-verdict">{% include "storefront/ui_icon.html" with name="chart" only %}{% if flat.askingPrice < lo %}This price is on the low side{% elif flat.askingPrice > hi %}This price is on the high side{% else %}This price is fair{% endif %}</h2>
+ <div class="fair-evidence" data-fair-evidence>
+  <div class="evidence-chart">
+   <div
+     class="band fair-band"
+     title="Fair range {{ lo|range_money }}–{{ hi|range_money }}"
+     style="--lo:{{ scale.lo }}%;--hi:{{ scale.hi }}%;--est:{{ scale.est }}%;--asking:{{ scale.asking }}%;"
+     role="img"
+     aria-label="Fair range {{ lo|range_money }}–{{ hi|range_money }}. Estimated price {{ est|typical_price }}. Asking price ${{ flat.askingPrice|intcomma }}.">
+    <span class="evidence-pin evidence-pin--ask" aria-hidden="true">Asking <b>${{ flat.askingPrice|intcomma }}</b></span>
+    <div class="fair-track"><span class="fair-segment"></span><i class="fair-limit fair-limit--low"></i><i class="fair-marker"></i><i class="fair-limit fair-limit--high"></i><i class="asking-marker"></i></div>
+   </div>
+  </div>
+  <dl class="fair-boundaries" aria-label="Fair range boundaries">
+   <div><dt>Low</dt><dd>{{ lo|range_money }}</dd></div>
+   <div><dt>Estimate</dt><dd>{{ est|range_money }}</dd></div>
+   <div><dt>High</dt><dd>{{ hi|range_money }}</dd></div>
+  </dl>
+  <p class="evidence-gap">{% typicalGap flat.askingPrice est %}</p>
+  {% include "storefront/price_uncertainty.html" with town=flat.town flatType=flat.flatType %}
+ </div>
+{% else %}
+ <h2 id="listing-worth-title">What it’s worth</h2>
+ <p class="muted">We can’t compare this flat’s price yet.</p>
+{% endif %}
+</section>
+{% if est and scale %}
+<details class="fold glance-fold glance-method">
+ <summary>{% include "storefront/ui_icon.html" with name="chart" only %}How did we get this price? <span class="fold-hint">From HDB resale prices</span></summary>
+ <div class="fold-body" id="price-method">
+  {% include "storefront/price_explanation.html" with version=flat.modelVersion %}
+ </div>
+</details>
+{% endif %}

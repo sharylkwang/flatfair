@@ -1,0 +1,75 @@
+{% extends 'storefront/base.html' %}
+{% load estate_tags humanize offer_tags %}
+{% block title %}Flats for sale · FlatFair{% endblock %}
+{% block content %}
+  {% include "storefront/recommended_flats.html" %}
+  <div class="browse-shop">
+    <input class="visually-hidden" type="checkbox" id="filters-open">
+    <header class="result-head">
+      <div class="result-title">
+        <h1>Flats for sale</h1>
+        {% if total %}<p class="result-count">{{ total|intcomma }} flat{{ total|pluralize }}</p>{% endif %}
+        {% try_price request.GET.est as yourEstimate %}{% if yourEstimate %}<p class="your-estimate">Your estimated price: <b>${{ yourEstimate|intcomma }}</b>. Each flat shows how its asking price compares.</p>{% endif %}
+      </div>
+      <label class="btn btn-ghost btn-sm browse-filter-open" for="filters-open"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h10m4 0h2M4 17h2m4 0h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>Filters{% if filterChips %}<span class="filter-badge">{{ filterChips|length }}</span>{% endif %}</label>
+      <form class="result-sort" method="get">{% for key,value in sortFields %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}<label for="result-sort">Sort by</label><select id="result-sort" name="sort" data-auto-submit><option value="recommended" {% if sort == 'recommended' %}selected{% endif %}>Sponsored first</option><option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option><option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: low to high</option><option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: high to low</option></select><noscript><button class="btn btn-ghost">Apply</button></noscript></form>
+      {% if filterChips %}
+        <nav class="applied-filters" aria-label="Applied filters">{% for chip in filterChips %}<a class="filter-chip" href="{{ chip.url }}" aria-label="Remove {{ chip.label }}"><span class="filter-label">{{ chip.label }}</span><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg></a>{% endfor %}<a class="clear-filters" href="{% url 'listings' %}">Clear all</a>{% if canBuy %}<form class="save-search" method="post" action="{% url 'save_search' %}">{% csrf_token %}{% for key,value in searchParams.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}<button class="btn btn-link">Save this search</button></form>{% elif not user.is_authenticated %}<a class="save-search" href="{% url 'signin' %}?next={{ request.get_full_path|urlencode }}">Save this search</a>{% endif %}</nav>
+      {% endif %}
+      {% if correctedTown %}<p class="result-note">Showing flats in {{ correctedTown|title }}.</p>{% endif %}
+      {% if searchedEstate %}<p class="result-note">{{ searchedEstate.name }} is part of {{ searchedEstate.town|title }}.</p>{% endif %}
+    </header>
+    <aside class="browse-side">
+      <form class="browse-filters" method="get" aria-label="Filter flats">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        {% if searchQuery or town %}<input type="hidden" name="q" value="{% if searchQuery %}{{ searchQuery }}{% else %}{{ town|title }}{% endif %}">{% endif %}
+        {% if town and searchQuery %}<input type="hidden" name="town" value="{{ town }}">{% endif %}
+        {% if town %}
+        <div class="filter-group filter-where">
+          <span class="filter-where-title">Area</span>
+          <span>{{ town|title }}</span>
+          <a class="clear-filters" href="{{ locationClear }}">Clear<span class="visually-hidden"> area</span></a>
+        </div>
+        {% else %}
+        <fieldset class="filter-group">
+          <legend>Area</legend>
+          <label class="filter-option"><input type="radio" name="region" value=""{% if not region %} checked{% endif %}><span>Any area</span><span class="filter-count">{{ areaTotal|intcomma }}</span></label>
+          {% for choice in areaChoices %}<label class="filter-option"><input type="radio" name="region" value="{{ choice.value }}"{% if choice.value == region %} checked{% endif %}><span>{{ choice.value }}</span><span class="filter-count">{{ choice.total|intcomma }}</span></label>{% endfor %}
+        </fieldset>
+        {% endif %}
+        <fieldset class="filter-group">
+          <legend>Flat type</legend>
+          <label class="filter-option"><input type="radio" name="flatType" value=""{% if not flatType %} checked{% endif %}><span>Any type</span><span class="filter-count">{{ typeTotal|intcomma }}</span></label>
+          {% for choice in typeChoices %}<label class="filter-option"><input type="radio" name="flatType" value="{{ choice.value }}"{% if choice.value == flatType %} checked{% endif %}><span>{{ choice.value|flat_label }}</span><span class="filter-count">{{ choice.total|intcomma }}</span></label>{% endfor %}
+        </fieldset>
+        <div class="filter-group">{% include "storefront/budget_range.html" %}</div>
+        <details class="filter-group filter-more" id="more-filters"{% if moreFilters %} open{% endif %}>
+          <summary>More filters{% if moreFilters %}<span class="filter-badge">{{ moreFilters }}</span>{% endif %}</summary>
+          <div class="filter-more-body">
+            <label class="mini-field">Bedrooms<select name="bedrooms"><option value="">Any</option>{% for n in roomChoices %}<option value="{{ n }}" {% if n == bedrooms %}selected{% endif %}>{{ n }}+</option>{% endfor %}</select></label>
+            <label class="mini-field">Bathrooms<select name="bathrooms"><option value="">Any</option>{% for n in bathChoices %}<option value="{{ n }}" {% if n == bathrooms %}selected{% endif %}>{{ n }}+</option>{% endfor %}</select></label>
+            <label class="mini-field">Size from (sqm)<input inputmode="numeric" autocomplete="off" enterkeyhint="next" name="minSqm" type="number" min="0" max="400" step="5" value="{{ minSqm }}" placeholder="Any"></label>
+            <label class="mini-field">Size up to (sqm)<input inputmode="numeric" autocomplete="off" enterkeyhint="next" name="maxSqm" type="number" min="0" max="400" step="5" value="{{ maxSqm }}" placeholder="Any"></label>
+            <label class="mini-field">Lease left<select name="minLease"><option value="">Any</option>{% for n in leaseChoices %}<option value="{{ n }}" {% if n == minLease %}selected{% endif %}>{{ n }}+ years</option>{% endfor %}</select></label>
+            <label class="check-field"><input name="balcony" type="checkbox" value="1" {% if balcony %}checked{% endif %}> Balcony</label>
+          </div>
+        </details>
+        <div class="filter-actions"><button class="btn btn-brand">Show flats</button></div>
+      </form>
+    </aside>
+    <div class="browse-results">
+      <h2 class="visually-hidden">Results</h2>
+      <div class="browse-grid">{% for flat in listings %}{% include 'storefront/card.html' %}{% empty %}<div class="browse-empty"><span class="empty-icon" aria-hidden="true">{% include "storefront/ui_icon.html" with name="search" %}</span><h2>No flats match these filters.</h2>{% if searchQuery %}<p>Check the spelling or <a href="{% url 'home' %}#shelf-area-title">pick a town on the home page map</a>.</p>{% else %}<p>Try another town, a different flat type or a wider budget.</p>{% endif %}{% if filterChips %}<a class="btn btn-brand" href="{% url 'listings' %}">Clear filters</a>{% else %}<a class="btn btn-brand" href="{% url 'home' %}#shelf-area-title">Pick a town</a>{% endif %}</div>{% endfor %}</div>
+      {% if listings %}<details class="fold tag-legend">
+  <summary>What do the tags mean?</summary>
+  <dl class="fold-body">
+    <div><dt>{% include 'storefront/tag_fair.html' %}</dt><dd>The asking price is close to what similar flats nearby sold for.</dd></div>
+    <div><dt>{% include 'storefront/tag_ad.html' with tag='Sponsored' extra='' %}</dt><dd>The seller paid to show this flat near the top. It says nothing about the price.</dd></div>
+  </dl>
+</details>{% endif %}
+      {% if pageObj.has_other_pages %}
+        <nav class="browse-pagination" aria-label="Results pages">{% if pageObj.has_previous %}<a class="btn btn-ghost" href="?{{ pageQuery }}&amp;page={{ pageObj.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ pageObj.number }} of {{ pageObj.paginator.num_pages }}</span>{% if pageObj.has_next %}<a class="btn btn-ghost" href="?{{ pageQuery }}&amp;page={{ pageObj.next_page_number }}">Next</a>{% endif %}</nav>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

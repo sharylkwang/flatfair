@@ -1,0 +1,9 @@
+{% load humanize estate_tags %}
+
+        <p>{{ flat.flatType|flat_label }} · {{ flat.bedrooms }} bed · {{ flat.bathrooms }} bath · {{ flat.floorAreaSqm|floatformat:'-1' }} sqm · {{ flat.storey|ordinal }} floor</p>
+
+        {% if flat.fairPrice and flat.status != 'sold' %}{% include 'storefront/tag_fair.html' %}{% endif %}
+        {% if flat.adTag %}{% include 'storefront/tag_ad.html' with tag=flat.adTag extra='' %}{% endif %}
+        {% if flat.recommendationReason %}<p>{{ flat.recommendationReason }}</p>{% endif %}
+        {% if savedIds is not None and flat.status == 'live' %}{% include 'storefront/save_menu.html' with big=True %}{% endif %}
+      

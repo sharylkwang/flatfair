@@ -1,0 +1,3 @@
+{% load estate_tags %}{% if page.has_other_pages %}
+  <nav class="activity-tabs" aria-label="{{ label|default:'Activity' }} pages">{% if page.has_previous %}<a href="{% page_url param page.previous_page_number %}{% if fragment %}#{{ fragment }}{% endif %}">Previous</a>{% endif %}<span>{% if label %}{{ label }}: {% endif %}Page {{ page.number }} of {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="{% page_url param page.next_page_number %}{% if fragment %}#{{ fragment }}{% endif %}">Next</a>{% endif %}</nav>
+{% endif %}

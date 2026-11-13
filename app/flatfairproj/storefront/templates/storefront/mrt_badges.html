@@ -1,0 +1,4 @@
+<span class="mrt-codes">{% for badge in badges %}<abbr
+  class="mrt-code"
+  style="--mrt:{{ badge.colour }};--mrt-text:{{ badge.text }}"
+  title="{{ badge.lineName }}">{{ badge.code }}</abbr>{% endfor %}</span>

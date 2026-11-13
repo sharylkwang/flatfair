@@ -1,0 +1,69 @@
+{% load staff_tags estate_tags shop_tags %}
+<details class="phone-menu" data-phone-menu>
+  <summary class="phone-menu-toggle" aria-label="Navigation" aria-controls="phone-sheet" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5h18M3 12h18M3 19h18"/></svg></summary>
+  <div class="phone-menu-shade" data-phone-close aria-hidden="true"></div>
+  <div class="phone-sheet" id="phone-sheet">
+    {% if canBuy and canSell %}
+      <form class="phone-mode-switch" method="post" action="{% url 'switch_mode' %}" aria-label="Buying or selling">
+        {% csrf_token %}<button type="submit" name="mode" value="buyer" aria-pressed="{% if currentMode == 'buyer' %}true{% else %}false{% endif %}">Buying</button><span aria-hidden="true">|</span><button type="submit" name="mode" value="seller" aria-pressed="{% if currentMode == 'seller' %}true{% else %}false{% endif %}">Selling</button>
+      </form>
+    {% endif %}
+    <nav class="phone-primary" aria-label="Phone navigation">
+      {% if header_role == 'staff' %}
+        {% for group in user|staff_menu_groups|slice:":1" %}<h2>{{ group.label }}</h2>{% for item in group.items %}{% include 'storefront/phone_menu_link.html' with route=item.page label=item.label icon=item.icon %}{% endfor %}{% endfor %}
+      {% elif header_role == 'seller' %}
+        {% include 'storefront/phone_menu_link.html' with route='dashboard' label='Dashboard' icon='dashboard' %}
+        {% include 'storefront/phone_menu_link.html' with route='my_listings' label='My listings' icon='home' %}
+        {% include 'storefront/phone_menu_link.html' with route='seller_viewings' label='Offers &amp; viewings' icon='calendar' %}
+        {% include 'storefront/phone_menu_link.html' with route='my_orders' label='Orders' icon='receipt' %}
+        {% include 'storefront/phone_menu_link.html' with route='packages' label='Packages' icon='offer' %}
+      {% elif user.is_authenticated %}
+        {% include 'storefront/phone_menu_link.html' with route='listings' label='Browse flats' icon='search' %}
+        {% include 'storefront/phone_menu_link.html' with route='saved' label='Saved' icon='heart' %}
+        {% include 'storefront/phone_menu_link.html' with route='my_offers' label='Offers &amp; viewings' icon='calendar' %}
+        {% include 'storefront/phone_menu_link.html' with route='valuation' label='Price check' icon='chart' %}
+        {% include 'storefront/phone_menu_link.html' with route='notifications' label='Notifications' icon='chat' menu_count=unread %}
+      {% else %}
+        {% include 'storefront/phone_menu_link.html' with route='listings' label='Browse flats' icon='search' %}
+        {% include 'storefront/phone_menu_link.html' with route='valuation' label='Price check' icon='chart' %}
+        {% include 'storefront/phone_menu_link.html' with route='lens' label='Photo search' icon='search' %}
+        {% include 'storefront/phone_menu_link.html' with route='community' label='Community' icon='people' %}
+      {% endif %}
+    </nav>
+    {% if header_role != 'staff' and header_role != 'seller' %}
+      {% flat_types as shopTypes %}
+      <nav class="phone-types" aria-label="Flat types">{% for kind in shopTypes %}<a href="{% url 'listings' %}?flatType={{ kind|urlencode }}"{% if page == 'listings' and request.GET.flatType == kind %} aria-current="true"{% endif %}>{{ kind|flat_label }}</a>{% endfor %}</nav>
+    {% endif %}
+    {% if user.is_authenticated %}
+      <details class="phone-more">
+        <summary>{% include 'storefront/ui_icon.html' with name='more' %}<span>More</span></summary>
+        <div>
+          {% if header_role == 'staff' %}
+            {% for group in user|staff_menu_groups|slice:"1:" %}<h2>{{ group.label }}</h2>{% for item in group.items %}{% include 'storefront/phone_menu_link.html' with route=item.page label=item.label icon=item.icon %}{% endfor %}{% endfor %}
+            {% for item in user|staff_menu %}{% if item.more %}{% include 'storefront/phone_menu_link.html' with route=item.page label=item.label icon=item.icon %}{% endif %}{% endfor %}
+            {% include 'storefront/phone_menu_link.html' with route='home' label='View site' icon='home' %}
+            {% include 'storefront/phone_menu_link.html' with route='notifications' label='Notifications' icon='chat' menu_count=unread %}
+            {% include 'storefront/phone_menu_link.html' with route='admin_account' label='Account' icon='person' %}
+          {% else %}
+            {% if header_role == 'seller' %}
+              {% include 'storefront/phone_menu_link.html' with route='listings' label='Browse flats' icon='search' %}
+              {% include 'storefront/phone_menu_link.html' with route='valuation' label='Price check' icon='chart' %}
+              {% include 'storefront/phone_menu_link.html' with route='notifications' label='Notifications' icon='chat' menu_count=unread %}
+              {% include 'storefront/phone_menu_link.html' with route='cart' label='Cart' icon='cart' menu_count=cartItems %}
+            {% endif %}
+            {% include 'storefront/phone_menu_link.html' with route='lens' label='Photo search' icon='search' %}
+            {% include 'storefront/phone_menu_link.html' with route='community' label='Community' icon='people' %}
+            {% include 'storefront/phone_menu_link.html' with route='my_messages' label='My messages' icon='mail' menu_count=supportUnread %}
+            {% include 'storefront/phone_menu_link.html' with route='support' label='Support' icon='support' %}
+            {% include 'storefront/phone_menu_link.html' with route='account_settings' label='Account' icon='person' %}
+            {% if canBuy and not canSell %}{% include 'storefront/phone_menu_link.html' with route='start_selling' label='Start selling' icon='plus' %}{% elif canSell and not canBuy %}{% include 'storefront/phone_menu_link.html' with route='start_buying' label='Start buying' icon='search' %}{% endif %}
+          {% endif %}
+          <form method="post" action="{% url 'signout' %}">{% csrf_token %}<button class="phone-menu-row" type="submit">{% include 'storefront/ui_icon.html' with name='signout' %}<span>Sign out</span></button></form>
+        </div>
+      </details>
+    {% else %}
+      {% include 'storefront/phone_menu_link.html' with route='signin' label='Sign in' icon='signin' %}
+      <a class="btn btn-brand phone-menu-list" href="{% url 'register' %}?role=seller">{% include 'storefront/ui_icon.html' with name='plus' %}List your flat</a>
+    {% endif %}
+  </div>
+</details>

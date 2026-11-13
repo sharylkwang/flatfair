@@ -1,0 +1,15 @@
+{% extends "storefront/base.html" %}
+{% block title %}{% if startingMode == "seller" %}Start selling{% else %}Start buying{% endif %} · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <section class="auth-form start-mode">
+      <h1>{% if startingMode == "seller" %}Start selling{% else %}Start buying{% endif %}</h1>
+      <p>{% if startingMode == "seller" %}You’ll use the same account, and your saved flats and offers stay. Next, list your flat free.{% else %}You’ll use the same account, and your listings and orders stay. Next, browse flats.{% endif %}</p>
+      <div class="start-mode-actions">
+        <form method="post">{% csrf_token %}<button class="btn btn-brand">{% if startingMode == "seller" %}Start selling{% else %}Start buying{% endif %}</button></form>
+        <a class="btn btn-ghost" href="{% url "home" %}">Back to home</a>
+      </div>
+    </section>
+  </div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'storefront/base.html' %}
+{% block title %}Change viewing time · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form cancel-form" method="post" action="{% url 'move_viewing' %}">
+      {% csrf_token %}
+      <input type="hidden" name="booking" value="{{ booking.pk }}">
+      <input type="hidden" name="from" value="{{ from }}">
+      <h1>Change your viewing time</h1>
+      <p class="hint">{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} · now {{ booking.slot.startsAt|date:'D j M, g:i' }}{{ booking.slot.startsAt|date:'A'|lower }}</p>
+      {% if movedBefore %}
+        <p class="cancel-count">You’ve already moved this viewing once. To change it again, please cancel it and book another time.</p>
+      {% elif not flatOpen %}
+        <p class="cancel-count">The seller has paused this flat for now, so you can’t move your viewing. It stays booked at the current time.</p>
+      {% elif pausedUntil %}
+        <p class="cancel-count">You’ve cancelled {{ cancelLimit }} confirmed viewings in the last {{ cancelDays }} days, so you can’t move a viewing until {{ pausedUntil|date:'j M' }}.</p>
+      {% elif times %}
+        <fieldset class="cancel-reasons">
+          <legend>Pick a new time</legend>
+          {% for slot in times %}
+            <label class="cancel-reason"><input type="radio" name="slot" value="{{ slot.pk }}" required><span>{{ slot.startsAt|date:'D j M, g:i' }}{{ slot.startsAt|date:'A'|lower }} · {{ slot.placesLeft }} spot{{ slot.placesLeft|pluralize }} left</span></label>
+          {% endfor %}
+        </fieldset>
+        <p class="field-hint">We’ll free up your current time and ask the seller to agree to the new one. You can move a viewing once, and it doesn’t count as a cancellation.</p>
+      {% else %}
+        <p class="cancel-count">There are no other open times for this flat right now. You can keep your current time, or cancel it from the flat’s page.</p>
+      {% endif %}
+      <div class="btn-pair">
+        {% if times and flatOpen and not movedBefore and not pausedUntil %}<button class="btn btn-brand">Move my viewing</button>{% endif %}
+        <a class="btn btn-ghost" href="{{ back }}">Keep current time</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

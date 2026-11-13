@@ -1,0 +1,25 @@
+{% load humanize estate_tags %}
+{% evidence_scale lo est hi asking as scale %}
+{% if est and scale %}
+  <div class="fair-evidence" data-fair-evidence>
+    <p class="evidence-title{% if not asking %} evidence-title--price{% endif %}" role="heading" aria-level="{{ level|default:2 }}">{% if asking %}{% if asking < lo %}{% if yours %}Your{% else %}This{% endif %} price is on the low side{% elif asking > hi %}{% if yours %}Your{% else %}This{% endif %} price is on the high side{% else %}{% if yours %}Your{% else %}This{% endif %} price is fair{% endif %}{% else %}<span>Estimated price</span> <b>{{ est|typical_price|capfirst }}</b>{% endif %}</p>
+    {% include "storefront/price_uncertainty.html" %}
+    <div class="evidence-chart">
+      <div class="band fair-band{% if not asking %} fair-band--plain{% endif %}" style="--lo:{{ scale.lo }}%;--hi:{{ scale.hi }}%;--est:{{ scale.est }}%;{% if asking %}--asking:{{ scale.asking }}%;{% endif %}" role="img" aria-label="Fair range {{ lo|range_money }}–{{ hi|range_money }}. Estimated price {{ est|typical_price }}.{% if asking %} {% if yours %}Your{% else %}Asking{% endif %} price ${{ asking|intcomma }}.{% endif %}">
+        {% if asking %}<span class="evidence-pin evidence-pin--est" aria-hidden="true">Our estimate <b>{{ est|typical_price }}</b></span>{% endif %}
+        <div class="fair-track"><span class="fair-segment"></span><i class="fair-marker"></i>{% if asking %}<i class="asking-marker"></i>{% endif %}</div>
+        {% if asking %}<span class="evidence-pin evidence-pin--ask" aria-hidden="true">{% if yours %}Your{% else %}Asking{% endif %} price <b>${{ asking|intcomma }}</b></span>{% endif %}
+      </div>
+    </div>
+    {% include "storefront/fair_boundaries.html" %}
+    {% if asking %}<p class="evidence-gap">{% if yours %}{% price_gap asking lo est hi 'Your price' %}{% else %}{% price_gap asking lo est hi %}{% endif %}{% if tag_note %}{% if asking < lo or asking > hi %} Price it between {{ lo|range_money }} and {{ hi|range_money }} to earn the free Fair price tag.{% endif %}{% endif %}</p>{% endif %}
+    {% if not hide_note %}
+      <details class="evidence-method">
+        <summary>How did we get this price?</summary>
+        {% include "storefront/price_explanation.html" %}
+      </details>
+    {% endif %}
+  </div>
+{% else %}
+  <p class="muted">We can’t compare this flat’s price yet.</p>
+{% endif %}

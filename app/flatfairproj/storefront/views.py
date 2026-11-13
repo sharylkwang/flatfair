@@ -52,6 +52,29 @@ from .search import (
 )
 from .valuation import band, TOWNS
 
+LISTINGS_PER_PAGE = 12
+
+
+
+def browseReturn(request, value):
+    backup = reverse("listings")
+
+    if not url_has_allowed_host_and_scheme(
+        value, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return backup
+
+    if value != backup and not value.startswith(backup + "?"):
+        return backup
+
+    parts = urlsplit(value)
+
+    if parts.scheme or parts.netloc or parts.path != backup or parts.fragment:
+        return backup
+
+    return value
+
+
 def home(request):
     if any(key in request.GET for key in SEARCH_FIELDS):
         return redirect(reverse("listings") + "?" + request.META.get("QUERY_STRING", ""))
@@ -141,6 +164,115 @@ def home(request):
         )
 
     return render(request, "storefront/home.html", context)
+
+
+def listings(request):
+    sorts = {
+        "price_asc": ("askingPrice", "pk"),
+        "price_desc": ("-askingPrice", "-pk"),
+        "newest": ("-createdAt", "-pk"),
+    }
+
+    ranked, filters = findHomes(request.GET)
+    ranked = ranked.annotate(acceptedCount=hasDeal())
+    sort = request.GET.get("sort", "recommended")
+
+    if sort in sorts:
+        ranked = ranked.order_by(*sorts[sort])
+    else:
+        sort = "recommended"
+        ranked = ranked.annotate(
+            hasPhotos=Exists(ListingPhoto.objects.filter(listing_id=OuterRef("pk")))
+        )
+        ranked = ranked.order_by("-rank", "-hasPhotos", "taken", "-createdAt", "-pk")
+
+    page = Paginator(ranked, LISTINGS_PER_PAGE).get_page(request.GET.get("page"))
+    flats = list(page.object_list)
+    prefetch_related_objects(flats, picsByRoom())
+    page.object_list = decorate(flats)
+    query = request.GET.copy()
+    query.pop("page", None)
+    query.pop("map", None)
+
+    if filters["searchQuery"]:
+        query["q"] = filters["searchQuery"]
+    else:
+        query.pop("q", None)
+
+    for field in ("town", "region", "flatType"):
+        if filters[field]:
+            query[field] = filters[field]
+        else:
+            query.pop(field, None)
+
+    for field in ("minPrice", "maxPrice"):
+        if filters[field] != "":
+            query[field] = str(filters[field])
+        else:
+            query.pop(field, None)
+
+    labels = {
+        "q": filters["searchQuery"],
+        "town": str(filters["town"]).title(),
+        "region": filters["region"],
+        "flatType": str(filters["flatType"]).replace(" ROOM", "-room").capitalize(),
+        "minPrice": f"From ${filters['minPrice']:,}" if filters["minPrice"] != "" else "",
+        "maxPrice": f"Up to ${filters['maxPrice']:,}" if filters["maxPrice"] != "" else "",
+        "minSqm": f"From {float(filters['minSqm']):g} sqm" if filters["minSqm"] else "",
+        "maxSqm": f"Up to {float(filters['maxSqm']):g} sqm" if filters["maxSqm"] else "",
+        "bedrooms": f"{filters['bedrooms']}+ bedrooms" if filters["bedrooms"] else "",
+        "bathrooms": f"{filters['bathrooms']}+ bathrooms" if filters["bathrooms"] else "",
+        "minLease": f"{filters['minLease']}+ years left on lease" if filters["minLease"] else "",
+        "balcony": "Balcony" if filters["balcony"] else "",
+    }
+
+    chips = []
+    placeOk = ""
+
+    for key, label in labels.items():
+        if label:
+            left = query.copy()
+            left.pop(key, None)
+            chips.append({"label": label, "url": "?" + left.urlencode()})
+
+            if key in ("town", "region"):
+                placeOk = chips[-1]["url"]
+
+    sort_by = []
+
+    for key, values in query.lists():
+        if key == "sort":
+            continue
+
+        for value in values:
+            sort_by.append((key, value))
+
+    typeRows, typeAll = typeCounts(query, filters["priceCap"])
+    areaRows, areaAll = ([], 0) if filters["town"] else zoneCounts(query, filters["priceCap"])
+
+    context = {
+        **filters,
+        "correctedTown": correctedTown(request.GET),
+        "searchedEstate": searchedEstate(request.GET),
+        "locationClear": placeOk,
+        "typeChoices": typeRows,
+        "areaChoices": areaRows,
+        "areaTotal": areaAll,
+        "typeTotal": typeAll,
+        "listings": page.object_list,
+        "pageObj": page,
+        "sort": sort,
+        "filterChips": chips,
+        "sortFields": sort_by,
+        "total": page.paginator.count,
+        "pageQuery": query.urlencode(),
+        "browseReturn": browseReturn(request, request.get_full_path()),
+        "searchParams": tidySearch(query),
+        **(picksData(request) if not chips else {}),
+        **save_data(request.user),
+    }
+
+    return render(request, "storefront/listings.html", context)
 
 
 def layoutUrl(form):
@@ -403,6 +535,22 @@ def valuation(request):
     return showWorth(request, context)
 
 
+def countView(request, flat):
+    if request.user.is_staff or (
+        request.user.is_authenticated and flat.seller_id == request.user.pk
+    ):
+        return
+
+    seen = request.session.get("seenListings", [])
+
+    if flat.pk in seen:
+        return
+
+    Listing.objects.filter(pk=flat.pk).update(viewCount=F("viewCount") + 1)
+    seen.append(flat.pk)
+    request.session["seenListings"] = seen[-200:]
+
+
 def listing_detail(request, publicId):
     flat = get_object_or_404(withTier(Listing.objects.select_related("seller")), publicId=publicId)
     prefetch_related_objects([flat], picsByRoom())
@@ -518,6 +666,49 @@ def listing_detail(request, publicId):
     return render(request, "storefront/listing_detail.html", context)
 
 
+@require_GET
+def listing_photo(request, publicId, room):
+    flat = get_object_or_404(Listing, publicId=publicId)
+    public = Listing.objects.public().filter(pk=flat.pk).exists()
+
+    if not public and not canSeeFlat(request.user, flat):
+        raise Http404
+
+    photo = get_object_or_404(flat.photos, room=room)
+
+    try:
+        reply = FileResponse(photo.image.open("rb"))
+    except (OSError, ValueError):
+        raise Http404
+
+    reply["Cache-Control"] = "public, max-age=0, must-revalidate" if public else "private, no-store"
+
+    reply["X-Content-Type-Options"] = "nosniff"
+
+    return reply
+
+
+@require_GET
+def address_search(request):
+    return JsonResponse({"results": address.search(request.GET.get("q", "")[:60])})
+
+
+def terms(request):
+    return render(request, "storefront/terms.html")
+
+
+def credits(request):
+    return render(
+        request,
+        "storefront/credits.html",
+        {"photos": sorted(picCredits()["photos"], key=lambda photo: photo["usedOn"])},
+    )
+
+
+# Show the listing plans
+
+
+
 @login_required
 @needEmail
 def my_offers(request):
@@ -527,6 +718,128 @@ def my_offers(request):
     return render(request, "storefront/my_offers.html", buy_data(request.user, request.GET))
 
 
+
+
+
+def lensDemo():
+    from collections import Counter
+    from . import lens as photoSearch
+    from storefront.templatetags.estate_tags import FIXED_FEATURES
+
+    photos = (
+        ListingPhoto.objects.filter(
+            listing__in=Listing.objects.public().filter(status="live"),
+            modelVersion=photoSearch.MODEL_VERSION,
+            embedding__isnull=False,
+        )
+        .exclude(image="")
+        .select_related("listing")
+        .only(
+            "pk",
+            "room",
+            "image",
+            "tags",
+            "embedding",
+            "aiIrrelevant",
+            "listing__publicId",
+            "listing__town",
+        )
+        .order_by("pk")
+    )
+
+    byGroup, byRoom, traitPics = {}, {}, {}
+    morePics = []
+    traitNums = Counter()
+
+    for photo in photos.iterator(chunk_size=100):
+        if photoSearch.validEmbedding(photo.embedding) is None or not photoSearch.scoreOk(
+            photo.aiIrrelevant
+        ):
+            continue
+
+        group = photo.room
+
+        if photo.room.startswith(("master_bedroom", "bedroom_")):
+            group = "bedroom"
+        elif "toilet" in photo.room:
+            group = "bathroom"
+        elif photo.room not in ("living_room", "kitchen", "balcony"):
+            group = "other"
+
+        byGroup.setdefault(group, photo)
+        byRoom.setdefault(photo.room, photo)
+
+        if len(morePics) < 6:
+            morePics.append(photo)
+
+        labels = {
+            feature[0]
+            for tag in photo.tags or []
+            if (feature := FIXED_FEATURES.get(str(tag).strip().lower()))
+        }
+
+        traitNums.update(labels)
+
+        for label in labels:
+            traitPics.setdefault(label, photo)
+
+    groups = ("living_room", "kitchen", "bedroom", "bathroom", "balcony", "other")
+    preferred = [byGroup[group] for group in groups if group in byGroup]
+    samples = list(
+        {photo.pk: photo for photo in [*preferred, *byRoom.values(), *morePics]}.values()
+    )[:6]
+    popular = sorted(traitNums, key=lambda label: (-traitNums[label], label))[:4]
+
+    return {
+        "lensSamples": samples,
+        "popularLooks": [{"label": label, "photo": traitPics[label]} for label in popular],
+    }
+
+
+def lens(request):
+    from base64 import b64encode
+    from io import BytesIO
+    from PIL import Image, ImageOps
+    from . import lens as photoSearch
+
+    context = {"form": photoSearch.LensForm()}
+
+    if request.method == "POST":
+        photoSearch.fromUpload(request, context)
+
+        if context.get("searched"):
+            upload = context["form"].cleaned_data["photo"]
+            upload.seek(0)
+
+            with Image.open(upload) as source:
+                image = ImageOps.exif_transpose(source)
+                image.thumbnail((320, 240))
+                output = BytesIO()
+                image.convert("RGB").save(output, "JPEG", quality=75, optimize=True)
+
+            context["submittedPhoto"] = "data:image/jpeg;base64," + b64encode(
+                output.getvalue()
+            ).decode("ascii")
+    elif "photo" in request.GET:
+        photoSearch.fromPic(request, context)
+    else:
+        from sellerpanel.photoqueue import warmWorker
+
+        warmWorker()
+
+    readyPics([match["flat"] for match in context.get("matches", [])])
+
+    for match in context.get("matches", []):
+        rooms = [photo.pk for photo in match["flat"].orderedPhotos()]
+
+        if match["photo"].pk in rooms:
+            match["number"] = rooms.index(match["photo"].pk) + 1
+
+    context["form"].fields["photo"].widget.attrs["accept"] = "image/jpeg,image/png"
+    context.update(lensDemo())
+    context.update(picksData(request))
+
+    return render(request, "storefront/lens.html", context)
 
 
 

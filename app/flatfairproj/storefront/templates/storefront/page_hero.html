@@ -1,0 +1,24 @@
+{% load static %}
+{% with hero_photo=photo %}
+  <section class="page-hero{% if hero_photo %} page-hero-photo{% else %} page-hero-text{% endif %}"{% if hero_photo %} data-photo-surface{% endif %} data-tier="{% if tier == 'task' or not tier and compact %}task{% else %}marketing{% endif %}"{% if tier == 'task' or not tier and compact %} data-compact{% endif %} data-header="light" style="--hero-panel:var(--{% if tier == 'task' or not tier and compact %}sky{% else %}{{ panel_tone|default:'sky' }}{% endif %});{% if photo_position %}--hero-position:{{ photo_position }};{% endif %}">
+    <div class="wrap page-hero-inner">
+      <div class="page-hero-copy">
+        <h1>{% if title_prefix %}{{ title_prefix }} {% endif %}{{ title }}{% if title_suffix %} {{ title_suffix }}{% endif %}{% if title_next %} <span class="page-hero-title-next">{{ title_next }}</span>{% endif %}</h1>
+        {% if show_count %}
+          <p class="page-hero-lead">{% if count %}{{ count }} flat{{ count|pluralize }}, each sold by its owner.{% else %}Every flat here is sold by its owner.{% endif %}</p>
+        {% elif lead %}
+          <p class="page-hero-lead">{{ lead }}</p>
+        {% endif %}
+        {% if extra_template %}
+          {% include extra_template %}
+        {% endif %}
+        {% if action_url %}<a class="btn btn-brand" href="{{ action_url }}">{{ action_label }}</a>{% elif hide_default_action %}{% elif request.resolver_match.url_name == 'listings' %}{% elif request.resolver_match.url_name == 'valuation' %}<a class="btn btn-ghost" href="{% url 'packages' %}">Explore selling packages</a>{% elif request.resolver_match.url_name == 'support' %}<a class="btn btn-ghost" href="mailto:support@flatfair.sg">Email support</a>{% else %}<a class="btn btn-ghost" href="{% url 'listings' %}">Explore flats</a>{% endif %}
+      </div>
+      {% if hero_photo %}
+        <div class="page-hero-image" aria-hidden="true">
+          <img src="{% static hero_photo %}?r=2" srcset="{% if photo_small %}{% static photo_small %}?r=2 {{ photo_small_width|default:960 }}w, {% endif %}{% static hero_photo %}?r=2 {{ photo_width|default:1672 }}w" sizes="220px" width="{{ photo_width|default:1672 }}" height="{{ photo_height|default:941 }}" alt="" decoding="sync" loading="eager" fetchpriority="high">
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endwith %}

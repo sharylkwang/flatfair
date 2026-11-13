@@ -1,0 +1,2 @@
+{% load humanize l10n %}
+{% if offer.status == 'countered' and not offer.agreedElsewhere %}<form method="post" action="{% url 'activity_action' %}">{% csrf_token %}<input type="hidden" name="id" value="{{ offer.pk }}"><input type="hidden" name="counterAmount" value="{{ offer.counterAmount|unlocalize }}"><button class="btn btn-brand btn-sm" name="action" value="accept_counter">Agree on ${{ offer.counterAmount|floatformat:0|intcomma }}</button></form>{% else %}<a class="btn btn-ghost btn-sm" href="{% url 'listing_detail' offer.listing.publicId %}">View flat</a>{% endif %}

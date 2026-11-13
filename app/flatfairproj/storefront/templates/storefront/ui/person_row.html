@@ -1,0 +1,6 @@
+<article class="calm-person-row"{% if row_id %} id="{{ row_id }}"{% endif %} data-ui="person-row">
+  <span class="avatar-initials" aria-hidden="true">{{ initial|default:title|slice:":1"|upper }}</span>
+  <div><h3>{{ title }}</h3>{% if text %}<p>{{ text }}</p>{% endif %}{% if status %}<span class="st">{{ status }}</span>{% endif %}</div>
+  {% if action_url %}<a class="btn btn-ghost btn-sm" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+  {% if details_template %}<details class="calm-person-details"><summary>Details<span class="visually-hidden"> for {{ title }}</span></summary><div class="role-item-body">{% include details_template %}</div></details>{% endif %}
+</article>

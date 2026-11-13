@@ -1,0 +1,31 @@
+{% extends 'storefront/base.html' %}
+{% load estate_tags %}
+{% block title %}Cancel viewing · FlatFair{% endblock %}
+{% block body_class %} auth-page{% endblock %}
+{% block content %}
+  <div class="auth-layout auth-solo">
+    <form class="auth-form cancel-form" method="post" action="{% url 'activity_action' %}">
+      {% csrf_token %}
+      <input type="hidden" name="id" value="{{ target }}">
+      <input type="hidden" name="action" value="{{ kind }}">
+      <input type="hidden" name="confirm" value="yes">
+      <input type="hidden" name="cancelPage" value="1">
+      <h1>Cancel this viewing?</h1>
+      <p class="hint">{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }} · {{ slot.startsAt|date:'D j M, g:i' }}{{ slot.startsAt|date:'A'|lower }}{% if by == 'seller' %}{% for booking in people %}{% if forloop.first %} · with {% elif forloop.last %} and {% else %}, {% endif %}{{ booking.buyer|buyer_name }}{% endfor %}{% endif %}</p>
+      <fieldset class="cancel-reasons">
+        <legend>Why are you cancelling?</legend>
+        {% for value, label in reasons %}
+          <label class="cancel-reason"><input type="radio" name="reason" value="{{ value }}" required{% if chosen == value %} checked{% endif %}><span>{{ label }}</span></label>
+        {% endfor %}
+      </fieldset>
+      <label class="mini-field">Anything to add (optional)<textarea name="note" rows="2" maxlength="200" aria-describedby="cancel-note-hint"></textarea><span class="field-hint" id="cancel-note-hint">{% if by == 'buyer' %}The seller sees your reason.{% else %}The buyer sees your reason.{% endif %} Please write a few words if you chose “Something else”.</span></label>
+      {% if counts %}
+        <p class="cancel-count">This will be cancellation {{ cancelNumber }} of {{ cancelLimit }} in {{ cancelDays }} days. {% if lastAllowed %}After this one you can’t {% if by == 'buyer' %}book another viewing{% else %}add viewing times{% endif %} for a while.{% else %}After {{ cancelLimit }}, you can’t {% if by == 'buyer' %}book new viewings{% else %}add viewing times{% endif %} for a while.{% endif %}</p>
+      {% endif %}
+      <div class="btn-pair">
+        <button class="btn btn-danger">Cancel viewing</button>
+        <a class="btn btn-ghost" href="{{ back }}">Keep viewing</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

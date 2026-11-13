@@ -1,0 +1,144 @@
+{% load offer_tags humanize l10n estate_tags %}
+<section class="activity-card" id="listing-action-card" tabindex="-1" aria-label="Offer or visit">
+  {% if flat.status == 'paused' %}
+    <h2 class="activity-heading">Paused for now</h2>
+    <p class="meta">The seller has paused this flat, so you can’t make an offer or book a viewing just now. {% if myOffer and myBookedSlots %}Your offer and viewing stay as they are, and we’ll tell you when it’s back.{% elif myOffer %}Your offer stays open, and we’ll tell you when it’s back.{% elif myBookedSlots %}Your viewing stays booked, and we’ll tell you when it’s back.{% else %}Please check back soon.{% endif %}</p>
+    {% if myOffer or myBookedSlots %}<a class="btn btn-ghost btn-block" href="{% url 'my_offers' %}">See my offers and viewings</a>{% endif %}
+  {% elif not canTransact and flat.status == 'review' and myOffer.status == 'accepted' %}
+    <p class="meta">The seller accepted your offer of ${{ myOffer.amount|floatformat:0|intcomma }}. They’re updating the listing, so other buyers can’t see it for now. Your agreed price still stands.</p>
+  {% elif not canTransact %}
+    <p class="meta">This flat isn’t open for offers or viewings.</p>
+  {% elif not user.is_authenticated or not isBuyer %}
+    {% if user.is_authenticated %}
+      <a class="btn btn-brand btn-block" href="{% url 'start_buying' %}">Start buying</a>
+      <p class="meta">Turn on buying to make an offer or book a viewing.</p>
+    {% else %}
+      <a class="btn btn-brand btn-block" href="{% url 'signin' %}?next={{ request.path|urlencode }}%23listing-action-card">Sign in to make an offer or visit</a>
+    {% endif %}
+    {% if activitySlots %}
+      <div class="viewing-times">
+        <h2 class="activity-heading">Viewing times</h2>
+        <ul>
+          {% for slot in activitySlots %}<li>{{ slot.startsAt|date:'D j M, g:i' }}{{ slot.startsAt|date:'A'|lower }} <small>{{ slot.placesLeft }} spot{{ slot.placesLeft|pluralize }} left</small></li>{% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <p class="meta">No viewing times yet.</p>
+    {% endif %}
+  {% elif flat.status == 'live' %}
+    {% if myOffer %}
+      <div class="offer-sent is-{{ myOffer.status }}" id="your-offer">
+        <div class="buy-state"><h2 class="activity-heading">Your offer</h2>{% include "storefront/buyer_badge.html" with offer=myOffer booking=None %}</div>
+        {% if myOffer.status == 'countered' %}
+          <p class="offer-sent-title">Seller asks ${{ myOffer.counterAmount|floatformat:0|intcomma }}</p>
+          {% offer_steps myOffer 'buyer' as steps %}
+          <p class="meta">{% if steps %}{{ steps }}{% else %}You offered ${{ myOffer.amount|floatformat:0|intcomma }}.{% endif %}</p>
+          {% if myOffer.reply %}<p class="offer-reply"><b>The seller replied:</b> {{ myOffer.reply }}</p>{% endif %}
+          {% if myOffer.agreedElsewhere %}
+            <p class="meta">You’ve already agreed a price on another flat. Ask that seller to undo it first.</p>
+          {% else %}
+            <form method="post" action="{% url 'activity_action' %}">{% csrf_token %}<input type="hidden" name="id" value="{{ myOffer.pk }}"><input type="hidden" name="counterAmount" value="{{ myOffer.counterAmount|unlocalize }}"><button class="btn btn-brand btn-block" name="action" value="accept_counter">Agree on ${{ myOffer.counterAmount|floatformat:0|intcomma }}</button></form>
+            {% include 'storefront/suggest_price.html' with offer=myOffer %}
+          {% endif %}
+          {% with amount=myOffer.counterAmount|floatformat:0|intcomma %}
+            {% include 'storefront/activity_form.html' with id=myOffer.pk action='decline_counter' label='Close my offer' ask='Close your offer and turn down $'|add:amount|add:'?' %}
+          {% endwith %}
+        {% elif myOffer.status == 'accepted' %}
+          <p class="offer-sent-title">${{ myOffer.amount|floatformat:0|intcomma }}</p>
+          {% deal_progress myOffer as dp %}
+          {% if dp %}
+            <p class="meta">{% if dp.deal.status == 'complete' %}The sale is complete.{% else %}Deal: {{ dp.done }} of {{ dp.total }} steps done{% if dp.next %} · Next: {{ dp.next }} ({{ dp.nextWho|lower }}){% if dp.dueOn %}, by {{ dp.dueOn|date:'j M' }}{% endif %}{% endif %}{% endif %}</p>
+            <a class="btn btn-ghost btn-block" href="{% url 'deal_page' dp.deal.pk %}">Open your deal</a>
+          {% else %}
+            <p class="meta">Next: email the seller to arrange HDB’s Option to Purchase. Have your HFE letter ready.</p>
+          {% endif %}
+          {% if myOffer.reply %}<p class="offer-reply"><b>The seller replied:</b> {{ myOffer.reply }}</p>{% endif %}
+          <a class="btn btn-brand btn-block" href="mailto:{{ flat.seller.email }}">Email the seller</a>
+          <p class="meta offer-contact">{{ flat.seller.get_full_name|default:flat.seller.email }} · {{ flat.seller.email }}</p>
+        {% else %}
+          <p class="offer-sent-title">${{ myOffer.amount|floatformat:0|intcomma }}</p>
+          <p class="meta">{% asking_gap myOffer.amount flat.askingPrice %}</p>
+          {% offer_steps myOffer 'buyer' as steps %}{% if steps %}<p class="meta">{{ steps }}</p>{% endif %}
+          {% if lo and hi %}
+            {% evidence_scale lo est hi myOffer.amount as offerScale %}
+            {% include 'storefront/position_bar.html' with scale=offerScale label='Your offer compared with similar sales' low=lo|range_money high=hi|range_money %}
+          {% endif %}
+          {% if myOffer.reply %}<p class="offer-reply"><b>The seller replied:</b> {{ myOffer.reply }}</p>{% endif %}
+          {% with where=flat.town|title %}
+            {% include 'storefront/activity_form.html' with id=myOffer.pk action='withdraw' label='Withdraw offer' ask='Withdraw your offer on Blk '|add:flat.block|add:' '|add:where|add:'? You can make a new one later.' %}
+          {% endwith %}
+        {% endif %}
+      </div>
+    {% else %}
+      <form method="post" action="{% url 'activity_action' %}" class="stack buyer-offer-form">
+        {% csrf_token %}
+        <input type="hidden" name="id" value="{{ flat.publicId }}">
+        <input type="hidden" name="action" value="offer">
+        <fieldset class="stack">
+          <legend class="visually-hidden">Offer price</legend>
+          <label class="mini-field">Your offer ($)<input inputmode="numeric" autocomplete="off" enterkeyhint="send" id="offer-amount" name="amount" type="number" min="{% widthratio flat.askingPrice 2 1 %}" max="3000000" step="1" value="{% if offerError %}{{ request.POST.amount }}{% else %}{{ flat.askingPrice }}{% endif %}" required{% if offerError.field == 'amount' %} aria-invalid="true" aria-describedby="offer-error"{% endif %}></label>
+          {% if offerError.field == 'amount' %}<p class="err" id="offer-error" role="alert">{{ offerError.text }}</p>{% endif %}
+          <div class="chips-row"><button class="fchip" type="button" data-offer-amount="{{ offer97 }}">3% below</button><button class="fchip" type="button" data-offer-amount="{{ offer95 }}">5% below</button><button class="fchip" type="button" data-offer-amount="{{ flat.askingPrice }}">Asking</button></div>
+          <p class="meta">{% if offerError and request.POST.amount %}{% asking_gap request.POST.amount flat.askingPrice %} {% endif %}{% if lo and hi %}{% if est %}Our estimate <b>{{ est|range_money }}</b> · {% endif %}Fair range <span class="price-range">{{ lo|range_money }}–{{ hi|range_money }}</span>{% else %}We can’t compare this flat’s price yet.{% endif %}</p>
+          {% if flat.autoDeclineLow and lo %}<p class="meta offer-floor-note">This seller considers offers from <b>{{ lo|range_money }}</b>. Lower offers are declined automatically.</p>{% endif %}
+        </fieldset>
+        <details class="offer-extra"{% if offerError and request.POST.message or offerError and request.POST.hasHfe %} open{% endif %}>
+          <summary>Add a message or HFE letter</summary>
+          <fieldset class="stack">
+            <legend class="visually-hidden">Message and HFE letter</legend>
+            <label class="mini-field">Private message (optional)<textarea name="message" maxlength="300" rows="2" placeholder="e.g. We can move in after March."{% if offerError.field == 'message' %} aria-invalid="true" aria-describedby="offer-error"{% endif %}>{% if offerError %}{{ request.POST.message }}{% endif %}</textarea></label>
+            {% if offerError.field == 'message' %}<p class="err" id="offer-error" role="alert">{{ offerError.text }}</p>{% endif %}
+            <label class="check-field"><input type="checkbox" name="hasHfe" value="yes"{% if offerError and request.POST.hasHfe %} checked{% endif %}> I have a valid HDB Flat Eligibility (HFE) letter</label>
+          </fieldset>
+        </details>
+        <button class="btn btn-brand btn-block" type="submit">Send offer</button>
+      </form>
+    {% endif %}
+    {% if myBookedSlots %}
+      <div class="viewing-mine" id="your-viewing">
+        <h2 class="activity-heading">Your viewing</h2>
+        <ul>
+          {% for slot in activitySlots %}{% if slot.myBooking %}
+            <li>
+              <span class="viewing-when">{{ slot.startsAt|date:'D j M, g:i' }}{{ slot.startsAt|date:'A'|lower }}</span>
+              {% include "storefront/buyer_badge.html" with booking=slot.myBooking offer=None %}
+              {% if slot.myBooking.status == 'confirmed' %}<a class="btn btn-link btn-sm" href="{% url 'booking_calendar' slot.myBooking.pk %}">Add to calendar <span class="visually-hidden">for {{ slot.startsAt|date:'D j M' }}</span></a>{% endif %}
+              <span class="viewing-mine-actions">{% if not slot.myBooking.movedFromStatus %}<a class="btn btn-ghost btn-sm" href="{% url 'move_viewing' %}?booking={{ slot.myBooking.pk }}">Change time <span class="visually-hidden">of your viewing on {{ slot.startsAt|date:'D j M, g:i' }}{{ slot.startsAt|date:'A'|lower }}</span></a>{% endif %}<a class="btn btn-ghost btn-sm" href="{% url 'cancel_viewing' %}?booking={{ slot.myBooking.pk }}">Cancel viewing <span class="visually-hidden">on {{ slot.startsAt|date:'D j M, g:i' }}{{ slot.startsAt|date:'A'|lower }}</span></a></span>
+            </li>
+          {% endif %}{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <form method="post" action="{% url 'activity_action' %}" class="stack viewing-form" id="request-viewing">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="book">
+      <fieldset>
+        <legend><h2 class="activity-heading">{% if myBookedSlots %}Pick another time{% else %}Pick a viewing time{% endif %}</h2></legend>
+        {% if canBook %}
+          <div class="viewing-slots">
+            {% for slot in activitySlots %}{% if not slot.myBooking %}
+              <label class="fchip"><input type="radio" name="id" value="{{ slot.pk }}" required {% if not slot.placesLeft %}disabled{% endif %}><span>{{ slot.startsAt|date:'D j M' }}<small><b>{{ slot.startsAt|date:'g:i' }}{{ slot.startsAt|date:'A'|lower }}</b> · {% if slot.placesLeft %}{{ slot.placesLeft }} left {% include 'sellerpanel/capacity_dots.html' %}{% else %}Full{% endif %}</small></span></label>
+            {% endif %}{% endfor %}
+          </div>
+        {% elif myBookedSlots %}
+          <p class="meta">No other times are open.</p>
+        {% elif activitySlots %}
+          <p class="meta">No spots left right now.</p>
+        {% else %}
+          <p class="meta">No viewing times yet. Ask the seller and we’ll tell you when they add some.</p>
+        {% endif %}
+      </fieldset>
+      {% if canBook %}
+        <button class="btn btn-block {% if myOffer.status == 'pending' %}btn-brand{% else %}btn-ghost{% endif %}">Request viewing</button>
+      {% endif %}
+    </form>
+    {% if not activitySlots and not myBookedSlots and flat.status == 'live' and isBuyer and flat.seller_id != user.pk %}
+      {% asked_viewing flat as alreadyAsked %}
+      {% if alreadyAsked %}
+        <p class="meta ask-viewing-done">You’ve asked for viewing times. We’ll tell you when the seller adds some.</p>
+      {% else %}
+        <form method="post" action="{% url 'ask_viewing' flat.publicId %}" class="ask-viewing">{% csrf_token %}<button class="btn btn-ghost btn-block">Ask for a viewing time</button></form>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+</section>

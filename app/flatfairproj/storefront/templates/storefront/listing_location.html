@@ -1,0 +1,25 @@
+{% load humanize estate_tags static %}
+<details class="fold glance-fold glance-location">
+  <summary>{% include "storefront/ui_icon.html" with name="home" only %}Location and MRT <span class="fold-hint">{% if nearest %}{% if nearest.walking %}{{ nearest.minutes }} min walk{% else %}{{ nearest.metres|intcomma }} m{% endif %} · {{ nearest.name }}{% else %}{{ flat.town|title }}{% endif %}</span></summary>
+  <div class="fold-body listing-location" id="location">
+    <div class="glance-location-facts">
+      {% if nearest %}
+        <div class="glance-walk-visual">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="27" cy="8" r="4"/><path d="m18 24 6-10 7 10 7 3M24 14l-2 16-9 12m9-12 10 12M9 30h5m-8 7h4"/></svg>
+          <div><p class="glance-walk-time">{% if nearest.walking %}{{ nearest.minutes }} <small>min walk</small>{% else %}{{ nearest.metres|intcomma }} <small>m away</small>{% endif %}</p><p class="glance-station">{% if nearest.badges %}<span class="glance-line-dot" style="background: {{ nearest.badges.0.colour }}" aria-hidden="true"></span>{% endif %}{{ nearest.name }}</p></div>
+        </div>
+        {% if nearest.badges %}<p class="glance-line-name">{{ nearest.badges.0.lineName }}</p>{% endif %}
+        {% if nextStation %}<p class="glance-next-station">Next nearest · {{ nextStation.name }} <span>about {{ nextStation.metres|intcomma }} m in a straight line</span></p>{% endif %}
+      {% else %}
+        <p class="glance-empty">We don’t have station distances for this flat yet.</p>
+      {% endif %}
+      {% include "storefront/mrt_near.html" %}
+      <a class="town-listings-link" href="{% url 'listings' %}?town={{ flat.town|urlencode }}">Other flats in {{ flat.town|title }}</a>
+    </div>
+    {% town_pin flat.town as locationPin %}
+    <svg class="listing-town-map" viewBox="0 0 1000 647" role="img" aria-label="Singapore map{% if locationPin %}, approximate town centre of {{ flat.town|title }}{% endif %}">
+      <image href="{% static 'storefront/map/sg_planning_areas.svg' %}" width="1000" height="647"/>
+      {% if locationPin %}<g class="listing-town-pin" transform="translate({{ locationPin.0|stringformat:'.1f' }} {{ locationPin.1|stringformat:'.1f' }})"><circle class="pin-halo" r="26"/><circle class="pin-body" r="18"/><circle class="pin-halo" r="6"/></g>{% endif %}
+    </svg>
+  </div>
+</details>

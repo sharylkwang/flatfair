@@ -1,0 +1,7 @@
+{% if scale %}
+<div class="position-band{% if tone %} is-{{ tone }}{% endif %}" style="--position:{{ scale.asking }}%;--lo:{{ scale.lo }}%;--hi:{{ scale.hi }}%" role="img" aria-label="{{ label }}. Fair range {{ low }}–{{ high }}.">
+  <span class="position-label">{{ label }}</span>
+  <div class="position-track" aria-hidden="true"><span class="position-range"></span><span class="position-marker"></span><span class="position-marker-label">{{ marker_label|default:'Your offer' }}</span></div>
+  <div class="position-ticks" aria-hidden="true"><span>{{ low }}</span><span>{{ high }}</span></div>
+</div>
+{% endif %}

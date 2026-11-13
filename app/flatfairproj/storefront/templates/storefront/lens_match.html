@@ -1,0 +1,12 @@
+{% load estate_tags humanize %}
+<div class="card-wrap">
+  <a class="card listing-card" href="{% url "listing_detail" match.flat.publicId %}{% if match.number %}#photo-{{ match.number }}{% endif %}">
+    <div class="listing-card-image"><img class="flat-thumb" src="{{ match.photo.publicUrl }}" alt="{{ match.photo.get_room_display }} in {% if match.flat.block %}Blk {{ match.flat.block }}, {% endif %}{{ match.flat.town|title }}" width="1536" height="1024" loading="lazy" decoding="async"><span class="lens-room">{{ match.photo.get_room_display }}</span></div>
+    <div class="listing-card-body">
+      <span class="lens-match{% if match.closeness == "Very similar" %} lens-match--very{% endif %}">{{ match.closeness }}</span>
+      <div class="listing-card-prices"><strong>${{ match.flat.askingPrice|intcomma }}</strong></div>
+      <h3>{% if match.flat.block %}Blk {{ match.flat.block }} {% endif %}{{ match.flat.town|title }}</h3>
+      <p>{{ match.flat.flatType|flat_label }}</p>
+    </div>
+  </a>
+</div>

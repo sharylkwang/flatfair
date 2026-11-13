@@ -371,6 +371,21 @@ def homeFor(user):
     return reverse("home")
 
 
+def landing(request, user):
+    nextUrl = nextPath(request)
+
+    if nextUrl:
+        return redirect(nextUrl)
+
+    if user.is_staff:
+        return redirect("admin_overview")
+
+    if currentMode(request) == "seller":
+        return redirect("dashboard")
+
+    return redirect("home")
+
+
 def register(request):
     if request.user.is_authenticated:
         return landing(request, request.user)
@@ -494,6 +509,48 @@ def signin(request):
         )
 
     return render(request, "storefront/signin.html", {"nextNote": signinNote(request)})
+
+
+def nextPath(request):
+    nextUrl = request.GET.get("next", "")
+
+    if nextUrl.startswith("/") and url_has_allowed_host_and_scheme(
+        nextUrl, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return nextUrl
+
+    return ""
+
+
+def signinNote(request):
+    nextUrl = nextPath(request)
+
+    if not nextUrl:
+        return ""
+
+    action = "continue"
+
+    for prefix, text in (
+        ("/my-offers", "see your offers and viewings"),
+        ("/saved", "see your saved flats"),
+        ("/notifications", "see your notifications"),
+        ("/seller", "manage your flat"),
+    ):
+        if nextUrl.startswith(prefix):
+            action = text
+
+            break
+
+    if nextUrl.startswith("/listing/"):
+        action = "see this flat"
+
+        if "#listing-action-card" in nextUrl:
+            action = "make an offer or book a viewing"
+
+        if "save=1" in nextUrl:
+            action = "save this flat"
+
+    return f"Sign in to {action}."
 
 
 def signout(request):

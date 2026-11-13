@@ -1,0 +1,6 @@
+{% load estate_tags humanize %}
+
+    {% if cancellable and booking.status != 'cancelled' and booking.status != 'done' %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'cancel_viewing' %}?booking={{ booking.pk }}">Cancel viewing</a>
+    {% else %}<p>This viewing can’t be changed now.</p>{% endif %}
+      

@@ -1,0 +1,2 @@
+{% load static %}
+{% if flat %}{% include "storefront/ui/flat_thumb.html" with size="small" %}{% elif photo %}<img src="{% static photo %}?r=2" alt="{% if not decorative %}{{ photo_alt|default:'' }}{% endif %}" width="160" height="112" loading="lazy" decoding="async">{% else %}{% include "storefront/ui_icon.html" with name=icon|default:"home" %}{% endif %}

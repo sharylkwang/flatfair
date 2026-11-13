@@ -1,0 +1,98 @@
+{% load estate_tags staff_tags shop_tags %}
+{% with page=request.resolver_match.url_name header_role=headerMode %}
+  {% if user.is_authenticated %}
+    {% notice_unread user as unread %}
+    {% support_unread user as supportUnread %}
+  {% endif %}
+  {% if header_role == 'seller' %}
+    {% cart_size as cartItems %}
+  {% endif %}
+  <header class="site-header{% if header_role != 'seller' and header_role != 'staff' %} shop-header{% endif %}" data-site-header>
+    <div class="wrap header-inner">
+      <a class="site-logo" href="{% url 'home' %}" aria-label="FlatFair home">{% include 'storefront/logo.html' %}{% if header_role == 'seller' %}<span class="header-role">Seller centre</span>{% elif header_role == 'staff' %}<span class="header-role">Admin</span>{% endif %}</a>
+      {% if header_role != 'seller' and header_role != 'staff' %}
+        <form class="header-search" method="get" action="{% url 'listings' %}" role="search">
+          <input type="search" name="q" maxlength="60" value="{% if page == 'listings' %}{% if searchQuery %}{{ searchQuery }}{% else %}{{ town|title }}{% endif %}{% endif %}" data-search-suggestions="{% url 'search_suggestions' %}" placeholder="Town, street or postal code" aria-label="Search flats by town, block, street or postal code" enterkeyhint="search">
+          <button type="submit" aria-label="Search flats">{% include "storefront/ui_icon.html" with name="search" %}</button>
+          <button type="button" class="search-clear" aria-label="Clear search" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+        </form>
+        {% if canBuy %}{% saved_count user as savedCount %}<a class="header-saved" href="{% url 'saved' %}" aria-label="Saved flats, {{ savedCount }}"{% if page == 'saved' %} aria-current="page"{% endif %}>{% include "storefront/ui_icon.html" with name="heart" %}{% if savedCount %}<span aria-hidden="true">{{ savedCount }}</span>{% endif %}</a>{% elif not user.is_authenticated %}<a class="header-saved" href="{% url 'signin' %}?next={% url 'saved' %}" aria-label="Saved flats, sign in to see them">{% include "storefront/ui_icon.html" with name="heart" %}</a>{% endif %}
+      {% endif %}
+      {% if user.is_authenticated %}<a class="header-bell" href="{% url 'notifications' %}" aria-label="Notifications{% if unread %}, {{ unread }} unread{% endif %}"{% if page == 'notifications' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg>{% if unread %}<span>{{ unread }}</span>{% endif %}</a>{% endif %}
+      {% include 'storefront/phone_menu.html' %}
+      <button
+        class="nav-toggle"
+        type="button"
+        aria-controls="primary-sheet"
+        aria-expanded="false"
+        aria-label="Open navigation"><svg
+        class="nav-toggle-lines"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.25"
+        stroke-linecap="round"
+        aria-hidden="true"><path class="nav-open-lines" d="M3 5h18M3 12h18M3 19h18"/><path class="nav-close-lines" d="m4 4 16 16M4 20 20 4"/></svg></button>
+      <button class="nav-backdrop" type="button" aria-label="Close navigation" tabindex="-1" hidden></button>
+      <div class="header-sheet" id="primary-sheet">
+        <div class="sheet-head"><span class="sheet-grabber" aria-hidden="true"></span><span class="sheet-title">{% if user.is_authenticated %}{{ user.first_name|default:"Account" }}{% else %}Menu{% endif %}</span><button class="sheet-done" type="button" data-sheet-close>Done</button></div>
+        {% if canBuy and canSell %}
+          <form class="mode-switch header-mode-switch" method="post" action="{% url 'switch_mode' %}" aria-label="Buying or selling">
+            {% csrf_token %}<button type="submit" class="fchip{% if currentMode == 'buyer' %} on{% endif %}" name="mode" value="buyer"{% if currentMode == 'buyer' %} aria-pressed="true"{% else %} aria-pressed="false"{% endif %}>Buying</button><span aria-hidden="true"> | </span><button type="submit" class="fchip{% if currentMode == 'seller' %} on{% endif %}" name="mode" value="seller"{% if currentMode == 'seller' %} aria-pressed="true"{% else %} aria-pressed="false"{% endif %}>Selling</button>
+          </form>
+        {% endif %}
+        <span class="mobile-menu-label">{% if header_role == 'seller' %}Selling{% elif header_role == 'staff' %}Admin{% else %}Browse{% endif %}</span>
+        <nav class="primary-nav" aria-label="Primary navigation">
+        {% if header_role == 'seller' %}
+          <a href="{% url 'dashboard' %}" {% if page == 'dashboard' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="dashboard" %}</span><span class="menu-row-label">Dashboard</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span><span class="nav-ink" aria-hidden="true"></span></a>
+          <a href="{% url 'my_listings' %}" {% if page == 'my_listings' or page == 'sell' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="home" %}</span><span class="menu-row-label">My listings</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span><span class="nav-ink" aria-hidden="true"></span></a>
+          <a href="{% url 'seller_viewings' %}" {% if page == 'seller_viewings' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="calendar" %}</span><span class="menu-row-label">Offers &amp; viewings</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span><span class="nav-ink" aria-hidden="true"></span></a>
+          <a href="{% url 'my_orders' %}" {% if page == 'my_orders' or page == 'receipt' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="receipt" %}</span><span class="menu-row-label">Orders</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span><span class="nav-ink" aria-hidden="true"></span></a>
+          <a class="desktop-nav-only" href="{% url 'packages' %}" {% if page == 'packages' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="offer" %}</span><span class="menu-row-label">Packages</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span><span class="nav-ink" aria-hidden="true"></span></a>
+        {% elif header_role == 'staff' %}
+          <a class="desktop-nav-only" href="{% url 'admin_overview' %}" {% if section or page == 'admin_overview' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="dashboard" %}</span><span class="menu-row-label">Admin</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span><span class="nav-ink" aria-hidden="true"></span></a>
+          {% for item in user|staff_menu %}<a class="staff-sheet-link" href="{% url item.page %}"{% if section == item.page %} aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name=item.icon %}</span><span class="menu-row-label">{{ item.label }}</span>{% if item.page == 'admin_queue' and queueCount %}<span class="side-count">{{ queueCount }}<span class="visually-hidden"> waiting</span></span>{% endif %}<span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>{% endfor %}
+          <a href="{% url 'home' %}" {% if page == 'home' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="home" %}</span><span class="menu-row-label">View site</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span><span class="nav-ink" aria-hidden="true"></span></a>
+        {% else %}
+          {% flat_types as shopTypes %}
+          {% include "storefront/browse_links.html" with show_nav_ink=True shop_types=shopTypes all_label="All flats" %}
+          {% if currentMode == 'buyer' %}<a class="desktop-nav-only" href="{% url 'my_offers' %}" {% if page == 'my_offers' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="offer" %}</span><span class="menu-row-label">Offers &amp; viewings</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span><span class="nav-ink" aria-hidden="true"></span></a>{% endif %}
+        {% endif %}
+      </nav>
+        {% if header_role == 'seller' or header_role == 'staff' %}
+          <div class="mobile-browse">
+            <span class="mobile-menu-label">Browse</span>
+            <nav class="primary-nav" aria-label="Browse navigation">{% include "storefront/browse_links.html" with show_nav_ink=False %}</nav>
+          </div>
+        {% endif %}
+        <span class="mobile-menu-label">Account</span>
+        <div class="header-actions">
+        {% if header_role == 'seller' %}<a class="header-cart" href="{% url 'cart' %}" aria-label="Cart, {{ cartItems }} items"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2 12h12l2-9H6M9 20h.01M18 20h.01"/></svg>{% if cartItems %}<span>{{ cartItems }}</span>{% endif %}</a>{% endif %}
+        {% if user.is_authenticated %}
+        <details class="header-account"><summary aria-label="Account menu{% if supportUnread %}, {{ supportUnread }} new support repl{{ supportUnread|pluralize:'y,ies' }}{% endif %}"><span class="header-avatar">{{ user.first_name|default:user.username|first|upper }}{% if supportUnread %}<b class="avatar-badge" aria-hidden="true">{{ supportUnread }}</b>{% endif %}</span><svg class="account-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+          <div class="account-content"><div class="account-profile"><span class="header-avatar mobile-profile-avatar" aria-hidden="true">{{ user.first_name|default:user.username|first|upper }}{% if user.last_name %}{{ user.last_name|first|upper }}{% endif %}</span><strong>{{ user.get_full_name|default:user.username }}</strong><small class="account-role">{% if user.is_staff %}{{ user|staff_role }}{% else %}{% if currentMode == 'seller' %}Selling{% else %}Buying{% endif %}{% endif %}</small></div>
+            {% if user.is_staff %}<a href="{% url 'admin_account' %}" {% if page == 'admin_account' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="person" %}</span><span class="menu-row-label">My account</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>{% endif %}
+            {% if not user.is_staff %}{% if canBuy or canSell %}<a href="{% url 'account_settings' %}" {% if page == 'account_settings' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="person" %}</span><span class="menu-row-label">Account settings</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>{% endif %}{% endif %}
+            {% if header_role == 'seller' %}<a class="mobile-account-row account-cart" href="{% url 'cart' %}" {% if page == 'cart' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="cart" %}</span><span class="menu-row-label">Cart</span><span class="account-count" aria-label="{{ cartItems }} items">{{ cartItems }}</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>{% endif %}
+            {% if currentMode == 'buyer' %}<a class="mobile-account-row" href="{% url 'my_offers' %}" {% if page == 'my_offers' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="offer" %}</span><span class="menu-row-label">Offers &amp; viewings</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a><a class="mobile-account-row" href="{% url 'saved' %}" {% if page == 'saved' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="heart" %}</span><span class="menu-row-label">Saved</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>{% endif %}
+            <a href="{% url 'notifications' %}" {% if page == 'notifications' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="chat" %}</span><span class="menu-row-label">Notifications {% if unread %}<span class="unread-badge">{{ unread }}</span>{% endif %}</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>
+            {% if not user.is_staff %}<a href="{% url 'my_messages' %}" {% if page == 'my_messages' or page == 'my_ticket' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="mail" %}</span><span class="menu-row-label">My messages {% if supportUnread %}<span class="unread-badge">{{ supportUnread }}<span class="visually-hidden"> new</span></span>{% endif %}</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>{% endif %}
+            {% if header_role != 'staff' %}<a href="{% url 'support' %}" {% if page == 'support' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="support" %}</span><span class="menu-row-label">Contact support</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>{% endif %}
+            {% if header_role == 'seller' %}<a href="{% url 'home' %}" {% if page == 'home' %}aria-current="page"{% endif %}><span class="menu-icon">{% include "storefront/ui_icon.html" with name="home" %}</span><span class="menu-row-label">Home page</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a>{% endif %}
+            {% if canBuy and not canSell %}<a href="{% url 'start_selling' %}">Start selling</a>{% elif canSell and not canBuy %}<a href="{% url 'start_buying' %}">Start buying</a>{% endif %}
+            <form class="account-signout" method="post" action="{% url 'signout' %}">{% csrf_token %}<button type="submit"><span class="menu-icon">{% include "storefront/ui_icon.html" with name="signout" %}</span><span class="menu-row-label">Sign out</span></button></form>
+          </div>
+        </details>
+        {% else %}<a class="header-signin" href="{% url 'signin' %}"><span class="menu-icon">{% include "storefront/ui_icon.html" with name="signin" %}</span><span class="menu-row-label">Sign in</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a><a class="mobile-register btn btn-ghost" href="{% url 'register' %}"><span class="menu-icon">{% include "storefront/ui_icon.html" with name="register" %}</span><span class="menu-row-label">Register</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a><a class="btn btn-brand header-list" href="{% url 'register' %}?role=seller"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>List your flat</a>{% endif %}
+      </div>
+        {% if currentMode == 'buyer' %}
+          {% if not canSell %}
+          <div class="mobile-menu-sell"><p class="mobile-menu-helper">Selling too? <a href="{% url 'start_selling' %}">Start selling</a> with this account.</p></div>
+          {% endif %}
+        {% elif not user.is_staff %}
+          <div class="mobile-menu-sell"><a class="btn btn-brand" href="{% if header_role == 'seller' %}{% url 'sell' %}{% else %}{% url 'register' %}?role=seller{% endif %}"><span class="menu-icon">{% include "storefront/ui_icon.html" with name="plus" %}</span><span class="menu-row-label">List your flat</span><span class="menu-chevron">{% include "storefront/ui_icon.html" with name="chevron" %}</span></a></div>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+{% endwith %}

@@ -180,6 +180,147 @@ def newReviews(limit=6):
     return list(reviews[:limit])
 
 
+def saleChart(sales, asking):
+    if not sales:
+        return {}
+
+    prices = [sale.price for sale in sales]
+    low, high = min(*prices, asking), max(*prices, asking)
+    padding = max((high - low) / 4, high / 40, 1)
+    low, high = low - padding, high + padding
+
+    def position(price):
+        return round(140 - (price - low) / (high - low) * 110, 1)
+
+    points = []
+    saleTags = []
+
+    for index, sale in enumerate(sales):
+        if len(sales) > 1:
+            x_spot = round(40 + index * 280 / (len(sales) - 1), 1)
+        else:
+            x_spot = 180
+
+        y_spot = position(sale.price)
+
+        points.append(
+            {
+                "x": x_spot,
+                "y": y_spot,
+                "labelY": round(y_spot - 14, 1),
+                "price": sale.price,
+                "number": index + 1,
+            }
+        )
+
+        saleTags.append(f"sale {index + 1} ${sale.price:,}")
+
+    label = (
+        "Recent sale prices: "
+        + "; ".join(saleTags)
+        + f". Asking price ${asking:,}. Dots show sales; the dashed line shows asking price."
+    )
+
+    return {"points": points, "askingY": position(asking), "label": label}
+
+
+def floorOverview(floors, storey):
+    rows = []
+
+    for name, low, high in (("Low", 1, 6), ("Mid", 7, 12), ("High", 13, 99)):
+        bands = [
+            row for row in floors.get("rows", []) if low <= int(row["label"].split("–")[0]) <= high
+        ]
+
+        count = sum(row["sales"] for row in bands)
+        average = None
+
+        if count:
+            total = sum(row["average"] * row["sales"] for row in bands)
+            average = int(round(total / count, -3))
+
+        rows.append(
+            {
+                "name": name,
+                "range": f"{low}–{high}" if high < 99 else "13+",
+                "average": average,
+                "mine": low <= storey <= high,
+            }
+        )
+
+    highest = max((row["average"] or 0 for row in rows), default=0)
+    labels = []
+
+    for row in rows:
+        if row["average"]:
+            row["width"] = round(row["average"] * 100 / highest)
+            price = f"${row['average']:,}"
+        else:
+            row["width"] = 0
+            price = "not enough recent sales"
+
+        text = f"{row['name']} floors ({row['range']}): {price}"
+
+        if row["mine"]:
+            text += ", this flat"
+
+        labels.append(text)
+
+    return {"rows": rows, "label": "; ".join(labels)}
+
+
+def nextStation(flat, nearest):
+    record = get_postal(flat.postalCode)
+
+    if not record or not nearest:
+        return None
+
+    index = walk_index()
+    pool = []
+
+    for station in index["stations"]:
+        if not station.get("open") or station["name"] == nearest["name"].removesuffix(
+            " MRT"
+        ).removesuffix(" LRT"):
+            continue
+
+        name = f"{station['name']} {station['kind']}"
+
+        metres = distance(record["lat"], record["lon"], station["lat"], station["lon"])
+
+        pool.append({"name": name, "metres": int(round(metres, -1))})
+
+    return min(pool, key=lambda station: station["metres"], default=None)
+
+
+PACKAGE_COPY = {
+    "Top spot": {
+        "benefits": [
+            "Shown first in search {duration}",
+            "Shown first on the home page",
+            "Sponsored tag on your flat",
+        ],
+        "place": "First",
+    },
+    "Boost 90 days": {
+        "benefits": [
+            "Shown above Boost 30 days {duration}",
+            "Sponsored tag on your flat",
+            "For one flat",
+        ],
+        "place": "Above Boost 30 days",
+    },
+    "Boost 30 days": {
+        "benefits": [
+            "Shown above free flats {duration}",
+            "Sponsored tag on your flat",
+            "For one flat",
+        ],
+        "place": "Above free flats",
+    },
+}
+
+
 def my_folders(user):
     if not hasRole(user, "buyer"):
         return None

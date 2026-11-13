@@ -1,0 +1,41 @@
+{% extends 'storefront/base.html' %}
+{% load humanize %}
+{% block title %}Your deal · FlatFair{% endblock %}
+{% block content %}
+  <div class="deal-page">
+    <a class="back-link" href="{{ back }}">← Back</a>
+    <h1>{% if role == 'admin' %}Deal for{% else %}Your deal for{% endif %} {% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</h1>
+    <p class="deal-facts">Agreed price <b>${{ deal.price|intcomma }}</b> on {{ deal.createdAt|date:'j M Y' }} · Buyer {{ deal.buyer.get_full_name|default:deal.buyer.email }} · Seller {{ flat.seller.get_full_name|default:flat.seller.email }}</p>
+    {% if deal.status == 'complete' %}
+      <p class="deal-banner is-done">The sale is complete. FlatFair has marked the flat as sold.</p>
+    {% elif deal.status == 'cancelled' %}
+      <p class="deal-banner">This deal was cancelled because the seller undid the acceptance.</p>
+    {% else %}
+      <p class="deal-summary">{{ progress.done }} of {{ progress.total }} steps done{% if progress.next %} · Next: <b>{{ progress.next }}</b> ({{ progress.nextWho|lower }}){% if progress.dueOn %}, by {{ progress.dueOn|date:'j M' }}{% endif %}{% endif %}</p>
+      <progress class="selling-progress" max="{{ progress.total }}" value="{{ progress.done }}" aria-label="Deal steps done">{{ progress.done }} of {{ progress.total }}</progress>
+    {% endif %}
+    <ol class="deal-steps" role="list">
+      {% for row in rows %}
+        <li class="deal-step{% if row.done %} is-done{% elif row.current %} is-current{% endif %}{% if row.late %} is-late{% endif %}" id="step-{{ row.step.key }}"{% if row.current %} aria-current="step"{% endif %}>
+          <span class="deal-tick" aria-hidden="true">{% if row.done %}{% include 'storefront/ui_icon.html' with name='check' %}{% else %}{{ forloop.counter }}{% endif %}</span>
+          <div class="deal-body">
+            <h2>{{ row.title }}</h2>
+            <p class="deal-who">{{ row.who }} · {% if row.done %}Done {{ row.step.doneAt|date:'j M' }}{% if row.step.doneBy == 'buyer' or row.step.doneBy == 'seller' %} by the {{ row.step.doneBy }}{% endif %}{% elif row.current and row.step.dueOn %}{% if row.late %}<b>Overdue</b>, was due {{ row.step.dueOn|date:'j M' }}{% else %}Due {{ row.step.dueOn|date:'j M' }}{% endif %}{% else %}Later{% endif %}</p>
+            <p>{{ row.about }}</p>
+            {% if row.step.note %}<p class="deal-note">“{{ row.step.note }}”</p>{% endif %}
+            {% if row.canMark %}
+              <form method="post" action="{% url 'deal_step' deal.pk %}" class="deal-mark" data-ask="Tick “{{ row.title }}” as done? We’ll tell the {% if role == 'buyer' %}seller{% else %}buyer{% endif %}." data-yes="Mark as done" data-no="Go back">
+                {% csrf_token %}<input type="hidden" name="step" value="{{ row.step.key }}">
+                <label class="mini-field">Note for the {% if role == 'buyer' %}seller{% else %}buyer{% endif %} (optional)<input name="note" maxlength="200" autocomplete="off"></label>
+                <button class="btn btn-brand btn-sm">Mark as done</button>
+              </form>
+            {% elif row.current and role != 'admin' %}
+              <p class="deal-wait">Waiting for the {{ row.who|lower }}.</p>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+    {% if role == 'buyer' %}<p class="deal-contact">Questions? Email the seller at <a href="mailto:{{ flat.seller.email }}">{{ flat.seller.email }}</a>.</p>{% elif role == 'seller' %}<p class="deal-contact">Questions? Email the buyer at <a href="mailto:{{ deal.buyer.email }}">{{ deal.buyer.email }}</a>.</p>{% endif %}
+  </div>
+{% endblock %}

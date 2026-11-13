@@ -1,0 +1,11 @@
+<form class="lens-form" method="post" enctype="multipart/form-data" action="{% url "lens" %}" data-lens-search>
+  {% csrf_token %}
+  <label class="lens-upload" for="{{ form.photo.id_for_label }}">
+    <span class="btn lens-upload-button">Choose a room photo</span>
+    {{ form.photo }}
+    <span class="field-hint" id="{{ form.photo.auto_id }}_helptext">{{ form.photo.help_text }}</span>
+    {% if form.photo.errors %}<span class="err" id="{{ form.photo.auto_id }}_error" role="alert">{{ form.photo.errors|striptags }}</span>{% endif %}
+  </label>
+  <button class="btn btn-brand" type="submit">Find similar flats</button>
+</form>
+<p class="lens-status" id="lens-status" role="status" aria-live="polite" aria-atomic="true"></p>

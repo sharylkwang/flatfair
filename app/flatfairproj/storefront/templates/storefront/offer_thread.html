@@ -1,0 +1,8 @@
+{% with messages=offer.messages.all %}
+  {% if messages or offer.reply %}
+    <ol class="offer-thread" aria-label="Messages about this offer">
+      {% if not messages %}<li class="from-seller"><b>{% if viewer == 'seller' %}You{% else %}Seller{% endif %}:</b> {{ offer.reply }}</li>{% endif %}
+      {% for message in messages %}<li class="from-{{ message.by }}"><b>{% if message.by == viewer %}You{% else %}{{ message.by|capfirst }}{% endif %}:</b> {{ message.text }} <time datetime="{{ message.createdAt|date:'c' }}">{{ message.createdAt|date:'j M, g:i A'|lower }}</time></li>{% endfor %}
+    </ol>
+  {% endif %}
+{% endwith %}

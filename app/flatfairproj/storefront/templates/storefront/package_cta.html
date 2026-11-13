@@ -1,0 +1,20 @@
+{% if p.runningPlan %}
+  <p class="pkg-status is-active">Active{% if p.runningPlan.expiry %}, {{ p.runningPlan.daysLeft }} day{{ p.runningPlan.daysLeft|pluralize }} left{% else %} until sold{% endif %}</p>
+{% elif p.coveredBy %}
+  <p class="pkg-status">Included in {{ p.coveredBy }}</p>
+{% elif isSeller and p.pk in cartIds %}
+  <a class="btn btn-ghost btn-block" href="{% url 'cart' %}">In your cart</a>
+{% elif isSeller %}
+  <form class="add" method="post" action="{% url 'cart_add' p.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="listing" value="{{ selectedListing }}">
+    <input type="hidden" name="next" value="cart">
+    <button class="btn btn-brand btn-block">Add to cart</button>
+  </form>
+{% elif user.is_authenticated %}
+  <p class="pkg-status">For sellers</p>
+{% else %}
+  <div class="add">
+    <a class="btn {% if quiet %}btn-ghost{% else %}btn-brand{% endif %} btn-block" href="{% url 'register' %}?role=seller&amp;next=/packages">Create seller account</a>
+  </div>
+{% endif %}

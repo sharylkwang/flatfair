@@ -1,0 +1,20 @@
+{% load humanize estate_tags %}
+{% with flat=group.flat %}
+<article class="buyer-flat" aria-labelledby="buyer-flat-{{ scope|default:'open' }}-{{ flat.pk }}">
+  <div class="buyer-flat-main">
+    <h3 id="buyer-flat-{{ scope|default:'open' }}-{{ flat.pk }}">{% if flat.block %}Blk {{ flat.block }} {% endif %}{{ flat.town|title }}</h3>
+    <p class="buyer-flat-facts">{{ flat.flatType|flat_label }} · {{ flat.floorAreaSqm|floatformat:'-1' }} sqm · Asking ${{ flat.askingPrice|floatformat:0|intcomma }}{% if flat.status == 'sold' %} · Sold{% elif flat.status == 'paused' %} · Paused by the seller{% elif flat.status == 'withdrawn' %} · No longer for sale{% endif %}</p>
+    <ul class="buyer-lines">
+      {% for offer in group.offers %}{% include "storefront/buyer_offer.html" %}{% endfor %}
+      {% for booking in group.bookings %}<li class="buyer-line" id="slot-{{ booking.slot_id }}" tabindex="-1">
+  <span class="buyer-line-name">Viewing</span>
+  <span class="buyer-line-facts">{{ booking.slot.startsAt|date:'D j M, g:i' }}{{ booking.slot.startsAt|date:'A'|lower }}</span>
+  {% include "storefront/buyer_badge.html" with offer=None %}
+  {% if scope != 'past' and booking.slot.listing.status == 'live' and not booking.movedFromStatus %}{% if booking.status == 'requested' or booking.status == 'confirmed' %}<span class="buyer-line-answer"><a class="btn btn-ghost btn-sm" href="{% url 'move_viewing' %}?booking={{ booking.pk }}&amp;from=offers">Change time <span class="visually-hidden">of your viewing on {{ booking.slot.startsAt|date:'D j M, g:i' }}{{ booking.slot.startsAt|date:'A'|lower }}</span></a></span>{% endif %}{% endif %}
+</li>{% endfor %}
+    </ul>
+  </div>
+  <div class="buyer-flat-photo">{% include "storefront/ui/flat_thumb.html" with size="small" %}</div>
+  {% if flat.status != 'withdrawn' %}<a class="btn btn-ghost btn-sm" href="{% url 'listing_detail' flat.publicId %}" aria-label="View flat, Blk {{ flat.block }} {{ flat.town|title }}">View flat</a>{% endif %}
+</article>
+{% endwith %}

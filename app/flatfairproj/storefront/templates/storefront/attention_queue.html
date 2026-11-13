@@ -1,0 +1,24 @@
+<section class="panel attention-queue" aria-labelledby="attention-heading">
+  <div class="rich-heading">
+    <h2 id="attention-heading">{{ queue_title|default:'Needs your attention' }}</h2>
+    {% if not hide_count %}<span class="heading-count">{{ attentionRows|length }} task{{ attentionRows|length|pluralize }}</span>{% endif %}
+  </div>
+  {% for row in attentionRows %}
+    <article class="attention-row">
+      <span class="attention-icon attention-icon--{{ row.tone }}">{% include 'storefront/ui_icon.html' with name=row.icon %}</span>
+      <div>
+        <h3>{{ row.title }}</h3>
+        <p>{{ row.meta }}</p>
+      </div>
+      <a class="btn btn-brand" href="{{ row.url }}">{{ row.action }}</a>
+    </article>
+  {% empty %}
+    {% with text=done_message|default:"You’re all caught up; new requests will appear here." action_url=done_url action_label=done_action|default:"Review my listings" %}{% load static %}
+<div class="empty calm-empty" data-ui="empty-state">
+  <img src="{% static 'storefront/empty-home.svg' %}" alt="" width="112" height="84" loading="lazy">
+  <p>{{ text }}</p>
+  <a class="btn btn-ghost btn-sm" href="{{ action_url }}">{{ action_label }}</a>
+</div>
+{% endwith %}
+  {% endfor %}
+</section>

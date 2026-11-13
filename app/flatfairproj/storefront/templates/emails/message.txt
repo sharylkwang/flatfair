@@ -1,0 +1,21 @@
+{% autoescape off %}{{ heading }}
+
+Hi {{ name|default:"there" }},
+{% for line in lines %}
+{{ line }}
+{% endfor %}{% if code %}
+    {{ code }}
+{% endif %}{% if rows %}
+{% for label, value, strong in rows %}{{ label }}: {{ value }}
+{% endfor %}{% endif %}{% if button %}
+{{ button.label }}: {{ button.url }}
+{% endif %}{% for note in notes %}
+{{ note }}
+{% endfor %}
+The FlatFair team
+
+--
+{{ reason }}
+FlatFair · Sell your HDB flat yourself. Buy straight from the owner.
+Contact support: {{ supportUrl }}
+{% endautoescape %}

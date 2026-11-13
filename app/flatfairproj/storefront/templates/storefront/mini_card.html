@@ -1,0 +1,8 @@
+{% load static humanize estate_tags %}
+{% with cover=flat.coverPhoto %}
+<a class="mini-listing" href="{% url 'listing_detail' flat.publicId %}" data-mini-listing="{{ flat.publicId }}">
+  <span class="mini-listing-photo">{% include "storefront/ui/flat_thumb.html" with size="large" %}</span>
+  {% if flat.fairPrice or flat.adTag %}<span class="card-flags">{% if flat.fairPrice %}{% include 'storefront/tag_fair.html' %}{% endif %}{% if flat.adTag %}{% include 'storefront/tag_ad.html' with tag=flat.adTag extra='' %}{% endif %}</span>{% endif %}
+  <div><strong>${{ flat.askingPrice|intcomma }}</strong><span>{% if flat.block %}Blk {{ flat.block }} · {% endif %}{{ flat.town|title }}</span>{% if flat.status == 'sold' %}<small class="mini-listing-offer badge-sold">Sold</small>{% elif flat.acceptedCount %}<small class="mini-listing-offer">Under offer</small>{% endif %}<small>{{ flat.flatType|flat_label }} · {{ flat.bedrooms }} bed · {{ flat.bathrooms }} bath&nbsp;·&nbsp;{{ flat.storey|ordinal }}&nbsp;floor</small></div>
+</a>
+{% endwith %}

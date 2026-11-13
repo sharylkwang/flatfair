@@ -1,0 +1,7 @@
+{% load humanize estate_tags %}
+{% nearest_mrt flat as mrt %}
+{% if mrt.walking %}
+  <p class="listing-mrt" title="About {{ mrt.metres|intcomma }} m on foot{% if mrt.exit %} to {{ mrt.exit }}{% endif %}"><strong>{{ mrt.minutes }} min walk to {{ mrt.name }}</strong> {% mrt_badges mrt.badges %}{% if mrt.exit %} · {{ mrt.exit }}{% endif %}</p>
+{% elif mrt %}
+  <p class="listing-mrt">About {{ mrt.metres|intcomma }} m to {{ mrt.name }}</p>
+{% endif %}

@@ -1,0 +1,3 @@
+{% load estate_tags %}
+{% price_uncertainty town flatType as uncertainty %}
+{% if uncertainty %}<p class="hint price-uncertainty">{{ uncertainty }}</p>{% endif %}

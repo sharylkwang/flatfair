@@ -1,0 +1,176 @@
+{
+  "towns": {
+    "AMK": "ANG MO KIO",
+    "CCK": "CHOA CHU KANG",
+    "TPY": "TOA PAYOH",
+    "KALLANG": "KALLANG/WHAMPOA",
+    "WHAMPOA": "KALLANG/WHAMPOA"
+  },
+  "areas": {
+    "YEW TEE": [
+      "CHOA CHU KANG NTH 5",
+      "CHOA CHU KANG NTH 6",
+      "CHOA CHU KANG NTH 7",
+      "CHOA CHU KANG ST 62",
+      "CHOA CHU KANG ST 64",
+      "CHOA CHU KANG DR",
+      "CHOA CHU KANG CRES"
+    ],
+    "LIMBANG": [
+      "CHOA CHU KANG ST 51",
+      "CHOA CHU KANG ST 52",
+      "CHOA CHU KANG ST 53",
+      "CHOA CHU KANG ST 54"
+    ],
+    "KHATIB": [
+      "YISHUN ST 61",
+      "YISHUN ST 71",
+      "YISHUN ST 72",
+      "YISHUN ST 81"
+    ],
+    "KOVAN": [
+      "HOUGANG ST 21",
+      "HOUGANG ST 22"
+    ],
+    "JALAN KAYU": [
+      "FERNVALE LANE",
+      "FERNVALE RD",
+      "FERNVALE LINK",
+      "FERNVALE ST"
+    ],
+    "PIONEER": [
+      "JURONG WEST ST 61",
+      "JURONG WEST ST 62",
+      "JURONG WEST ST 64",
+      "JURONG WEST ST 65",
+      "JURONG WEST ST 91",
+      "JURONG WEST ST 92",
+      "JURONG WEST ST 93"
+    ],
+    "TAMAN JURONG": [
+      "YUNG SHENG RD",
+      "YUNG HO RD",
+      "YUNG AN RD",
+      "YUNG KUANG RD",
+      "YUNG LOH RD",
+      "YUNG PING RD",
+      "CORPORATION DR",
+      "TAH CHING RD",
+      "HO CHING RD",
+      "KANG CHING RD",
+      "TAO CHING RD",
+      "YUAN CHING RD"
+    ],
+    "YUHUA": [
+      "JURONG EAST ST 21",
+      "JURONG EAST ST 24"
+    ],
+    "BUKIT GOMBAK": [
+      "BT BATOK ST 31",
+      "BT BATOK ST 32",
+      "BT BATOK ST 33",
+      "BT BATOK ST 34"
+    ],
+    "BEAUTY WORLD": [
+      "TOH YI DR"
+    ],
+    "BUONA VISTA": [
+      "GHIM MOH RD",
+      "GHIM MOH LINK",
+      "HOLLAND AVE",
+      "HOLLAND DR",
+      "HOLLAND CL"
+    ],
+    "HOLLAND VILLAGE": [
+      "HOLLAND AVE",
+      "HOLLAND DR",
+      "HOLLAND CL"
+    ],
+    "CHINATOWN": [
+      "SMITH ST",
+      "SAGO LANE",
+      "KRETA AYER RD",
+      "UPP CROSS ST",
+      "NEW MKT RD",
+      "CHIN SWEE RD"
+    ],
+    "LITTLE INDIA": [
+      "BUFFALO RD",
+      "KLANG LANE",
+      "CHANDER RD",
+      "ROWELL RD"
+    ],
+    "BUGIS": [
+      "QUEEN ST",
+      "WATERLOO ST",
+      "BAIN ST"
+    ],
+    "TANJONG PAGAR": [
+      "TG PAGAR PLAZA",
+      "CANTONMENT RD"
+    ],
+    "LAVENDER": [
+      "CRAWFORD LANE",
+      "NTH BRIDGE RD",
+      "FRENCH RD",
+      "KING GEORGE'S AVE"
+    ],
+    "BIDADARI": [
+      "ALKAFF CRES",
+      "BIDADARI PK DR"
+    ],
+    "MACPHERSON": [
+      "MACPHERSON LANE",
+      "CIRCUIT RD",
+      "PIPIT RD",
+      "BALAM RD"
+    ],
+    "DAKOTA": [
+      "DAKOTA CRES",
+      "OLD AIRPORT RD",
+      "PINE CL",
+      "CASSIA CRES",
+      "JLN DUA"
+    ],
+    "KEMBANGAN": [
+      "LENGKONG TIGA"
+    ]
+  },
+  "street_words": {
+    "NORTH": "NTH",
+    "SOUTH": "STH",
+    "AVENUE": "AVE",
+    "ROAD": "RD",
+    "STREET": "ST",
+    "DRIVE": "DR",
+    "CENTRAL": "CTRL",
+    "CRESCENT": "CRES",
+    "PLACE": "PL",
+    "LORONG": "LOR",
+    "JALAN": "JLN",
+    "BUKIT": "BT",
+    "UPPER": "UPP",
+    "TANJONG": "TG",
+    "KAMPONG": "KG",
+    "GARDENS": "GDNS",
+    "TERRACE": "TER",
+    "HEIGHTS": "HTS",
+    "PARK": "PK",
+    "CLOSE": "CL",
+    "COMMONWEALTH": "C'WEALTH"
+  },
+  "number_words": {
+    "ONE": "1",
+    "TWO": "2",
+    "THREE": "3",
+    "FOUR": "4",
+    "FIVE": "5",
+    "SIX": "6",
+    "SEVEN": "7",
+    "EIGHT": "8",
+    "NINE": "9",
+    "TEN": "10",
+    "ELEVEN": "11",
+    "TWELVE": "12"
+  }
+}

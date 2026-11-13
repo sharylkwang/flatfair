@@ -540,6 +540,46 @@ def mailSlip(sender, instance, created, **kwargs):
     )
 
 
+@login_required
+def notifications(request):
+    social = request.GET.get("show") == "community"
+    shownAt = timezone.now()
+    items = Paginator(page_items(request.user, social), 10).get_page(request.GET.get("page"))
+    unread = request.user.activity_notices.filter(read=False, createdAt__lte=shownAt)
+
+    if social:
+        unread = unread.filter(kind__startswith="community_")
+
+    unread.update(read=True)
+    context = {"items": items, "lead": LEADS[role_of(request.user)], "community": social}
+
+    return render(request, "storefront/notifications.html", context)
+
+
+def noteFlood(request):
+    key = "support:" + sha256(request.META.get("REMOTE_ADDR", "").encode()).hexdigest()
+    sent = cache.get(key, 0) + 1
+    cache.set(key, sent, 3600)
+
+    return sent > (5)
+
+
+def helpStart(request):
+    initial = {}
+
+    if request.GET.get("topic") in dict(Ticket.TOPICS):
+        initial["topic"] = request.GET["topic"]
+
+    if request.GET.get("order", "").isdigit():
+        initial["order"] = request.GET["order"]
+
+    if request.user.is_authenticated and request.GET.get("payment", "").isdigit():
+        payment = get_object_or_404(Payment, pk=request.GET["payment"], seller=request.user)
+        initial["message"] = f"Please help me with payment {payment.reference}."
+
+    return initial
+
+
 def support(request):
     form = None
 

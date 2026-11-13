@@ -1,0 +1,11 @@
+{% extends 'storefront/base.html' %}
+{% block title %}{% if request.resolver_match.url_name == 'listing_detail' %}Flat not found{% else %}Page not found{% endif %} · FlatFair{% endblock %}
+{% block body_class %} error-page{% endblock %}
+{% block page_header %}
+  {% if request.resolver_match.url_name == 'listing_detail' %}
+    {% include 'storefront/page_hero.html' with tier="task" title='This flat is no longer for sale' lead='It may have been sold, or the link may be out of date. You can still browse other flats.' photo="storefront/photos/error-404.jpg" photo_width=1600 photo_height=1067 photo_small="storefront/photos/error-404-960.jpg" hide_default_action=True extra_template="storefront/error_actions.html" %}
+  {% else %}
+    {% include 'storefront/page_hero.html' with tier="task" title='Page not found' lead='Sorry, we can’t find that page. Please check the address, or browse flats.' photo="storefront/photos/error-404.jpg" photo_width=1600 photo_height=1067 photo_small="storefront/photos/error-404-960.jpg" hide_default_action=True extra_template="storefront/error_actions.html" %}
+  {% endif %}
+{% endblock %}
+{% block content %}{% endblock %}

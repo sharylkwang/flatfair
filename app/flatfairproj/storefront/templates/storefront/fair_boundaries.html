@@ -1,0 +1,5 @@
+{% load estate_tags %}
+<dl class="fair-boundaries" aria-label="Fair range boundaries">
+  <div><dt>Low</dt><dd>{{ lo|range_money }}</dd></div>
+  <div><dt>High</dt><dd>{{ hi|range_money }}</dd></div>
+</dl>
