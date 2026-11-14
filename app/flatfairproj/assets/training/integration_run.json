@@ -1,0 +1,314 @@
+{
+  "clean ZIP, photo model not downloaded": {
+    "ranAt": "2026-11-10T09:35:25+00:00",
+    "python": "3.12.3",
+    "system": "Linux",
+    "project": "flatfairproj",
+    "price": {
+      "input": {
+        "town": "ANG MO KIO",
+        "flatType": "4 ROOM",
+        "flatModel": "New Generation",
+        "floorAreaSqm": 91,
+        "storey": 5,
+        "leaseYear": 1984,
+        "postal": "560474",
+        "block": "474"
+      },
+      "modelVersion": "v5.3",
+      "band": {
+        "low": 470106,
+        "estimate": 494848,
+        "high": 544843
+      },
+      "predictionSeconds": 0.421,
+      "cases": [
+        {
+          "case": "asking at the estimate",
+          "askingPrice": 495000,
+          "flag": null,
+          "verdict": "Fair price",
+          "listingStatusOnSubmit": "live (if photos and documents also pass)"
+        },
+        {
+          "case": "asking 25% above the estimate",
+          "askingPrice": 619000,
+          "flag": "above",
+          "verdict": "Priced high",
+          "listingStatusOnSubmit": "review"
+        },
+        {
+          "case": "asking 25% below the estimate",
+          "askingPrice": 371000,
+          "flag": null,
+          "verdict": "Priced low",
+          "listingStatusOnSubmit": "live (if photos and documents also pass)"
+        }
+      ]
+    },
+    "photos": {
+      "modelInstalled": false,
+      "identity": "not installed",
+      "thresholds": {
+        "refuseAt": 0.6269974708557129,
+        "reviewAt": 0.2547644078731537,
+        "slotWarningAt": 0.9
+      },
+      "photos": 4,
+      "checkSeconds": 0.0,
+      "cases": [
+        {
+          "case": "living room photo in the Living room slot",
+          "file": "storefront/static/storefront/interiors/hdb-460204-08-living_room.jpg",
+          "slot": "living_room",
+          "label": null,
+          "roomLabel": null,
+          "roomConfidence": null,
+          "notRoomScore": null,
+          "aiImageScore": null,
+          "decision": "listing held for staff review",
+          "reasons": [
+            "photo check unavailable"
+          ]
+        },
+        {
+          "case": "kitchen photo in the Master bedroom slot",
+          "file": "storefront/static/storefront/interiors/hdb-460204-08-kitchen.jpg",
+          "slot": "master_bedroom",
+          "label": null,
+          "roomLabel": null,
+          "roomConfidence": null,
+          "notRoomScore": null,
+          "aiImageScore": null,
+          "decision": "listing held for staff review",
+          "reasons": [
+            "photo check unavailable"
+          ]
+        },
+        {
+          "case": "outdoor estate photo in the Kitchen slot",
+          "file": "storefront/static/storefront/estate/jurongwest.jpg",
+          "slot": "kitchen",
+          "label": null,
+          "roomLabel": null,
+          "roomConfidence": null,
+          "notRoomScore": null,
+          "aiImageScore": null,
+          "decision": "listing held for staff review",
+          "reasons": [
+            "photo check unavailable"
+          ]
+        },
+        {
+          "case": "app icon (not a photo of a flat) in the Bedroom 2 slot",
+          "file": "storefront/static/storefront/icons/icon-512.png",
+          "slot": "bedroom_2",
+          "label": null,
+          "roomLabel": null,
+          "roomConfidence": null,
+          "notRoomScore": null,
+          "aiImageScore": null,
+          "decision": "listing held for staff review",
+          "reasons": [
+            "photo check unavailable"
+          ]
+        }
+      ]
+    },
+    "packages": {
+      "listingsChecked": 5,
+      "cases": [
+        {
+          "listing": "Ang Mo Kio 3 ROOM",
+          "status": "review",
+          "suggestion": "Boost 30 days",
+          "reason": "Your flat has been listed for over a month; your flat has under 50 years of lease remaining. A visibility boost may help buyers find it.",
+          "seconds": 0.096
+        },
+        {
+          "listing": "Bedok 4 ROOM",
+          "status": "live",
+          "suggestion": "Boost 90 days",
+          "reason": "Bedok has high resale activity; your flat has been listed for over a month. A visibility boost may help buyers find it.",
+          "seconds": 0.013
+        },
+        {
+          "listing": "Bishan 5 ROOM",
+          "status": "live",
+          "suggestion": null,
+          "reason": "no paid package suggested (free option predicted, active package, or model unavailable)",
+          "seconds": 0.001
+        },
+        {
+          "listing": "Bukit Batok EXECUTIVE",
+          "status": "live",
+          "suggestion": "Top spot",
+          "reason": "Your asking price is above the fair range; Bukit Batok has high resale activity. A visibility boost may help buyers find it.",
+          "seconds": 0.013
+        },
+        {
+          "listing": "Choa Chu Kang 4 ROOM",
+          "status": "live",
+          "suggestion": null,
+          "reason": "no paid package suggested (free option predicted, active package, or model unavailable)",
+          "seconds": 0.001
+        }
+      ]
+    }
+  },
+  "clean ZIP, photo model installed": {
+    "ranAt": "2026-11-10T09:35:29+00:00",
+    "python": "3.12.3",
+    "system": "Linux",
+    "project": "flatfairproj",
+    "price": {
+      "input": {
+        "town": "ANG MO KIO",
+        "flatType": "4 ROOM",
+        "flatModel": "New Generation",
+        "floorAreaSqm": 91,
+        "storey": 5,
+        "leaseYear": 1984,
+        "postal": "560474",
+        "block": "474"
+      },
+      "modelVersion": "v5.3",
+      "band": {
+        "low": 470106,
+        "estimate": 494848,
+        "high": 544843
+      },
+      "predictionSeconds": 0.419,
+      "cases": [
+        {
+          "case": "asking at the estimate",
+          "askingPrice": 495000,
+          "flag": null,
+          "verdict": "Fair price",
+          "listingStatusOnSubmit": "live (if photos and documents also pass)"
+        },
+        {
+          "case": "asking 25% above the estimate",
+          "askingPrice": 619000,
+          "flag": "above",
+          "verdict": "Priced high",
+          "listingStatusOnSubmit": "review"
+        },
+        {
+          "case": "asking 25% below the estimate",
+          "askingPrice": 371000,
+          "flag": null,
+          "verdict": "Priced low",
+          "listingStatusOnSubmit": "live (if photos and documents also pass)"
+        }
+      ]
+    },
+    "photos": {
+      "modelInstalled": true,
+      "identity": "verified",
+      "thresholds": {
+        "refuseAt": 0.6269974708557129,
+        "reviewAt": 0.2547644078731537,
+        "slotWarningAt": 0.9
+      },
+      "photos": 4,
+      "checkSeconds": 10.745,
+      "cases": [
+        {
+          "case": "living room photo in the Living room slot",
+          "file": "storefront/static/storefront/interiors/hdb-460204-08-living_room.jpg",
+          "slot": "living_room",
+          "label": "kitchen",
+          "roomLabel": "kitchen",
+          "roomConfidence": 0.45194026827812195,
+          "notRoomScore": 0.04551957024705189,
+          "aiImageScore": 0.43625137209892273,
+          "decision": "accepted",
+          "reasons": []
+        },
+        {
+          "case": "kitchen photo in the Master bedroom slot",
+          "file": "storefront/static/storefront/interiors/hdb-460204-08-kitchen.jpg",
+          "slot": "master_bedroom",
+          "label": "kitchen",
+          "roomLabel": "kitchen",
+          "roomConfidence": 0.9748435616493225,
+          "notRoomScore": 0.019410293719261063,
+          "aiImageScore": 0.5389254689216614,
+          "decision": "listing held for staff review",
+          "reasons": [
+            "may be AI-generated",
+            "This looks like a kitchen. Is it the right photo for Master bedroom?"
+          ]
+        },
+        {
+          "case": "outdoor estate photo in the Kitchen slot",
+          "file": "storefront/static/storefront/estate/jurongwest.jpg",
+          "slot": "kitchen",
+          "label": "window view",
+          "roomLabel": "phone",
+          "roomConfidence": 0.6299038529396057,
+          "notRoomScore": 0.0,
+          "aiImageScore": 0.5974961519241333,
+          "decision": "listing held for staff review",
+          "reasons": [
+            "may be AI-generated",
+            "This looks like a window view, not the Kitchen. Staff will check it."
+          ]
+        },
+        {
+          "case": "app icon (not a photo of a flat) in the Bedroom 2 slot",
+          "file": "storefront/static/storefront/icons/icon-512.png",
+          "slot": "bedroom_2",
+          "label": "screenshot",
+          "roomLabel": "screenshot",
+          "roomConfidence": 0.7864586710929871,
+          "notRoomScore": 0.9974051803801558,
+          "aiImageScore": 0.6631408929824829,
+          "decision": "refused with a reason",
+          "reasons": []
+        }
+      ]
+    },
+    "packages": {
+      "listingsChecked": 5,
+      "cases": [
+        {
+          "listing": "Ang Mo Kio 3 ROOM",
+          "status": "review",
+          "suggestion": "Boost 30 days",
+          "reason": "Your flat has been listed for over a month; your flat has under 50 years of lease remaining. A visibility boost may help buyers find it.",
+          "seconds": 0.08
+        },
+        {
+          "listing": "Bedok 4 ROOM",
+          "status": "live",
+          "suggestion": "Boost 90 days",
+          "reason": "Bedok has high resale activity; your flat has been listed for over a month. A visibility boost may help buyers find it.",
+          "seconds": 0.013
+        },
+        {
+          "listing": "Bishan 5 ROOM",
+          "status": "live",
+          "suggestion": null,
+          "reason": "no paid package suggested (free option predicted, active package, or model unavailable)",
+          "seconds": 0.001
+        },
+        {
+          "listing": "Bukit Batok EXECUTIVE",
+          "status": "live",
+          "suggestion": "Top spot",
+          "reason": "Your asking price is above the fair range; Bukit Batok has high resale activity. A visibility boost may help buyers find it.",
+          "seconds": 0.013
+        },
+        {
+          "listing": "Choa Chu Kang 4 ROOM",
+          "status": "live",
+          "suggestion": null,
+          "reason": "no paid package suggested (free option predicted, active package, or model unavailable)",
+          "seconds": 0.001
+        }
+      ]
+    }
+  }
+}

@@ -117,7 +117,9 @@ def dateRange(request):
             value = None
 
         if raw and value is None:
-            problem = "Those dates did not work. Pick dates from the calendar and try again."
+            problem = (
+                "Those dates did not work. Pick dates from the calendar and try again."
+            )
 
         dates.append(value)
 
@@ -125,6 +127,8 @@ def dateRange(request):
 
     if start and end and start > end:
         problem = "The start date must be on or before the end date. Showing every date instead."
+
+
         start = end = None
 
     return start, end, problem
@@ -138,7 +142,9 @@ def page(request, template, context=None, section=None):
     for key in ("rows", "orders", "people", "products", "team", "entries"):
         if key in context:
             if not hasattr(context[key], "paginator"):
-                context[key] = Paginator(context[key], 25).get_page(request.GET.get("page"))
+                context[key] = Paginator(context[key], 25).get_page(
+                    request.GET.get("page")
+                )
 
             context["pageObj"] = context[key]
 
@@ -155,15 +161,20 @@ def page(request, template, context=None, section=None):
     context["queueCount"] = Listing.objects.filter(status="review").count()
     ticketNum = Ticket.objects.exclude(status="resolved").count()
 
-    reviewNum = Review.objects.filter(createdAt__gte=timezone.now() - timedelta(days=30)).count()
+    reviewNum = Review.objects.filter(
+        createdAt__gte=timezone.now() - timedelta(days=30)
+    ).count()
 
-    postNum = Post.objects.filter(hidden=False, reports__resolved=False).distinct().count()
+    postNum = (
+        Post.objects.filter(hidden=False, reports__resolved=False).distinct().count()
+    )
 
     orderNum = 0
 
     from sellerpanel.reconciliation import payAlertQ
 
     payNum = Payment.objects.filter(payAlertQ()).count()
+
 
     if canOpen(request.user, "admin_orders"):
         orderNum = Order.objects.filter(todoQ()).distinct().count()
@@ -181,18 +192,27 @@ def page(request, template, context=None, section=None):
 
     groups = MENU_GROUPS
 
-    items = {item["page"]: {**item, "count": counts.get(item["page"])} for item in context["menu"]}
+    items = {
+        item["page"]: {**item, "count": counts.get(item["page"])}
+        for item in context["menu"]
+    }
+
 
     context["menuGroups"] = [
         {
             "label": label,
-            "items": [items[name] for name in names if name in items and not items[name]["more"]],
+            "items": [
+                items[name]
+                for name in names
+                if name in items and not items[name]["more"]
+            ],
         }
         for label, names in groups
         if any(name in items and not items[name]["more"] for name in names)
     ]
 
     context["moreMenu"] = [item for item in items.values() if item["more"]]
+
 
     return render(request, template, context)
 
@@ -219,6 +239,7 @@ def flatWeeks(today):
 
     counts = {}
 
+
     for row in rows:
         counts[row["week"].date()] = row["count"]
 
@@ -227,7 +248,9 @@ def flatWeeks(today):
     for number in range(WEEKS_SHOWN):
         start = first + timedelta(weeks=number)
 
-        weeks.append({"label": start.strftime("%-d %b"), "count": counts.get(start.date(), 0)})
+        weeks.append(
+            {"label": start.strftime("%-d %b"), "count": counts.get(start.date(), 0)}
+        )
 
     busiest = max(week["count"] for week in weeks) or 1
 
@@ -291,6 +314,8 @@ def salesWeeks(today):
     )
 
     totals = {row["week"].date(): row["total"] for row in rows}
+
+
     weeks = []
 
     for number in range(WEEKS_SHOWN):
@@ -312,6 +337,7 @@ def flatShares():
     counts = dict(Listing.objects.values_list("status").annotate(count=Count("pk")))
     total = sum(counts.values())
 
+
     named = [
         ("live", "Live"),
         ("review", "In review"),
@@ -319,7 +345,10 @@ def flatShares():
         ("sold", "Sold"),
     ]
 
-    parts = [{"key": key, "label": label, "count": counts.get(key, 0)} for key, label in named]
+    parts = [
+        {"key": key, "label": label, "count": counts.get(key, 0)}
+        for key, label in named
+    ]
 
     parts.append(
         {
@@ -338,6 +367,7 @@ def flatShares():
 def monthNums(now):
     paid = Order.objects.exclude(status="refunded")
     month = paid.filter(createdAt__gte=now - timedelta(days=30))
+
 
     before = paid.filter(
         createdAt__gte=now - timedelta(days=60), createdAt__lt=now - timedelta(days=30)
@@ -360,7 +390,10 @@ def itemSales():
     )
 
     for row in rows:
-        row["width"] = round(row["total"] / rows[0]["total"] * 100) if rows[0]["total"] else 0
+        row["width"] = (
+            round(row["total"] / rows[0]["total"] * 100) if rows[0]["total"] else 0
+        )
+
 
     return rows
 
@@ -376,6 +409,7 @@ def idleActions(user):
         if canOpen(user, urlName) and len(idle) < 2:
             idle.append({"url": reverse(urlName), "label": label, "words": words})
 
+
     if len(idle) == 2:
         return (
             idle,
@@ -390,6 +424,9 @@ def idleActions(user):
 
 def hotTasks(waiting):
     from adminpanel.orders import refundQ, todoQ
+
+
+
     from storefront.deals import stuckDeals
 
     now = timezone.now()
@@ -468,7 +505,13 @@ def hotTasks(waiting):
     for rank, (query, detail) in enumerate(zip(queries, details)):
         icon, title, text, urlName, queryString, label = detail
 
-        oldest = query.order_by("createdAt", "pk").values_list("createdAt", flat=True).first()
+
+
+        oldest = (
+            query.order_by("createdAt", "pk")
+            .values_list("createdAt", flat=True)
+            .first()
+        )
 
         actions.append(
             {
@@ -484,13 +527,22 @@ def hotTasks(waiting):
             }
         )
 
-    actions.sort(key=lambda action: (-action["count"], action["oldest"], action["priority"]))
+    actions.sort(
+        key=lambda action: (-action["count"], action["oldest"], action["priority"])
+    )
+
+
 
     return {"startActions": actions[:3], "alsoWaiting": actions[3:]}
 
 
 def todoActions(tasks, paymentCount):
-    todo = [action for action in tasks["startActions"] + tasks["alsoWaiting"] if action["count"]]
+    todo = [
+        action
+        for action in tasks["startActions"] + tasks["alsoWaiting"]
+        if action["count"]
+    ]
+
 
     if paymentCount:
         todo.append(
@@ -529,8 +581,12 @@ def overview(request):
     from adminpanel.moderation import addHolds, queueSets
     from adminpanel.orders import refundQ
 
+
     user = request.user
     hello = helloFor(user)
+
+
+
     paid = Order.objects.exclude(status="refunded")
     orderNum = paid.count()
     addons = paid.filter(items__kind="addon").distinct().count()
@@ -540,15 +596,26 @@ def overview(request):
     reviewNum = Listing.objects.filter(status="review").count()
     liveNum = Listing.objects.filter(status="live").count()
     userNum = User.objects.filter(is_staff=False).count()
+
+
+
     toStart = 0
     doing = 0
 
     if orderOk:
-        toStart = Order.objects.filter(status="paid", items__kind="addon").distinct().count()
+        toStart = (
+            Order.objects.filter(status="paid", items__kind="addon").distinct().count()
+        )
 
-        doing = Order.objects.filter(status="processing", items__kind="addon").distinct().count()
+        doing = (
+            Order.objects.filter(status="processing", items__kind="addon")
+            .distinct()
+            .count()
+        )
 
     openHelp = Ticket.objects.none()
+
+
 
     if ticketOk:
         openHelp = Ticket.objects.exclude(status="resolved")
@@ -559,12 +626,16 @@ def overview(request):
     if ticketOk:
         weekAgo = timezone.now() - timedelta(days=7)
 
-        weekDone = Ticket.objects.filter(status="resolved", resolvedAt__gte=weekAgo).count()
+
+        weekDone = Ticket.objects.filter(
+            status="resolved", resolvedAt__gte=weekAgo
+        ).count()
 
     refundNum = Order.objects.filter(refundQ()).distinct().count()
     payNum = 0
     sentNum = 0
     alerts = []
+
 
     if refundNum:
         alerts.append(
@@ -588,7 +659,9 @@ def overview(request):
                 status="submitted", listing__status="review"
             ).count()
 
-            checkText = "Each one says why it was held. Approve, reject or ask for documents."
+            checkText = (
+                "Each one says why it was held. Approve, reject or ask for documents."
+            )
 
             if sentNum:
                 checkText = f"{plural(sentNum, 'document submission')} ready to check. Accept or ask the seller to upload again."
@@ -631,6 +704,8 @@ def overview(request):
                 )
             )
 
+
+
         from sellerpanel.reconciliation import payAlertQ
 
         payNum = Payment.objects.filter(payAlertQ()).count()
@@ -669,6 +744,8 @@ def overview(request):
 
     idle, idleNote = idleActions(user)
     jobUrl, jobName = mainAction(queueOk, ticketOk, alerts)
+
+
     latest = []
 
     if orderOk:
@@ -682,10 +759,14 @@ def overview(request):
 
     if queueOk:
         waiting = list(
-            Listing.objects.filter(status="review").order_by("reviewSince", "createdAt")[:5]
+            Listing.objects.filter(status="review").order_by(
+                "reviewSince", "createdAt"
+            )[:5]
         )
 
-    readyPics(waiting + [item.listing for order in latest for item in order.items.all()])
+    readyPics(
+        waiting + [item.listing for order in latest for item in order.items.all()]
+    )
 
     weeks = flatWeeks(timezone.localtime())
     weekMax = sizeBars(weeks, "count")
@@ -726,7 +807,9 @@ def overview(request):
         "reviewCount": reviewNum,
         "reasonCounts": {
             key: group.count()
-            for key, group in queueSets(addHolds(Listing.objects.filter(status="review"))).items()
+            for key, group in queueSets(
+                addHolds(Listing.objects.filter(status="review"))
+            ).items()
         },
         "ticketCount": ticketNum,
         "resolvedThisWeek": weekDone,
@@ -755,11 +838,15 @@ DELIVERY_TYPES = {**DOCUMENT_TYPES, ".zip": ("application/zip", b"PK", None)}
 def findUsers(request):
     people = peopleCan(User.objects.filter(is_staff=False)).order_by("first_name", "pk")
 
+
+
     term = request.GET.get("q", "").strip()
 
     if term:
         people = people.filter(
-            Q(first_name__icontains=term) | Q(last_name__icontains=term) | Q(email__icontains=term)
+            Q(first_name__icontains=term)
+            | Q(last_name__icontains=term)
+            | Q(email__icontains=term)
         )
 
     role = request.GET.get("role", "")
@@ -788,6 +875,7 @@ def user_list(request):
         "query": request.GET.urlencode(),
     }
 
+
     return page(request, "adminpanel/customers.html", context)
 
 
@@ -803,6 +891,9 @@ def see_user(request, pk):
         return redirect("admin_customers")
 
     canDo = peopleCan(User.objects.filter(pk=person.pk)).get()
+
+
+
     sells = canDo.isSeller
     form = ContactForm(instance=person)
 
@@ -814,7 +905,11 @@ def see_user(request, pk):
                 with transaction.atomic():
                     form.save()
             except IntegrityError:
-                if not User.objects.exclude(pk=person.pk).filter(username=person.email).exists():
+                if (
+                    not User.objects.exclude(pk=person.pk)
+                    .filter(username=person.email)
+                    .exists()
+                ):
                     raise
 
                 form.add_error("email", "Another account already uses this email.")
@@ -830,6 +925,7 @@ def see_user(request, pk):
 
                 return redirect("admin_customer", pk=pk)
 
+
     history = (
         AuditLog.objects.filter(target__startswith=f"Customer #{person.pk} ")
         .select_related("actor")
@@ -842,9 +938,9 @@ def see_user(request, pk):
         "listings": person.listings.annotate(
             isPublic=Exists(Listing.objects.public().filter(pk=OuterRef("pk")))
         ).order_by("-createdAt"),
-        "orders": person.orders.prefetch_related("items__product", "items__listing").order_by(
-            "-createdAt"
-        ),
+        "orders": person.orders.prefetch_related(
+            "items__product", "items__listing"
+        ).order_by("-createdAt"),
         "history": history,
         "tickets": person.tickets.order_by("-createdAt")[:10],
         "offers": person.offers.select_related("listing").order_by("-createdAt")[:10],
@@ -880,7 +976,9 @@ def user_block(request, pk):
         return HttpResponseBadRequest("Choose suspend or reactivate.")
 
     if not reason or len(reason) > 200:
-        messages.error(request, "Add a reason of 200 characters or fewer for this account change.")
+        messages.error(
+            request, "Add a reason of 200 characters or fewer for this account change."
+        )
 
         return redirect("admin_customer", pk=pk)
 
@@ -895,7 +993,10 @@ def user_block(request, pk):
         person.is_active = False
         person.save(update_fields=["is_active"])
 
-        hidden = person.listings.filter(status__in=["live", "review"]).update(status="hidden")
+
+        hidden = person.listings.filter(status__in=["live", "review"]).update(
+            status="hidden"
+        )
 
         if sells:
             audit(
@@ -938,6 +1039,8 @@ def user_block(request, pk):
 
             if flat:
                 flat.status = "review"
+
+
                 flat.save(update_fields=["status"])
                 gotBack = 1
 
@@ -960,6 +1063,8 @@ def user_block(request, pk):
             else:
                 flatWord = "listings"
 
+
+
             messages.success(
                 request,
                 f"{person.first_name} is active again. {gotBack} {flatWord} back in review.",
@@ -967,7 +1072,9 @@ def user_block(request, pk):
         else:
             audit(request, "account reactivated", user_tag(person), reason)
 
-            messages.success(request, f"{person.first_name} is active again and can sign in.")
+            messages.success(
+                request, f"{person.first_name} is active again and can sign in."
+            )
 
     return redirect("admin_customer", pk=pk)
 
@@ -1005,6 +1112,7 @@ def item_edit(request, pk=None):
         )
 
         messages.success(request, f"{saved.name} saved.")
+
 
         return redirect("admin_catalogue")
 
@@ -1049,6 +1157,8 @@ def item_pic(request, pk):
     if problem:
         messages.error(request, problem)
 
+
+
         return redirect("admin_product_edit", product.pk)
 
     product.image.save("photo.jpg", ContentFile(data), save=False)
@@ -1075,6 +1185,9 @@ def item_flip(request, pk):
             return redirect("admin_catalogue")
 
         product.isActive = wanted == "1"
+
+
+
         product.save()
 
         audit(
@@ -1121,12 +1234,17 @@ def staff(request):
         else:
             audit(request, "staff added", member.email, "Admin")
 
-            messages.success(request, f"{member.first_name} can now sign in as an Admin.")
+            messages.success(
+                request, f"{member.first_name} can now sign in as an Admin."
+            )
 
             return redirect("admin_staff")
 
     staffUsers = User.objects.filter(is_staff=True).order_by("first_name", "pk")
     team = Paginator(staffUsers, 25).get_page(request.GET.get("page"))
+
+
+
     context = {"form": form, "team": team, "rules": PASSWORD_RULES}
 
     return page(request, "adminpanel/staff.html", context)
@@ -1174,6 +1292,9 @@ def staff_drop(request, pk):
         member.save()
         member.groups.remove(*Group.objects.filter(name="Admin"))
         audit(request, "staff removed", member.email)
+
+
+
         messages.success(request, f"{member.first_name} no longer has staff access.")
 
     return redirect("admin_staff")
@@ -1186,10 +1307,14 @@ def account(request):
     form = ChangePasswordForm(request.user, request.POST or None)
     form.fields["new_password2"].label = "Type new password again"
 
+
+
     if request.method == "POST" and form.is_valid():
         form.save()
         update_session_auth_hash(request, form.user)
         audit(request, "password changed", request.user.email)
+
+
         tellChange(request, request.user)
         messages.success(request, "Password changed.")
 
@@ -1211,7 +1336,7 @@ def priceFlagQ():
     return (
         Q(bandHigh__isnull=False, bandLow__isnull=False)
         & ~Q(askingPrice=0)
-        & (Q(askingPrice__gt=F("bandHigh")) | Q(askingPrice__lt=F("bandLow") * (0.7)))
+        & (Q(askingPrice__gt=F("bandHigh")) | Q(askingPrice__lt=F("bandLow") * 0.7))
     )
 
 
@@ -1225,6 +1350,8 @@ def bandCheck():
         }:
             return None
 
+
+
         overall, towns = report["overall"], report["byTown"]
 
         if not isinstance(towns, dict) or not towns:
@@ -1237,6 +1364,7 @@ def bandCheck():
             "aboveShare",
             "typoShare",
         )
+
 
         amounts = (
             "meanWidthDollars",
@@ -1252,7 +1380,11 @@ def bandCheck():
             for key in (*shares, *amounts):
                 value = summary[key]
 
-                if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+                if (
+                    type(value) not in (int, float)
+                    or not math.isfinite(value)
+                    or value < 0
+                ):
                     return None
 
                 if key in shares and value > 1:
@@ -1286,7 +1418,11 @@ def price_page(request):
         createdAt__gte=OuterRef("createdAt"),
     )
 
-    unseen = ListingPhoto.objects.filter(doubtQ(), listing__status="live").exclude(Exists(seen))
+
+
+    unseen = ListingPhoto.objects.filter(doubtQ(), listing__status="live").exclude(
+        Exists(seen)
+    )
 
     flagged = Decision.objects.filter(
         priceFlagQ(), staff__isnull=False, decision__in=["approved", "rejected"]
@@ -1296,6 +1432,9 @@ def price_page(request):
     )
 
     approved, rejected = flagged["approved"], flagged["rejected"]
+
+
+
     info = modelInfo()
 
     if info.get("month"):
@@ -1318,10 +1457,14 @@ def price_page(request):
         "approvedCount": approved,
         "rejectedCount": rejected,
         "overrideRate": (
-            round(approved / (approved + rejected) * 100) if approved + rejected else None
+            round(approved / (approved + rejected) * 100)
+            if approved + rejected
+            else None
         ),
         "photosChecked": ListingPhoto.objects.exclude(aiIrrelevant=None).count(),
-        "photosDoubtful": ListingPhoto.objects.filter(doubtQ(), listing__status="review").count(),
+        "photosDoubtful": ListingPhoto.objects.filter(
+            doubtQ(), listing__status="review"
+        ).count(),
         "liveDoubtful": unseen.count(),
         "liveFlats": (
             Listing.objects.filter(pk__in=unseen.values("listing"))
@@ -1340,7 +1483,9 @@ def replyLink(ticket):
 
 
 def add_thread(found):
-    latest = TicketMessage.objects.filter(ticket=OuterRef("pk")).order_by("-createdAt", "-pk")
+    latest = TicketMessage.objects.filter(ticket=OuterRef("pk")).order_by(
+        "-createdAt", "-pk"
+    )
 
     return found.annotate(
         replyCount=Count("replies"),
@@ -1363,6 +1508,8 @@ def tickets(request):
 
     board = []
 
+
+
     for key, title, rows in columns:
         cards = list(rows)
 
@@ -1384,7 +1531,11 @@ def staffReply(request, pk, body):
     if ticket.status == "resolved":
         return False
 
-    TicketMessage.objects.create(ticket=ticket, author=request.user, body=body, fromStaff=True)
+    TicketMessage.objects.create(
+        ticket=ticket, author=request.user, body=body, fromStaff=True
+    )
+
+
 
     if ticket.assignee_id is None:
         ticket.assignee = request.user
@@ -1421,6 +1572,7 @@ def see_ticket(request, pk):
         initial={"body": replies.get(request.GET.get("reply"), "")},
     )
 
+
     if request.method == "POST" and not ticket.customer_id:
         messages.error(
             request,
@@ -1431,7 +1583,9 @@ def see_ticket(request, pk):
 
     if request.method == "POST" and form.is_valid():
         if staffReply(request, ticket.pk, form.cleaned_data["body"]):
-            messages.success(request, "Reply sent. The customer sees it in My messages.")
+            messages.success(
+                request, "Reply sent. The customer sees it in My messages."
+            )
         else:
             messages.error(
                 request,
@@ -1439,6 +1593,7 @@ def see_ticket(request, pk):
             )
 
         return redirect("admin_ticket", ticket.pk)
+
 
     context = {
         "ticket": ticket,
@@ -1455,13 +1610,18 @@ def see_ticket(request, pk):
 @transaction.atomic
 def ticket_do(request, pk):
     ticket = Ticket.objects.select_for_update().filter(pk=pk).first()
+
+
     action = request.POST.get("action")
+
 
     if request.method != "POST" or not ticket or action != "resolve":
         return redirect("admin_tickets")
 
     if ticket.status == "resolved":
-        messages.error(request, f"Ticket #{ticket.pk} is already resolved. Nothing changed.")
+        messages.error(
+            request, f"Ticket #{ticket.pk} is already resolved. Nothing changed."
+        )
     else:
         ticket.status, ticket.resolvedAt = "resolved", timezone.now()
         ticket.assignee = request.user

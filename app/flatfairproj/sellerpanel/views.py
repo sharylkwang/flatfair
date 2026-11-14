@@ -72,6 +72,8 @@ def sureVisits(user):
 
 def lowerNote(listing, product):
     wanted = tierOf(product.tier)
+
+
     plans = packsNow([listing])
 
     for plan in plans:
@@ -92,6 +94,8 @@ def lowerNote(listing, product):
 
             return f"{product.name} is already active on this flat {until}. You can add it again after it ends."
 
+
+
     return ""
 
 
@@ -106,6 +110,7 @@ def plural(count, word):
 @login_required
 def dashboard(request):
     from sellerpanel.listings import sellSlots
+
 
     if not hasRole(request.user, "seller"):
         return sell_only(request)
@@ -127,6 +132,7 @@ def dashboard(request):
 
     for flat in events["activityFlats"][:5]:
         flatVerdict = None
+
 
         if flat.status != "sold" and flat.estimatedPrice and flat.bandLow and flat.bandHigh:
             flatVerdict = verdict(
@@ -160,6 +166,7 @@ def dashboard(request):
 
     dealCost = Offer.objects.filter(listing=OuterRef("pk"), status="accepted").values("amount")[:1]
 
+
     sold = request.user.listings.filter(status="sold").annotate(
         soldPrice=Coalesce(Subquery(dealCost), F("askingPrice"), output_field=DecimalField())
     )
@@ -167,6 +174,8 @@ def dashboard(request):
     soldSum = sold.aggregate(total=Sum("soldPrice"))["total"]
     fee = savings(soldSum or 0)["agentFee"]
     reviewNum = events["listingCounts"]["review"]
+
+
     alerts = []
 
     newOffers = Offer.objects.filter(
@@ -180,6 +189,7 @@ def dashboard(request):
         slot__startsAt__gte=timezone.now(),
         status="requested",
     ).count()
+
 
     if newOffers:
         alerts.append(
@@ -206,6 +216,8 @@ def dashboard(request):
                 "Confirm " + plural(booked, "viewing"),
             )
         )
+
+
 
     if endPlan and endPlan["expiry"] <= timezone.now() + timedelta(days=7):
         alerts.append(
@@ -235,11 +247,14 @@ def dashboard(request):
             )
         )
 
+
+
     agenda = []
 
     for day in events["days"][:7]:
         for slot in day["slots"]:
             agenda.append(slot.pk)
+
 
     weekPlan = sellSlots(ViewingSlot.objects.filter(pk__in=agenda[:3]).select_related("listing"))
 
@@ -273,6 +288,8 @@ def dashboard(request):
     for step in steps:
         if step["done"]:
             ticked += 1
+
+
 
     context = {
         **events,
@@ -345,6 +362,7 @@ def toggle_sold(request, publicId):
 
         return redirect("my_listings")
 
+
     if flat.status == "sold":
         agreed = flat.offers.filter(status="accepted").first()
 
@@ -361,6 +379,8 @@ def toggle_sold(request, publicId):
                 return redirect("my_listings")
 
     before = flat.status
+
+
     sellState(flat, "sold")
 
     if flat.status == before:
@@ -382,6 +402,7 @@ def toggle_sold(request, publicId):
 
         offer_notes(offers, "offer_declined", "buyer")
 
+
         booked = list(
             ViewingBooking.objects.select_for_update()
             .filter(
@@ -398,6 +419,7 @@ def toggle_sold(request, publicId):
 
         for booking in booked:
             visit_note(booking.slot, "viewing_cancelled", [booking.buyer_id], "seller")
+
 
     if closed:
         messages.success(
@@ -416,6 +438,7 @@ def toggle_sold(request, publicId):
         messages.success(
             request, "Your flat is relisted. Our team will check it before buyers can see it."
         )
+
 
     return redirect("my_listings")
 
@@ -454,6 +477,8 @@ def offerAsks(offer):
         f"Undo accepting {amount} from {name}? It will go back to waiting for your reply."
     )
 
+
+
     return offer
 
 
@@ -479,6 +504,7 @@ def seller_viewings(request):
     history = addReply(Offer.objects.filter(pk__in=[offer.pk for offer in bidPage]))
     history = history.order_by("-createdAt", "-pk")
 
+
     bidFlats = (
         Listing.objects.filter(pk__in=history.values("listing_id"))
         .annotate(acceptedCount=Count("offers", filter=Q(offers__status="accepted"), distinct=True))
@@ -496,6 +522,7 @@ def seller_viewings(request):
         )
         .order_by("-createdAt", "-pk")
     )
+
 
     for flat in bidFlats:
         for offer in flat.openHistory:
@@ -523,6 +550,7 @@ def seller_viewings(request):
     historyFlats = {flat.pk: flat for flat in bidFlats}
     openParts = []
     soldParts = []
+
 
     for flat in request.user.listings.exclude(status="withdrawn").order_by("-createdAt", "-pk"):
         known = historyFlats.get(flat.pk)
@@ -552,6 +580,8 @@ def seller_viewings(request):
         + [slot.listing for slot in waitSlots + planSlots]
     )
 
+
+
     now = timezone.localtime()
 
     context = {
@@ -569,6 +599,7 @@ def seller_viewings(request):
         "slotMax": (now + timedelta(days=180)).strftime("%Y-%m-%dT%H:%M"),
     }
 
+
     return render(request, "sellerpanel/seller_viewings.html", context)
 
 
@@ -585,10 +616,14 @@ def offer_floor(request, publicId):
     flat = get_object_or_404(Listing, publicId=publicId, seller=request.user)
     turnOn = request.POST.get("on") == "1"
 
+
+
     if turnOn and not (flat.estimatedPrice and flat.bandLow):
         messages.error(request, "We can’t set a minimum until we have an estimate for this flat.")
 
+
         return redirect("seller_listing", publicId=flat.publicId)
+
 
     Listing.objects.filter(pk=flat.pk).update(autoDeclineLow=turnOn)
 
@@ -627,6 +662,8 @@ def photo_move_back(request):
     moveBack(request, data, room)
     request.session.modified = True
     listing = listingFor(request, data)
+
+
     page = (
         reverse("edit_listing", kwargs={"publicId": listing.publicId})
         if listing
@@ -649,6 +686,7 @@ def stepsFor(request):
 
     if flat is None:
         return None
+
 
     from storefront.templatetags.offer_tags import share_links
 
@@ -692,10 +730,12 @@ def stepsFor(request):
         },
     ]
 
+
     nextStep = next((step for step in steps if not step["done"]), None)
 
     for step in steps:
         step["next"] = step is nextStep
+
 
     place = f"Blk {flat.block} {flat.town.title()}" if flat.block else flat.town.title()
 
@@ -780,6 +820,8 @@ def followers(flat):
         ).values_list("buyer_id", flat=True)
     )
 
+
+
     visits = set(
         ViewingBooking.objects.filter(
             slot__listing=flat,
@@ -789,17 +831,22 @@ def followers(flat):
         ).values_list("buyer_id", flat=True)
     )
 
+
+
     saved = set(
         SavedListing.objects.filter(listing=flat)
         .exclude(collection__user_id=flat.seller_id)
         .values_list("collection__user_id", flat=True)
     )
 
+
     return offers, visits, saved
 
 
 def tellFans(flat, kind, words, people, savedUrl):
     offers, visits, saved = people
+
+
     place = _place(flat)
     notices = []
 
@@ -813,6 +860,7 @@ def tellFans(flat, kind, words, people, savedUrl):
         else:
             key = "saved"
 
+
         url = savedUrl if key == "saved" else reverse("my_offers")
         notices.append(
             ActivityNotice(
@@ -821,7 +869,11 @@ def tellFans(flat, kind, words, people, savedUrl):
         )
 
     made = ActivityNotice.objects.bulk_create(notices)
+
+
     mailNotes(made)
+
+
 
     return len(made)
 
@@ -879,6 +931,7 @@ def pause_listing(request, publicId):
             dict(PAUSE_REASONS).get(reason, "No reason given"),
         )
 
+
     if told:
         messages.success(
             request,
@@ -888,6 +941,8 @@ def pause_listing(request, publicId):
         messages.success(
             request, "Your listing is paused. Buyers can’t find it until you resume it."
         )
+
+
 
     return pageFor(flat)
 
@@ -901,6 +956,8 @@ def resume_listing(request, publicId):
 
     with transaction.atomic():
         flat = sellerFlat(request, publicId)
+
+
 
         if flat.status != "paused":
             return pageFor(flat)
@@ -940,6 +997,8 @@ def closeAll(flat, now):
         status="declined", respondedAt=now
     )
 
+
+
     ViewingBooking.objects.filter(
         slot__listing=flat, slot__startsAt__gt=now, status__in=ACTIVE_BOOKINGS
     ).update(
@@ -959,6 +1018,7 @@ def closeAll(flat, now):
 def delete_listing(request, publicId):
     if not hasRole(request.user, "seller"):
         return redirect("home")
+
 
     with transaction.atomic():
         flat = sellerFlat(request, publicId)
@@ -991,6 +1051,7 @@ def delete_listing(request, publicId):
             "note": request.POST.get("note", "")[:200],
         }
 
+
         if request.method != "POST":
             return render(request, "sellerpanel/delete_listing.html", context)
 
@@ -1003,6 +1064,8 @@ def delete_listing(request, publicId):
 
         now = timezone.now()
         people = (offers, visits, saved)
+
+
         closeAll(flat, now)
         Listing.objects.filter(pk=flat.pk).update(
             status="withdrawn", withdrawnAt=now, withdrawReason=reason, withdrawNote=note

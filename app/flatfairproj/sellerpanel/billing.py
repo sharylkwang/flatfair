@@ -59,6 +59,7 @@ def cartGroups(items):
 
     groups = []
 
+
     if packs:
         groups.append({"items": packs, "status": "completed"})
 
@@ -103,6 +104,8 @@ def cart_add(request, pk):
 
     product = Product.objects.filter(pk=pk, isActive=True).first()
 
+
+
     if not product:
         return redirect("packages")
 
@@ -113,6 +116,7 @@ def cart_add(request, pk):
 
     target = cartFlat(request.user, request.session.get("cartListing"))
     packUrl = reverse("packages")
+
 
     if target:
         packUrl += f"?listing={target.publicId}"
@@ -162,6 +166,8 @@ def cart(request):
     if not hasRole(request.user, "seller"):
         return sell_only(request)
 
+
+
     items = list(
         Product.objects.filter(pk__in=request.session.get("cart", []), isActive=True).order_by("pk")
     )
@@ -180,6 +186,9 @@ def cart(request):
     )
 
     homes = openFlats(request.user).order_by("-createdAt")
+
+
+
     theFlat = cartFlat(request.user, request.session.get("cartListing"))
 
     context = {
@@ -218,10 +227,14 @@ def checkout(request):
         request, token, request.POST.get("listing", ""), request.POST.get("pay") == "yes"
     )
 
+
     if not isinstance(result, Payment):
         return result
 
     items, groups, listing = payLines(result)
+
+
+
     session = newSession(request, items, sum(group["gst"] for group in groups), token, listing)
 
     if not session:
@@ -242,6 +255,8 @@ def stripe_return(request):
 
     stripeId = request.GET.get("session_id", "")
     paid = getSession(stripeId)
+
+
 
     if paid is None:
         messages.error(request, STRIPE_ERROR)
@@ -269,6 +284,8 @@ def stripe_return(request):
     payment = Payment.objects.filter(
         seller=request.user, method="stripe", checkoutToken=token
     ).first()
+
+
 
     if (
         not payment
@@ -345,6 +362,8 @@ def payLines(payment):
         ]
         items.extend(lines)
 
+
+
         groups.append(
             {
                 **{key: Decimal(saved[key]) for key in ("subtotal", "gst", "total")},
@@ -375,6 +394,7 @@ def mayBuy(payment, seller):
             pk__in=[item.pk for item in items]
         )
     }
+
 
     if not items or len(products) != len(items):
         return None, None, "A product in this purchase no longer exists."
@@ -424,6 +444,9 @@ def finishPay(payment, confirmed=None):
 
     if already:
         payment.needsAttention = False
+
+
+
         payment.save()
 
         return already, ""
@@ -460,6 +483,7 @@ def finishPay(payment, confirmed=None):
     payment.snapshot = {**payment.snapshot, "attentionReason": problem}
     payment.save(update_fields=["needsAttention", "snapshot"])
 
+
     return ([], problem) if problem else (placed, "")
 
 
@@ -473,6 +497,8 @@ def addOrders(seller, groups, token, listing, payment):
         if placed:
             orderKey = token + "-2"
 
+
+
         order = Order.objects.create(
             seller=seller,
             payment=payment,
@@ -482,6 +508,7 @@ def addOrders(seller, groups, token, listing, payment):
             gst=group["gst"],
             total=group["total"],
         )
+
 
         for item in group["items"]:
             line = OrderItem.objects.create(
@@ -552,6 +579,7 @@ def payStep(request, token, chosen, pay):
     if not items:
         messages.error(request, "Your cart is empty. Please add a package or service first.")
 
+
         return redirect("cart")
 
     package = None
@@ -597,6 +625,8 @@ def payStep(request, token, chosen, pay):
 
     partSum, gst = groupSums(groups)
 
+
+
     context = {
         "items": items,
         "hasPackage": package is not None,
@@ -629,6 +659,7 @@ def payStep(request, token, chosen, pay):
 
     frozen = payCopy(groups, listing)
 
+
     payment, created = Payment.objects.get_or_create(
         checkoutToken=token,
         defaults={
@@ -641,6 +672,7 @@ def payStep(request, token, chosen, pay):
 
     if payment.seller_id != request.user.pk or payment.snapshot != frozen:
         messages.error(request, "Your cart has changed. Please check the new total.")
+
 
         return redirect("cart")
 
@@ -663,6 +695,9 @@ def payStep(request, token, chosen, pay):
 def payDone(request, payment, placed, paidWith=""):
     if request.session.get("checkoutToken") == payment.checkoutToken:
         request.session["cart"] = []
+
+
+
         request.session.pop("checkoutToken", None)
 
     first = placed[0]
@@ -719,6 +754,8 @@ def checkPay(request, pk):
     if order:
         messages.success(request, f"Thank you. Order #{order.pk} has been placed.")
 
+
+
         return redirect("receipt", pk=order.pk)
 
     return redirect("my_orders")
@@ -744,6 +781,8 @@ def my_orders(request):
         refunded=Count("pk", filter=Q(status="refunded")),
     )
 
+
+
     spent = orders.exclude(status="refunded").aggregate(total=Sum("total"))["total"] or 0
 
     if spent:
@@ -766,6 +805,8 @@ def my_orders(request):
     orders = Paginator(waitingOrders + otherOrders, 10).get_page(request.GET.get("orders_page"))
     now = timezone.now()
 
+
+
     pays = (
         request.user.payments.filter(orders__isnull=True)
         .filter(
@@ -777,6 +818,8 @@ def my_orders(request):
 
     for order in orders:
         order.hasServices = False
+
+
 
         for line in order.items.all():
             if line.kind == "package":
@@ -825,6 +868,8 @@ def receipt(request, pk):
         elif order.status == "completed":
             waiting.append(line)
 
+
+
     context = {
         "order": order,
         "rateable": canRate,
@@ -839,6 +884,8 @@ def receipt(request, pk):
 @login_required
 def delivery_file(request, pk):
     item = get_object_or_404(OrderItem.objects.select_related("order"), pk=pk)
+
+
 
     if item.order.seller_id != request.user.pk and not canOpen(request.user, "admin_orders"):
         raise Http404
@@ -908,6 +955,8 @@ def rate_item(request, pk):
 
     if not form.is_valid():
         messages.error(request, list(form.errors.values())[0][0])
+
+
 
         return redirect(back)
 

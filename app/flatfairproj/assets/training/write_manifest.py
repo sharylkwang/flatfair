@@ -29,7 +29,7 @@ def pretrainedEntries():
     cache = Path.home() / ".cache" / "huggingface" / "hub"
 
     for name, folder in pretrained.MODEL_PATHS.items():
-        path = PROJECT / "ml" / folder
+        path = pretrained.ML / folder
         reference = cache / ("models--" + name.replace("/", "--")) / "refs" / "main"
         meta = path / ".cache" / "huggingface" / "download" / "config.json.metadata"
         source = meta if meta.is_file() else reference
@@ -83,7 +83,7 @@ def photoIdentity(entry=None):
         "revision": revision,
         "embeddingSize": 512,
         "photoModelVersion": pretrained.picVersion(
-            PROJECT / "ml" / "clip", pretrained.CLIP_NAME, revision, entry
+            pretrained.ML / "clip", pretrained.CLIP_NAME, revision, entry
         ),
     }
 
@@ -199,7 +199,9 @@ def main():
 
     artifacts = []
 
-    for path in sorted((PROJECT / "ml").rglob("*.joblib")):
+
+
+    for path in sorted((pretrained.ML).rglob("*.joblib")):
         artifacts.append(
             {
                 "path": str(path.relative_to(PROJECT)),

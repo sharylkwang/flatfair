@@ -28,7 +28,7 @@ DOCUMENT_TYPES = {
 
 
 def check_docs(uploads):
-    if not 1 <= len(uploads) <= (5):
+    if not 1 <= len(uploads) <= 5:
         raise ValidationError("Choose between 1 and 5 files.")
 
     for upload in uploads:
@@ -42,14 +42,22 @@ def checkFile(upload, types=DOCUMENT_TYPES, maxSize=MAX_DOCUMENT_SIZE):
     if not wanted or upload.content_type != wanted[0]:
         raise ValidationError("Upload files with the matching file type.")
 
+
+
     if upload.size > maxSize:
-        raise ValidationError(f"Each file must be {maxSize // (1024 * 1024)} MB or smaller.")
+        raise ValidationError(
+            f"Each file must be {maxSize // (1024 * 1024)} MB or smaller."
+        )
 
     data = upload.read(maxSize + 1)
+
+
     upload.seek(0)
 
     if len(data) > maxSize:
-        raise ValidationError(f"Each file must be {maxSize // (1024 * 1024)} MB or smaller.")
+        raise ValidationError(
+            f"Each file must be {maxSize // (1024 * 1024)} MB or smaller."
+        )
 
     if not data.startswith(wanted[1]):
         raise ValidationError("A file does not match its declared format.")
@@ -79,6 +87,7 @@ def checkFile(upload, types=DOCUMENT_TYPES, maxSize=MAX_DOCUMENT_SIZE):
 def sendDocs(request, pk):
     from .views import audit
 
+
     docAsk = get_object_or_404(DocumentRequest, pk=pk, listing__seller=request.user)
 
     lock_user(request.user.pk)
@@ -90,9 +99,12 @@ def sendDocs(request, pk):
         status="review",
     )
 
+
     docAsk = get_object_or_404(DocumentRequest.objects.select_for_update(), pk=pk)
 
     latest = flat.documentRequests.order_by("-createdAt", "-pk").first()
+
+
 
     if latest.pk != pk or docAsk.status not in ("requested", "rejected"):
         raise Http404
@@ -100,12 +112,15 @@ def sendDocs(request, pk):
     url = reverse("my_listings") + f"#listing-{flat.publicId}"
     uploads = request.FILES.getlist("documents")
 
+
     try:
         check_docs(uploads)
     except ValidationError as error:
         messages.error(request, error.messages[0])
 
         return redirect(url)
+
+
 
     oldOnes = list(docAsk.files.all())
     saved = []
@@ -119,7 +134,12 @@ def sendDocs(request, pk):
                 contentType=DOCUMENT_TYPES[Path(upload.name).suffix.lower()][0],
             )
 
+
+
             doc.file.save(upload.name, upload, save=False)
+
+
+
             saved.append(doc.file)
             doc.save()
 
@@ -132,6 +152,7 @@ def sendDocs(request, pk):
         docAsk.staffReason = ""
         docAsk.save()
         teamUrl = reverse("admin_queue") + f"#queue-{flat.pk}"
+
 
         for staff in User.objects.filter(is_active=True, is_staff=True).distinct():
             notify(
@@ -165,7 +186,9 @@ def sendDocs(request, pk):
 def getDoc(request, pk):
     from .views import audit
 
-    doc = get_object_or_404(DocumentFile.objects.select_related("request__listing"), pk=pk)
+    doc = get_object_or_404(
+        DocumentFile.objects.select_related("request__listing"), pk=pk
+    )
 
     if doc.request.listing.seller_id != request.user.pk and not canOpen(
         request.user, "admin_queue"
@@ -184,6 +207,7 @@ def getDoc(request, pk):
 
     reply["Cache-Control"] = "private, no-store"
     reply["X-Content-Type-Options"] = "nosniff"
+
 
     audit(
         request,

@@ -20,8 +20,10 @@ from django.views.static import serve
 def media(request, path):
     path = posixpath.normpath(path.replace("\\", "/")).lstrip("/")
 
+
     if path.split("/", 1)[0] in ("listings", "demo", "deliveries", "pending", "vision"):
         raise Http404
+
 
     return serve(request, path, document_root=settings.MEDIA_ROOT)
 

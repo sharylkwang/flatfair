@@ -124,9 +124,13 @@ def file_cache(path, size=1):
             return saved(tuple(stamps), *args, **kwargs)
 
         read.cache_clear = saved.cache_clear
+
+
+
         read.cache_info = saved.cache_info
         read.cache_parameters = saved.cache_parameters
         return read
+
 
     return remember
 
@@ -146,7 +150,7 @@ def file_hash(path):
 
 def modelEntry(name):
     try:
-        sheet = read_model(file_info(MANIFEST))
+        sheet = json.loads(MANIFEST.read_text(encoding="utf-8"))
 
         return next(entry for entry in sheet["pretrained"] if entry["modelId"] == name)
     except Exception as error:
@@ -155,17 +159,26 @@ def modelEntry(name):
 
 def verifyModel(name, folder=None, revision=None, entry=None):
     folder = Path(folder) if folder is not None else ML / MODEL_PATHS[name]
+
+
+
     revision = revision if revision is not None else REVISIONS[name]
     entry = entry if entry is not None else modelEntry(name)
 
     if not folder.is_dir():
         return "not installed"
 
+
     if not entry or entry.get("status") != "installed" or entry.get("revision") != revision:
         return "identity mismatch"
 
+
     files = entry.get("files", [])
+
+
+
     names = {file["path"] for file in files}
+
 
     if "config.json" not in names or not any(
         name.endswith((".safetensors", ".bin")) for name in names
@@ -181,6 +194,7 @@ def verifyModel(name, folder=None, revision=None, entry=None):
 
         if actual != names:
             return "identity mismatch"
+
 
         for file in files:
             path = folder / file["path"]
@@ -278,13 +292,17 @@ def packTraits(
         )
     ]
 
+
+
     if not all(math.isfinite(value) for value in values):
         raise ValueError("Package features must be finite.")
+
 
     area, floor, lease, asking, worth, low, high, days, year, rivals = values
 
     if area <= 0 or asking <= 0 or not 0 < low < worth < high or rivals < 0:
         raise ValueError("Package features need a valid price band and listing.")
+
 
     return {
         "town": town.strip().upper(),

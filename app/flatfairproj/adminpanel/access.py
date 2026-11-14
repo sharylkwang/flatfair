@@ -47,7 +47,9 @@ def canOpen(user, page):
 def canSeeFlat(user, flat):
     from storefront.models import Listing
 
-    if (user.is_authenticated and flat.seller_id == user.pk) or canOpen(user, "admin_queue"):
+    if (user.is_authenticated and flat.seller_id == user.pk) or canOpen(
+        user, "admin_queue"
+    ):
         return True
 
     if (
@@ -56,6 +58,8 @@ def canSeeFlat(user, flat):
         and flat.offers.filter(buyer=user, status="accepted").exists()
     ):
         return True
+
+
 
     if flat.status == "paused" and flat.seller_id and flat.seller.is_active:
         return True
@@ -69,6 +73,7 @@ def canSeeFlat(user, flat):
 def menu(user):
     if not staffRole(user):
         return []
+
 
     return [
         {
@@ -87,7 +92,9 @@ def staffPage(page):
         @wraps(view)
         def inner(request, *args, **kwargs):
             if not canOpen(request.user, page):
-                return render(request, "storefront/forbidden.html", {"role": "staff"}, status=403)
+                return render(
+                    request, "storefront/forbidden.html", {"role": "staff"}, status=403
+                )
 
             from storefront.listing_rules import autoClose
 
@@ -95,7 +102,10 @@ def staffPage(page):
 
             return view(request, *args, **kwargs)
 
+
+
         return inner
+
 
     return wrap
 
@@ -104,6 +114,7 @@ def price_risk():
     gap = (Cast(F("askingPrice") - F("bandHigh"), FloatField()) * 100.0) / Cast(
         F("bandHigh"), FloatField()
     )
+
 
     return Case(
         When(estimatedPrice__isnull=True, then=Value(25.0)),
@@ -119,6 +130,8 @@ def price_risk():
 def withRisk(flats):
     from adminpanel.models import Decision
 
+
+
     denied = (
         Decision.objects.filter(decision="rejected", listing__seller=OuterRef("seller"))
         .exclude(listing=OuterRef("pk"))
@@ -126,6 +139,7 @@ def withRisk(flats):
         .annotate(total=Count("pk"))
         .values("total")[:1]
     )
+
 
     flats = flats.annotate(
         pastRejections=Coalesce(Subquery(denied, output_field=IntegerField()), Value(0))
@@ -147,6 +161,7 @@ def withRisk(flats):
         + Least(Cast(F("pastRejections"), FloatField()) * 10.0, Value(20.0))
     )
 
+
     return flats.annotate(
         risk=Cast(Least(Greatest(score, Value(0.0)), Value(100.0)), IntegerField())
     )
@@ -156,11 +171,13 @@ def riskLevel(score):
     if score is None:
         return ""
 
-    if score >= (50):
+    if score >= 50:
         return "high"
 
-    if score >= (20):
+    if score >= 20:
         return "medium"
+
+
 
     return "low"
 
@@ -173,7 +190,9 @@ def riskParts(flat):
     elif flat.askingPrice > flat.bandHigh:
         gap = (flat.askingPrice - flat.bandHigh) * 100 / flat.bandHigh
 
-        parts.append((f"Price {gap:.0f}% above the fair range", round(min(40, gap * 40 / 15))))
+        parts.append(
+            (f"Price {gap:.0f}% above the fair range", round(min(40, gap * 40 / 15)))
+        )
     elif flat.askingPrice < flat.bandLow:
         parts.append(("Price below the fair range (possible typo)", 30))
 
@@ -206,6 +225,8 @@ def riskParts(flat):
     if getattr(flat, "sellerReactivated", False):
         parts.append(("Seller was suspended before", 20))
 
+
+
     if getattr(flat, "pastRejections", 0):
         parts.append(
             (
@@ -213,6 +234,8 @@ def riskParts(flat):
                 min(20, flat.pastRejections * 10),
             )
         )
+
+
 
     return parts
 
@@ -223,9 +246,10 @@ def passSafe(flats):
 
     passed = 0
 
-    for flat in withRisk(flats).filter(risk__lt=(10)).order_by("reviewSince", "pk")[:(200)]:
+    for flat in withRisk(flats).filter(risk__lt=10).order_by("reviewSince", "pk")[:200]:
         if not heldByCost(flat) or liveIssue(flat, flat.revision, "review"):
             continue
+
 
         flat.status = "live"
         flat.save(update_fields=["status"])
@@ -253,6 +277,8 @@ def passSafe(flats):
         from storefront.notices import choice_note
 
         choice_note(flat, "approved")
+
+
         passed += 1
 
     return passed

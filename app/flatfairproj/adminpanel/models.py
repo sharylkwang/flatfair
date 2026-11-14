@@ -11,11 +11,23 @@ from storefront.models import Listing, Order
 
 
 @deconstructible
+
+
 class DocumentStorage(FileSystemStorage):
+
+
     @property
     def base_location(self):
+
+
+
         return str(
+
+
             getattr(
+
+
+
                 settings,
                 "PRIVATE_DOCUMENT_ROOT",
                 f"{settings.MEDIA_ROOT}-private-documents",
@@ -24,10 +36,22 @@ class DocumentStorage(FileSystemStorage):
 
     @property
     def location(self):
+
+
         return str(Path(self.base_location).resolve())
 
     def url(self, name):
-        raise ValueError("Documents are available only through the checked download view.")
+
+
+
+        raise ValueError(
+
+
+            "Documents are available only through the checked download view."
+
+
+
+        )
 
 
 def documentPath(document, filename):
@@ -38,12 +62,22 @@ def documentPath(document, filename):
 class DocumentRequest(models.Model):
     STATUSES = [
         ("requested", "Documents requested"),
+
+
         ("submitted", "Documents submitted"),
+
+
+
         ("accepted", "Documents accepted"),
+
+
+
         ("rejected", "Upload again"),
     ]
 
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="documentRequests")
+    listing = models.ForeignKey(
+        Listing, on_delete=models.CASCADE, related_name="documentRequests"
+    )
     requestedBy = models.ForeignKey(
         User, on_delete=models.RESTRICT, related_name="documentRequests"
     )
@@ -57,26 +91,43 @@ class DocumentRequest(models.Model):
 
 
 class DocumentFile(models.Model):
-    request = models.ForeignKey(DocumentRequest, on_delete=models.CASCADE, related_name="files")
+    request = models.ForeignKey(
+        DocumentRequest, on_delete=models.CASCADE, related_name="files"
+    )
     file = models.FileField(storage=DocumentStorage(), upload_to=documentPath)
     originalName = models.CharField(max_length=255)
     size = models.PositiveIntegerField()
     contentType = models.CharField(max_length=50)
+
+
+
     uploadedAt = models.DateTimeField(default=timezone.now)
 
 
 class Decision(models.Model):
     CHOICES = [
         ("approved", "Approved"),
+
+
         ("rejected", "Rejected"),
+
+
+
         ("documents", "Documents requested"),
+
+
+
         ("takendown", "Taken down"),
     ]
 
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="decisions")
+    listing = models.ForeignKey(
+        Listing, on_delete=models.CASCADE, related_name="decisions"
+    )
     staff = models.ForeignKey(
         User, on_delete=models.RESTRICT, related_name="decisions", null=True, blank=True
     )
+
+
     decision = models.CharField(max_length=10, choices=CHOICES)
     reason = models.CharField(max_length=200, blank=True)
     askingPrice = models.IntegerField()
@@ -104,10 +155,23 @@ class AuditLog(models.Model):
 class Ticket(models.Model):
     TOPICS = [
         ("listing", "My listing"),
+
+
+
         ("orders", "Payments and orders"),
+
+
+
         ("refund", "Refund request"),
+
+
+
         ("viewings", "Offers and viewings"),
+
+
         ("account", "My account"),
+
+
         ("other", "Something else"),
     ]
     STATUSES = [("open", "Open"), ("resolved", "Resolved")]
@@ -134,6 +198,7 @@ class Ticket(models.Model):
     )
     customerSeenAt = models.DateTimeField(null=True, blank=True)
 
+
     def tone(self):
         return self.TONES[self.status]
 
@@ -141,7 +206,8 @@ class Ticket(models.Model):
 class TicketMessageQuerySet(models.QuerySet):
     def unseen(self):
         return self.filter(fromStaff=True).filter(
-            Q(ticket__customerSeenAt=None) | Q(createdAt__gt=F("ticket__customerSeenAt"))
+            Q(ticket__customerSeenAt=None)
+            | Q(createdAt__gt=F("ticket__customerSeenAt"))
         )
 
 

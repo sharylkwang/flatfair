@@ -52,6 +52,8 @@ def orderMoves(order):
     services = any(item.kind == "addon" for item in items)
     allowed = transitions.get(order.status, ())
 
+
+
     if Refund.objects.filter(order=order, status="pending").exists():
         allowed = [value for value in allowed if value == "refunded"]
 
@@ -66,7 +68,18 @@ def orderMoves(order):
 
 def refundQuestion(order):
     items = list(order.items.all())
-    names = joinWords(dict.fromkeys(item.name or item.product.name for item in items))
+    names = []
+
+    for item in items:
+        name = item.name or item.product.name
+
+        if name not in names:
+            names.append(name)
+
+
+    names = joinWords(names)
+
+
     who = firstName(order.seller)
 
     return f"Refund ${order.total:,.2f} to {who} for {names}?"
@@ -93,6 +106,8 @@ def jobGuide(order):
     for item in order.items.all():
         if item.kind != "addon":
             continue
+
+
 
         start, finish = guide.get(
             item.name,
@@ -121,18 +136,23 @@ def addActions(order):
     moves = dict(orderMoves(order))
 
     order.workActions = [
-        {"status": value, "label": label} for value, label in work_actions.items() if value in moves
+        {"status": value, "label": label}
+        for value, label in work_actions.items()
+        if value in moves
     ]
 
     order.refundAsk = refundQuestion(order) if "refunded" in moves else ""
     order.guide = jobGuide(order)
     order.hasServices = any(item.kind == "addon" for item in order.items.all())
 
+
     return order
 
 
 def refundQ():
-    return Q(refunds__status="pending") | Q(tickets__topic="refund", tickets__status="open")
+    return Q(refunds__status="pending") | Q(
+        tickets__topic="refund", tickets__status="open"
+    )
 
 
 def todoQ():
@@ -187,6 +207,7 @@ def findOrders(request):
     if end:
         orders = orders.filter(createdAt__date__lte=end)
 
+
     return orders, problem
 
 
@@ -197,6 +218,7 @@ def orders(request):
     found, problem = findOrders(request)
     orderSet = Paginator(found, 25).get_page(request.GET.get("page"))
 
+
     for order in orderSet:
         addActions(order)
 
@@ -205,7 +227,9 @@ def orders(request):
     context = {
         "orders": orderSet,
         "q": request.GET.get("q", ""),
-        "attentionPayments": Payment.objects.filter(payAlertQ()).select_related("seller"),
+        "attentionPayments": Payment.objects.filter(payAlertQ()).select_related(
+            "seller"
+        ),
         "statuses": Order.STATUS_CHOICES,
         "status": request.GET.get("status", "needs"),
         "types": ORDER_TYPES,
@@ -235,9 +259,12 @@ def deals(request):
     if tab not in dict(deal_tabs):
         tab = "open"
 
-    base = Deal.objects.select_related("listing__seller", "buyer").prefetch_related("steps")
+    base = Deal.objects.select_related("listing__seller", "buyer").prefetch_related(
+        "steps"
+    )
 
     stuck = stuckDeals()
+
 
     queries = {
         "open": base.filter(status="open"),
@@ -256,6 +283,8 @@ def deals(request):
 
     for deal in queries[tab].order_by("-createdAt", "-pk")[:100]:
         row = {**progress(deal)}
+
+
         row["stuck"] = deal.pk in stuckIds
         rows.append(row)
 
@@ -281,7 +310,7 @@ def saveFiles(request, order, savedFiles):
 
         if upload:
             try:
-                checkFile(upload, DELIVERY_TYPES, (20) * 1024 * 1024)
+                checkFile(upload, DELIVERY_TYPES, 20 * 1024 * 1024)
             except ValidationError as error:
                 return error.messages[0]
 
@@ -290,11 +319,16 @@ def saveFiles(request, order, savedFiles):
         upload = request.FILES.get(f"file-{item.pk}")
 
         changed = (
-            bool(upload) or bool(note and note != item.deliveryNote) or item.deliveredAt is None
+            bool(upload)
+            or bool(note and note != item.deliveryNote)
+            or item.deliveredAt is None
         )
+
+
 
         if note:
             item.deliveryNote = note[:1000]
+
 
         if upload:
             old = item.deliveryFile.name
@@ -307,6 +341,7 @@ def saveFiles(request, order, savedFiles):
                     lambda name=old, storage=storage: storage.delete(name),
                     robust=True,
                 )
+
 
         if changed:
             item.deliveredAt = timezone.now()
@@ -339,6 +374,8 @@ def sentNote(order):
 def refundNext(request, order):
     url = reverse("my_orders") + f"#order-{order.pk}"
 
+
+
     notify(
         order.seller_id,
         "order_refunded",
@@ -355,7 +392,10 @@ def refundNext(request, order):
         .order_by("pk")
     )
 
+
+
     replies = []
+
 
     for ticket in openHelp:
         replies.append(
@@ -393,7 +433,9 @@ def doRefund(request, pk):
         refund = Refund.objects.filter(order=order).exclude(status="failed").first()
 
         if refund is None:
-            refund = Refund.objects.create(order=order, amount=order.total, staff=request.user)
+            refund = Refund.objects.create(
+                order=order, amount=order.total, staff=request.user
+            )
 
         if refund.status == "succeeded":
             return
@@ -401,6 +443,7 @@ def doRefund(request, pk):
         refund.status = "pending"
         refund.save(update_fields=["status"])
         payment = order.payment
+
 
     if payment and payment.method == "stripe":
         result = makeRefund(refund, payment)
@@ -419,6 +462,7 @@ def doRefund(request, pk):
             request,
             "Stripe has not confirmed the refund. The order was not marked refunded. Retry the refund to check it again.",
         )
+
 
         return
 
@@ -466,6 +510,7 @@ def saveOrder(request, pk, savedFiles):
                 "Delivery sent to seller; work remains processing.",
             )
 
+
             sentNote(order)
             messages.success(request, f"Delivery sent for order #{order.pk}.")
         elif order and status == order.status:
@@ -475,6 +520,8 @@ def saveOrder(request, pk, savedFiles):
                 problem = saveFiles(request, order, savedFiles)
             else:
                 problem = ""
+
+
 
             if problem:
                 request.session["deliveryProblem"] = problem
@@ -527,6 +574,7 @@ def see_order(request, pk):
     if not order:
         return redirect("admin_orders")
 
+
     addActions(order)
 
     changes = (
@@ -549,10 +597,14 @@ def see_order(request, pk):
                 "what": change.detail,
                 "when": change.createdAt,
                 "who": (
-                    (change.actor.first_name or change.actor.email) if change.actor else "System"
+                    (change.actor.first_name or change.actor.email)
+                    if change.actor
+                    else "System"
                 ),
             }
         )
+
+
 
     context = {
         "order": order,
@@ -570,6 +622,8 @@ def see_order(request, pk):
 @staffPage("admin_orders")
 def payments(request):
     notes = []
+
+
     autoSync(notes.append)
 
     for note in notes:
@@ -584,7 +638,9 @@ def payments(request):
         .order_by("createdAt", "pk")
     )
 
-    return page(request, "adminpanel/payments.html", {"rows": found}, section="admin_orders")
+    return page(
+        request, "adminpanel/payments.html", {"rows": found}, section="admin_orders"
+    )
 
 
 def payNote(payment, text):
@@ -601,10 +657,14 @@ def payNote(payment, text):
 def pay_action(request, pk):
     action = request.POST.get("action")
 
+
+
     if action not in ("check", "place", "refund", "close"):
         return HttpResponseBadRequest("Choose a payment action.")
 
     payment = Payment.objects.filter(payAlertQ(), pk=pk).first()
+
+
 
     if not payment:
         return redirect("admin_payments")
@@ -645,8 +705,12 @@ def placeBuy(request, payment):
     placed, problem = finishPay(payment)
 
     text = (
-        problem or "Purchase placed: " + ", ".join(f"order #{order.pk}" for order in placed) + "."
+        problem
+        or "Purchase placed: "
+        + ", ".join(f"order #{order.pk}" for order in placed)
+        + "."
     )
+
 
     audit(request, "payment purchase", f"Payment #{payment.pk}", text)
     payNote(payment, text)
@@ -661,6 +725,7 @@ def endUnpaid(request, payment):
     if payment.status != "pending":
         messages.error(request, "Only a checkout that was never paid can be closed.")
 
+
         return
 
     if (
@@ -674,6 +739,8 @@ def endUnpaid(request, payment):
         )
 
         return
+
+
 
     with transaction.atomic():
         lock_user(payment.seller_id)
@@ -699,7 +766,9 @@ def endUnpaid(request, payment):
             "Your checkout was closed because it wasn’t finished. No money was taken.",
         )
 
-    messages.success(request, f"Payment #{payment.pk} was closed as unpaid. No money was taken.")
+    messages.success(
+        request, f"Payment #{payment.pk} was closed as unpaid. No money was taken."
+    )
 
 
 def refundLost(request, payment):
@@ -718,6 +787,7 @@ def refundLost(request, payment):
             return
 
         refund = payment.refunds.exclude(status="failed").first()
+
 
         if refund is None:
             refund = Refund.objects.create(
@@ -738,6 +808,8 @@ def refundLost(request, payment):
 
     status, changed = endRefund(refund, result, request.user)
 
+
+
     if not changed:
         return
 
@@ -747,4 +819,6 @@ def refundLost(request, payment):
             f"Payment #{payment.pk} from {payment.seller.email} was refunded in full (${payment.amount:,.2f}).",
         )
     else:
-        messages.error(request, "Stripe has not confirmed the refund. Staff will check it again.")
+        messages.error(
+            request, "Stripe has not confirmed the refund. Staff will check it again."
+        )

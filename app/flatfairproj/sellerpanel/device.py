@@ -46,16 +46,21 @@ def read_gpus():
 
     for line in done.stdout.strip().splitlines():
         index, used, total = [int(part) for part in line.split(",")]
+
+
+
         gpus.append((index, used, total))
+
 
     return gpus
 
 
-def pickGpu(setting="auto", needMb=(3000)):
+def pickGpu(setting="auto", needMb=3000):
     setting = str(setting).strip().lower()
 
     if setting == "off" or gpuOff():
         return None
+
 
     if setting.isdigit():
         return int(setting)
@@ -65,6 +70,8 @@ def pickGpu(setting="auto", needMb=(3000)):
     except (OSError, ValueError, subprocess.SubprocessError):
         log.info("No GPU was found, so AI workers use the CPU")
 
+
+
         return None
 
     best = None
@@ -73,7 +80,7 @@ def pickGpu(setting="auto", needMb=(3000)):
     for index, used, total in gpus:
         free = total - used
 
-        if free >= needMb and used <= total * (0.6) and free > topFree:
+        if free >= needMb and used <= total * 0.6 and free > topFree:
             best = index
             topFree = free
 
@@ -110,8 +117,12 @@ def startDevice():
 def gpuUsedMb():
     torch = sys.modules.get("torch")
 
+
+
     if torch is None or not gpuChosen():
         return 0
+
+
 
     return torch.cuda.memory_reserved() / 2**20
 
@@ -136,12 +147,14 @@ def modelLock(blocking=False):
     path.parent.mkdir(parents=True, exist_ok=True)
     held = False
 
+
     with open(path, "a+b") as handle:
         try:
             if os.name == "nt":
                 import msvcrt
 
                 handle.seek(0, os.SEEK_END)
+
 
                 if handle.tell() == 0:
                     handle.write(b"0")
@@ -158,7 +171,11 @@ def modelLock(blocking=False):
                         if not blocking:
                             raise
 
+
+
                         time.sleep(0.1)
+
+
                         handle.seek(0)
             else:
                 import fcntl
@@ -166,9 +183,11 @@ def modelLock(blocking=False):
                 mode = fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB)
                 fcntl.flock(handle, mode)
 
+
             held = True
         except OSError:
             pass
+
 
         try:
             yield held

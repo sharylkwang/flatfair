@@ -33,6 +33,9 @@ def auditRows(entries):
 
     for entry in entries:
         match = re.match(r"(Order|Customer|Listing|Ticket) #(\d+)", entry.target)
+
+
+
         entry.recordType = match.group(1) if match else ""
         entry.recordId = int(match.group(2)) if match else None
 
@@ -51,6 +54,8 @@ def auditRows(entries):
         entry.recordLabel = entry.target
         entry.recordUrl = ""
         kind = entry.recordType
+
+
         row_id = entry.recordId
         named = entry.target.split("(", 1)[-1].rstrip(")")
 
@@ -106,6 +111,7 @@ def audit_log(request):
         except Exception as error:
             messages.error(request, "Choose a valid staff member.")
 
+
     start, end, problem = dateRange(request)
 
     if start:
@@ -115,20 +121,31 @@ def audit_log(request):
         entries = entries.filter(createdAt__date__lte=end)
 
     shown = Paginator(entries, 25).get_page(request.GET.get("page"))
+
+
+
     auditRows(shown)
 
-    actions = AuditLog.objects.values_list("action", flat=True).distinct().order_by("action")
+    actions = (
+        AuditLog.objects.values_list("action", flat=True).distinct().order_by("action")
+    )
+
+
 
     context = {
         "entries": shown,
         "actions": [(value, labelFor(value)) for value in actions],
-        "actors": User.objects.filter(auditEntries__isnull=False).distinct().order_by("first_name"),
+        "actors": User.objects.filter(auditEntries__isnull=False)
+        .distinct()
+        .order_by("first_name"),
         "action": action,
         "actor": actor,
         "start": request.GET.get("from", ""),
         "end": request.GET.get("to", ""),
         "dateProblem": problem,
-        "filtered": bool(action or actor or request.GET.get("from") or request.GET.get("to")),
+        "filtered": bool(
+            action or actor or request.GET.get("from") or request.GET.get("to")
+        ),
     }
 
     return page(request, "adminpanel/audit.html", context)
@@ -139,6 +156,7 @@ def safeCell(value):
         return value
 
     start = 0
+
 
     while start < len(value) and (value[start].isspace() or ord(value[start]) < 32):
         start += 1
@@ -191,6 +209,8 @@ def logExport(request, exportType, rowCount):
     if request.GET.get("q"):
         parts.append("a search")
 
+
+
     detail = plural(rowCount, "row") + ", no filters"
 
     if parts:
@@ -223,6 +243,7 @@ def audit_csv(request):
 
     start, end, problem = dateRange(request)
 
+
     if start:
         entries = entries.filter(createdAt__date__gte=start)
         parts.append(f"from {start}")
@@ -235,6 +256,8 @@ def audit_csv(request):
 
     for entry in entries.iterator(chunk_size=500):
         person = entry.actor
+
+
 
         rows.append(
             [
@@ -264,7 +287,10 @@ def audit_csv(request):
 def orders_csv(request):
     from adminpanel.orders import findOrders
 
+
     rows = []
+
+
     found, problem = findOrders(request)
 
     for order in found:
@@ -287,7 +313,11 @@ def orders_csv(request):
             ]
         )
 
+
+
     logExport(request, "orders", len(rows))
+
+
 
     return csvFile(
         "orders",
@@ -320,14 +350,19 @@ def users_csv(request):
         for customer in findUsers(request)
     ]
 
+
+
     logExport(request, "customers", len(rows))
 
-    return csvFile("customers", ["ID", "Name", "Email", "Role", "Joined", "Status"], rows)
+    return csvFile(
+        "customers", ["ID", "Name", "Email", "Role", "Joined", "Status"], rows
+    )
 
 
 @staffPage("admin_queue")
 def flats_csv(request):
     from adminpanel.moderation import findFlats
+
 
     homes = findFlats(request)
 
@@ -351,7 +386,10 @@ def flats_csv(request):
         for flat in homes
     ]
 
+
     logExport(request, "listings", len(rows))
+
+
 
     header = [
         "ID",

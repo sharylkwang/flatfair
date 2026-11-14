@@ -48,3 +48,4 @@ typer==0.27.3
 typing_extensions==4.16.0
 tzdata==2026.5
 requests==2.34.2
+ipykernel==6.29.5

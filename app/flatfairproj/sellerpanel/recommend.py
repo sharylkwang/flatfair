@@ -18,12 +18,12 @@ from .plans import packsNow
 log = logging.getLogger(__name__)
 
 
-@lru_cache(maxsize=1)
+@file_cache(lambda: settings.BASE_DIR / "assets" / "ml" / "package_model.joblib")
 def loadPackageModel():
     try:
         import joblib
 
-        bundle = joblib.load(settings.BASE_DIR / "ml" / "package_model.joblib")
+        bundle = joblib.load(settings.BASE_DIR / "assets" / "ml" / "package_model.joblib")
 
         return check_pack(bundle)
     except (OSError, EOFError, ValueError) as error:
@@ -42,16 +42,22 @@ def check_pack(artifact):
             raise ArtifactUnavailable("Incompatible package version or features")
 
         model = artifact["model"]
+
+
         encoded = model.named_steps["vectorizer"].get_feature_names_out().tolist()
 
         if encoded != artifact["encodedFeatures"]:
             raise ArtifactUnavailable("Incompatible encoded package features")
+
+
 
         if model.named_steps["classifier"].n_features_in_ != len(encoded):
             raise ArtifactUnavailable("Incompatible package feature count")
 
         if set(model.classes_) != set(PACKAGE_TIERS):
             raise ArtifactUnavailable("Incompatible package classes")
+
+
 
         if not all(name in encoded for name in FEATURE_NAMES if name not in ("town", "flatType")):
             raise ArtifactUnavailable("Missing package features")
@@ -63,6 +69,7 @@ def check_pack(artifact):
             for town, count in sales.items()
         ):
             raise ArtifactUnavailable("Invalid town transactions")
+
 
         if (
             not math.isfinite(artifact["competitionThreshold"])
@@ -79,6 +86,7 @@ def makeTraits(listing, artifact, now=None):
     now = now or timezone.now()
     today = timezone.localtime(now)
     town = listing.town.strip().upper()
+
 
     if town not in artifact["townTransactions"]:
         raise ValueError("No transaction proxy is available for this town.")
@@ -112,6 +120,8 @@ def recommendationReason(features, artifact):
     if features["daysListed"] >= 30:
         reasons.append("your flat has been listed for over a month")
 
+
+
     if features["leaseRemaining"] < 50:
         reasons.append("your flat has under 50 years of lease remaining")
 
@@ -131,11 +141,14 @@ def bestPack(listing):
     if listing is None or listing.status not in OPEN_LISTING_STATUSES:
         return None
 
+
     try:
         bundle = loadPackageModel()
 
         if bundle is None or packsNow([listing]):
             return None
+
+
 
         traits = makeTraits(listing, bundle)
         label = bundle["model"].predict([traits])[0]
@@ -173,6 +186,8 @@ def showTip(listing):
 
         start = timezone.localtime(now).replace(hour=0, minute=0, second=0, microsecond=0)
 
+
+
         with transaction.atomic():
             lock_user(listing.seller_id)
 
@@ -201,11 +216,14 @@ def tipStats():
         converted=Count("orderItem", distinct=True, filter=buys),
     )
 
+
     convertedListings = stats.pop("convertedListings")
 
     stats["conversionRate"] = (
         round(convertedListings / stats["shown"] * 100, 1) if stats["shown"] else 0
     )
+
+
 
     return stats
 
@@ -224,10 +242,14 @@ def picPitch(flat):
     if flat is None or flat.status not in ("live", "review"):
         return None
 
-    product = Product.objects.filter(name=("Pro photography"), kind="addon", isActive=True).first()
+    product = Product.objects.filter(name="Pro photography", kind="addon", isActive=True).first()
+
+
 
     if product is None:
         return None
+
+
 
     if OrderItem.objects.filter(
         listing=flat, product=product, order__status__in=(("paid", "processing", "completed"))

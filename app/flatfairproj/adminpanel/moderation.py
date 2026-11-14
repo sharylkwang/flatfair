@@ -46,7 +46,9 @@ def holdWhy(flat, doubtful, lastAsk=None):
     if not all((flat.estimatedPrice, flat.bandLow, flat.bandHigh)):
         reasons.append("We could not check the price automatically.")
     else:
-        flag = flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+        flag = flagReason(
+            flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh
+        )
 
         if flag == "above":
             reasons.append("The asking price is higher than similar flats sold for.")
@@ -76,6 +78,8 @@ def holdWhy(flat, doubtful, lastAsk=None):
             "No price or photo flag. It went back to review after a change, so check it before buyers see it."
         )
 
+
+
     return reasons
 
 
@@ -85,10 +89,14 @@ def photoWhy(photo):
     if photo.modelVersion != MODEL_VERSION:
         reasons.append(STALE_PHOTO)
 
+
+
     if photo.aiIrrelevant is None:
         reasons.append("The room-photo check could not run.")
     elif photo.aiIrrelevant >= HOLD_AT:
-        reasons.append(f"May not show the flat. It looks like {niceLabel(photo.aiLabel)}.")
+        reasons.append(
+            f"May not show the flat. It looks like {niceLabel(photo.aiLabel)}."
+        )
 
     if photo.aiGenerated is None:
         reasons.append("The AI-image check could not run.")
@@ -102,7 +110,9 @@ def docsToAsk(flat, doubtful):
     asks = []
 
     if all((flat.estimatedPrice, flat.bandLow, flat.bandHigh)):
-        flag = flagReason(flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh)
+        flag = flagReason(
+            flat.askingPrice, flat.bandLow, flat.estimatedPrice, flat.bandHigh
+        )
 
         if flag == "above":
             asks.append("renovation receipts or nearby sales that explain the price")
@@ -111,6 +121,7 @@ def docsToAsk(flat, doubtful):
 
     if doubtful:
         asks.append("new phone photos of the rooms below")
+
 
     if not asks:
         asks.append("their HDB lease papers, to show they own the flat")
@@ -125,11 +136,17 @@ def addHolds(listings):
         .values("createdAt")[:1]
     )
 
-    backOn = Q(seller__profile__reactivatedAt__gte=Coalesce(F("lastApproved"), F("createdAt")))
+    backOn = Q(
+        seller__profile__reactivatedAt__gte=Coalesce(F("lastApproved"), F("createdAt"))
+    )
+
+
 
     return (
         listings.annotate(lastApproved=Subquery(lastApproved))
-        .annotate(sellerReactivated=ExpressionWrapper(backOn, output_field=BooleanField()))
+        .annotate(
+            sellerReactivated=ExpressionWrapper(backOn, output_field=BooleanField())
+        )
         .annotate(
             stalePhotos=Count(
                 "photos",
@@ -140,7 +157,8 @@ def addHolds(listings):
             unsurePhotos=Count("photos", filter=Q(photos__aiIrrelevant__gte=HOLD_AT)),
             uncheckedPhotos=Count(
                 "photos",
-                filter=Q(photos__aiIrrelevant__isnull=True) | Q(photos__aiGenerated__isnull=True),
+                filter=Q(photos__aiIrrelevant__isnull=True)
+                | Q(photos__aiGenerated__isnull=True),
             ),
         )
     )
@@ -171,7 +189,9 @@ def queueRow(flat, missingReason):
 
     row["reasons"] = holdWhy(flat, row["doubtful"], row["lastAsk"])
 
-    row["manualPhotos"] = flat.photos.filter(missingQ()).exclude(manualQ(flat.revision)).exists()
+    row["manualPhotos"] = (
+        flat.photos.filter(missingQ()).exclude(manualQ(flat.revision)).exists()
+    )
 
     if row["manualPhotos"]:
         row["doubtful"] = list(flat.photos.order_by(roomOrder(), "pk"))
@@ -179,11 +199,17 @@ def queueRow(flat, missingReason):
     for photo in row["doubtful"]:
         photo.staffReasons = " ".join(photoWhy(photo))
 
-        photo.staffNotes = " ".join(reason for reason in photoWhy(photo) if reason != STALE_PHOTO)
+        photo.staffNotes = " ".join(
+            reason for reason in photoWhy(photo) if reason != STALE_PHOTO
+        )
 
-    row["stalePhotos"] = [photo for photo in row["doubtful"] if photo.modelVersion != MODEL_VERSION]
+    row["stalePhotos"] = [
+        photo for photo in row["doubtful"] if photo.modelVersion != MODEL_VERSION
+    ]
 
     row["askFor"] = docsToAsk(flat, row["doubtful"])
+
+
 
     if flat.seller and flat.seller.email:
         name = firstName(flat.seller)
@@ -200,10 +226,14 @@ def queueRow(flat, missingReason):
             {
                 "pos": bandSpots(low_cost, fair_cost, top_cost, flat.askingPrice),
                 "verdict": verdict(flat.askingPrice, low_cost, fair_cost, top_cost),
-                "outsideAmount": max(low_cost - flat.askingPrice, flat.askingPrice - top_cost, 0),
+                "outsideAmount": max(
+                    low_cost - flat.askingPrice, flat.askingPrice - top_cost, 0
+                ),
                 "outsideSide": "below" if flat.askingPrice < low_cost else "above",
             }
         )
+
+
 
     return row
 
@@ -244,6 +274,7 @@ def bulkPass(request):
 
     summary = f"{passed} approved, {len(skipped)} skipped"
 
+
     if skipped:
         summary += ": " + "; ".join(skipped)
 
@@ -252,13 +283,17 @@ def bulkPass(request):
 
     messages.success(request, summary)
 
+
+
     return queueBack(request)
 
 
 def queueBack(request):
     back = request.POST.get("back", "")
 
-    if back.startswith("?") and url_has_allowed_host_and_scheme(back, allowed_hosts=None):
+    if back.startswith("?") and url_has_allowed_host_and_scheme(
+        back, allowed_hosts=None
+    ):
         return redirect(reverse("admin_queue") + back)
 
     return redirect("admin_queue")
@@ -267,6 +302,8 @@ def queueBack(request):
 @transaction.atomic
 def passOne(request, pk, identity):
     from adminpanel.orders import flatName
+
+
 
     ownerId = Listing.objects.filter(pk=pk).values_list("seller_id", flat=True).first()
     seller = lock_user(ownerId)
@@ -286,7 +323,10 @@ def passOne(request, pk, identity):
     if otherOpen(seller, flat):
         return STAFF_ONE_FLAT_MESSAGE
 
-    doc = flat.documentRequests.select_for_update().order_by("-createdAt", "-pk").first()
+
+    doc = (
+        flat.documentRequests.select_for_update().order_by("-createdAt", "-pk").first()
+    )
 
     if doc and doc.status != "accepted":
         return "Open document request; review the documents individually."
@@ -324,8 +364,13 @@ def passOne(request, pk, identity):
 
 def queueSets(flats):
     picHold = (
-        Q(aiPhotos__gt=0) | Q(unsurePhotos__gt=0) | Q(uncheckedPhotos__gt=0) | Q(stalePhotos__gt=0)
+        Q(aiPhotos__gt=0)
+        | Q(unsurePhotos__gt=0)
+        | Q(uncheckedPhotos__gt=0)
+        | Q(stalePhotos__gt=0)
     )
+
+
 
     askHold = (
         Q(askingPrice__gt=F("bandHigh"))
@@ -348,12 +393,16 @@ def heldFlats():
         .prefetch_related(
             Prefetch(
                 "photos",
-                queryset=ListingPhoto.objects.filter(doubtQ()).order_by(roomOrder(), "pk"),
+                queryset=ListingPhoto.objects.filter(doubtQ()).order_by(
+                    roomOrder(), "pk"
+                ),
                 to_attr="doubtfulPhotos",
             ),
             Prefetch(
                 "decisions",
-                queryset=Decision.objects.filter(decision="documents").order_by("-createdAt"),
+                queryset=Decision.objects.filter(decision="documents").order_by(
+                    "-createdAt"
+                ),
                 to_attr="documentDecisions",
             ),
             Prefetch(
@@ -393,6 +442,8 @@ def queue_item(request, pk):
     flat = withRisk(heldFlats()).filter(pk=pk).first()
     row = queueRow(flat, request.session.pop("queueError", None))
     row["hold"] = holdKind(row)
+
+
     row["riskParts"] = riskParts(flat)
     readyPics([flat])
     query = request.GET.copy()
@@ -452,6 +503,7 @@ def queue(request):
     rowList = []
     noReason = request.session.pop("queueError", None)
 
+
     for flat in rows:
         row = queueRow(flat, noReason)
         row["hold"] = holdKind(row)
@@ -461,11 +513,16 @@ def queue(request):
         messages.error(request, "Add a reason before you reject or ask for documents.")
 
     readyPics([row["flat"] for row in rowList])
+
+
+
     rows.object_list = rowList
 
     context = {
         "rows": rows,
-        "log": Decision.objects.select_related("listing", "staff").order_by("-createdAt")[:15],
+        "log": Decision.objects.select_related("listing", "staff").order_by(
+            "-createdAt"
+        )[:15],
         "approvedCount": Decision.objects.filter(decision="approved").count(),
         "rejectedCount": Decision.objects.filter(decision="rejected").count(),
         "reason": reason,
@@ -501,7 +558,10 @@ def flatFresh(request, flat):
 
 def docsFresh(request, documents):
     try:
-        return parse_datetime(request.POST.get("documentVersion", "")) == documents.updatedAt
+        return (
+            parse_datetime(request.POST.get("documentVersion", ""))
+            == documents.updatedAt
+        )
     except Exception as error:
         return False
 
@@ -519,9 +579,7 @@ def reviewPics(request, flat, prepared, allowManual=False):
     if not missing and (allDone or flat.photos.filter(manualQ(flat.revision)).exists()):
         return ""
 
-    message = (
-        "Photo checks are out of date and could not be rerun. The listing stays in staff review."
-    )
+    message = "Photo checks are out of date and could not be rerun. The listing stays in staff review."
 
     if not allowManual or request.POST.get("manualPhotos") != "on" or not missing:
         return (
@@ -531,7 +589,10 @@ def reviewPics(request, flat, prepared, allowManual=False):
 
     photos = list(flat.photos.all())
 
-    if any(not photo.image or not photo.image.storage.exists(photo.image.name) for photo in photos):
+    if any(
+        not photo.image or not photo.image.storage.exists(photo.image.name)
+        for photo in photos
+    ):
         return "A photo is missing. Ask the seller to upload it again before approving the photos manually."
 
     flat.photos.update(
@@ -539,6 +600,7 @@ def reviewPics(request, flat, prepared, allowManual=False):
         staffReviewedAt=timezone.now(),
         staffReviewedRevision=flat.revision,
     )
+
 
     audit(
         request,
@@ -554,6 +616,8 @@ def reviewPics(request, flat, prepared, allowManual=False):
 def decide(request, pk):
     if request.method != "POST":
         return redirect("admin_queue")
+
+
 
     flat = Listing.objects.filter(pk=pk).first()
 
@@ -592,10 +656,18 @@ def saveChoice(request, pk, prepared):
     )
 
     if not flat or choice not in ("approved", "rejected", "documents"):
-        last = Decision.objects.filter(listing__pk=pk).order_by("-createdAt", "-pk").first()
+        last = (
+            Decision.objects.filter(listing__pk=pk)
+            .order_by("-createdAt", "-pk")
+            .first()
+        )
 
         if not last or last.decision != choice:
-            messages.error(request, "Someone already decided on that listing. Nothing changed.")
+            messages.error(
+                request, "Someone already decided on that listing. Nothing changed."
+            )
+
+
 
         return redirect("admin_queue")
 
@@ -607,10 +679,13 @@ def saveChoice(request, pk, prepared):
 
         return redirect("admin_queue")
 
-    docAsk = flat.documentRequests.select_for_update().order_by("-createdAt", "-pk").first()
+    docAsk = (
+        flat.documentRequests.select_for_update().order_by("-createdAt", "-pk").first()
+    )
 
     docId = request.POST.get("documentRequest", "")
     docMode = bool(docId)
+
 
     if docMode and (
         not docAsk
@@ -619,7 +694,9 @@ def saveChoice(request, pk, prepared):
         or choice not in ("approved", "rejected")
         or not docsFresh(request, docAsk)
     ):
-        messages.error(request, "Those documents have already changed. Reload the queue.")
+        messages.error(
+            request, "Those documents have already changed. Reload the queue."
+        )
 
         return redirect("admin_queue")
 
@@ -645,6 +722,9 @@ def saveChoice(request, pk, prepared):
         docAsk.reviewedAt = timezone.now()
         docAsk.updatedAt = docAsk.reviewedAt
         docAsk.save()
+
+
+
         choice_note(flat, "documents", reason)
 
         audit(
@@ -659,7 +739,9 @@ def saveChoice(request, pk, prepared):
         return redirect("admin_queue")
 
     if choice == "approved" and (seller is None or not seller.is_active):
-        messages.error(request, "This seller is suspended. Reinstate them before approving.")
+        messages.error(
+            request, "This seller is suspended. Reinstate them before approving."
+        )
 
         return redirect("admin_queue")
 
@@ -667,6 +749,7 @@ def saveChoice(request, pk, prepared):
         messages.error(request, STAFF_ONE_FLAT_MESSAGE)
 
         return redirect("admin_queue")
+
 
     if choice == "approved":
         problem = liveIssue(
@@ -694,6 +777,8 @@ def saveChoice(request, pk, prepared):
 
             return redirect("admin_queue_item", pk=flat.pk)
 
+
+
     logChoice(request.user, flat, choice, reason)
 
     if choice == "documents":
@@ -712,6 +797,8 @@ def saveChoice(request, pk, prepared):
             docAsk.reviewedAt = None
             docAsk.updatedAt = timezone.now()
             docAsk.save()
+
+
 
         audit(
             request,
@@ -753,7 +840,9 @@ def saveChoice(request, pk, prepared):
     if choice == "approved":
         messages.success(request, f"{flatName(flat)} approved. Buyers can now see it.")
     else:
-        messages.success(request, f"{flatName(flat)}: {dict(Decision.CHOICES)[choice].lower()}.")
+        messages.success(
+            request, f"{flatName(flat)}: {dict(Decision.CHOICES)[choice].lower()}."
+        )
 
     return queueBack(request)
 
@@ -764,7 +853,11 @@ def saveChoice(request, pk, prepared):
 def pic_choice(request, pk, photoId):
     from sellerpanel.photos import dropPhoto
 
-    flat = get_object_or_404(Listing.objects.select_for_update(), pk=pk, status="review")
+
+
+    flat = get_object_or_404(
+        Listing.objects.select_for_update(), pk=pk, status="review"
+    )
 
     photo = get_object_or_404(ListingPhoto, pk=photoId, listing=flat)
     back = reverse("admin_queue_item", args=[flat.pk]) + "#review-photos"
@@ -811,7 +904,10 @@ def pic_choice(request, pk, photoId):
         reverse("edit_listing", args=[flat.publicId]),
     )
 
-    messages.success(request, f"The {room} photo is removed and the seller is told why.")
+
+    messages.success(
+        request, f"The {room} photo is removed and the seller is told why."
+    )
 
     return redirect(back)
 
@@ -825,6 +921,7 @@ def reviews(request):
     low = request.GET.get("rating") == "low"
     recent = request.GET.get("days") == "30"
 
+
     if recent:
         rows = rows.filter(createdAt__gte=timezone.now() - timedelta(days=30))
 
@@ -832,6 +929,8 @@ def reviews(request):
         "all": rows.count(),
         "low": rows.filter(rating__lte=LOW_RATING).count(),
     }
+
+
 
     if low:
         rows = rows.filter(rating__lte=LOW_RATING)
@@ -845,7 +944,9 @@ def reviews(request):
         if recent:
             noItems = "No reviews in the last 30 days."
         else:
-            noItems = "No reviews yet. Sellers can rate a service once its order is done."
+            noItems = (
+                "No reviews yet. Sellers can rate a service once its order is done."
+            )
 
     context = {
         "emptyText": noItems,
@@ -862,7 +963,9 @@ def reviews(request):
 @staffPage("admin_reviews")
 def see_review(request, pk):
     review = (
-        Review.objects.select_related("seller", "orderItem__product", "orderItem__order")
+        Review.objects.select_related(
+            "seller", "orderItem__product", "orderItem__order"
+        )
         .filter(pk=pk)
         .first()
     )
@@ -871,6 +974,8 @@ def see_review(request, pk):
         messages.error(request, "That review no longer exists.")
 
         return redirect("admin_reviews")
+
+
 
     context = {
         "r": review,
@@ -886,7 +991,12 @@ def see_review(request, pk):
 @require_POST
 @transaction.atomic
 def flip_review(request, pk):
-    review = Review.objects.select_for_update().select_related("orderItem").filter(pk=pk).first()
+    review = (
+        Review.objects.select_for_update()
+        .select_related("orderItem")
+        .filter(pk=pk)
+        .first()
+    )
 
     back = reverse("admin_reviews")
 
@@ -895,6 +1005,8 @@ def flip_review(request, pk):
 
     if request.POST.get("days") == "30":
         back += "&days=30" if "?" in back else "?days=30"
+
+
 
     if not review:
         messages.error(request, "That review no longer exists.")
@@ -909,7 +1021,11 @@ def flip_review(request, pk):
     reason = request.POST.get("reason", "").strip()
 
     if wanted == "1" and (not reason or len(reason) > 200):
-        messages.error(request, "Add a reason of 200 characters or fewer to hide this review.")
+        messages.error(
+            request, "Add a reason of 200 characters or fewer to hide this review."
+        )
+
+
 
         return redirect(back)
 
@@ -920,7 +1036,11 @@ def flip_review(request, pk):
         request,
         "review hidden" if review.hidden else "review shown",
         f"Review #{review.pk}",
-        (reason if review.hidden else f"{review.orderItem.name} · {review.rating} out of 5"),
+        (
+            reason
+            if review.hidden
+            else f"{review.orderItem.name} · {review.rating} out of 5"
+        ),
     )
 
     if review.hidden:
@@ -933,9 +1053,13 @@ def flip_review(request, pk):
             reverse("my_orders"),
         )
 
-        messages.success(request, f"Review #{review.pk} is hidden from the Packages page.")
+        messages.success(
+            request, f"Review #{review.pk} is hidden from the Packages page."
+        )
     else:
-        messages.success(request, f"Review #{review.pk} is shown on the Packages page again.")
+        messages.success(
+            request, f"Review #{review.pk} is shown on the Packages page again."
+        )
 
     return redirect(back)
 
@@ -998,6 +1122,8 @@ def findFlats(request):
     if seller:
         flats = flats.filter(seller_id=seller)
 
+
+
     return add_pack(flats).order_by("-createdAt", "-pk")
 
 
@@ -1025,6 +1151,9 @@ def listings(request):
         flat.priceCheck = priceCheck(flat)
 
     readyPics(list(rows))
+
+
+
     ownerId = theSeller(request)
     status = request.GET.get("status", "")
     query = request.GET.copy()
@@ -1035,12 +1164,16 @@ def listings(request):
         "statuses": Listing.STATUS_CHOICES,
         "status": status,
         "statusLabel": dict(Listing.STATUS_CHOICES).get(status, ""),
-        "towns": Listing.objects.order_by("town").values_list("town", flat=True).distinct(),
+        "towns": Listing.objects.order_by("town")
+        .values_list("town", flat=True)
+        .distinct(),
         "town": request.GET.get("town", ""),
         "above": request.GET.get("above") == "1",
         "q": request.GET.get("q", ""),
         "seller": User.objects.filter(pk=ownerId).first() if ownerId else None,
-        "filtered": any(request.GET.get(key) for key in ("status", "town", "above", "q", "seller")),
+        "filtered": any(
+            request.GET.get(key) for key in ("status", "town", "above", "q", "seller")
+        ),
         "returnQuery": query.urlencode(),
     }
 
@@ -1069,7 +1202,9 @@ def backToList(request, pk):
 
     query = QueryDict(request.POST.get("returnQuery", "")).urlencode()
 
-    return redirect(f"{reverse('admin_listings')}{'?' + query if query else ''}#listing-{pk}")
+    return redirect(
+        f"{reverse('admin_listings')}{'?' + query if query else ''}#listing-{pk}"
+    )
 
 
 @staffPage("admin_listings")
@@ -1084,6 +1219,8 @@ def flat_do(request, pk):
 
     if request.method != "POST":
         return redirect("admin_listings")
+
+
 
     action = request.POST.get("action")
     reason = request.POST.get("reason", "").strip()[:200]
@@ -1101,7 +1238,9 @@ def flat_do(request, pk):
         else:
             seller = None
 
-        flat = Listing.objects.select_for_update().filter(pk=pk, seller_id=ownerId).first()
+        flat = (
+            Listing.objects.select_for_update().filter(pk=pk, seller_id=ownerId).first()
+        )
 
         if not flat or action not in actions:
             messages.error(request, "That listing could not be found. Nothing changed.")
@@ -1132,9 +1271,13 @@ def flat_do(request, pk):
             return backToList(request, pk)
 
         if action == "takedown" and not reason:
-            messages.error(request, f"Add a reason the seller will see, then take down {name}.")
+            messages.error(
+                request, f"Add a reason the seller will see, then take down {name}."
+            )
 
             return backToList(request, pk)
+
+
 
         if action == "relist" and (seller is None or not seller.is_active):
             messages.error(
@@ -1164,9 +1307,13 @@ def flat_do(request, pk):
 
             audit(request, "listing taken down", target, reason)
 
-            messages.success(request, f"{name} is taken down. Buyers can no longer see it.")
+            messages.success(
+                request, f"{name} is taken down. Buyers can no longer see it."
+            )
         elif action == "relist":
-            problem = liveIssue(flat, checked.revision, checked.status, staffAccepted=True)
+            problem = liveIssue(
+                flat, checked.revision, checked.status, staffAccepted=True
+            )
 
             picIssue = ""
 
@@ -1180,7 +1327,9 @@ def flat_do(request, pk):
 
                 return backToList(request, pk)
 
-            problem = liveIssue(flat, checked.revision, checked.status, staffAccepted=True)
+            problem = liveIssue(
+                flat, checked.revision, checked.status, staffAccepted=True
+            )
 
             if problem:
                 messages.error(request, problem)
@@ -1204,6 +1353,8 @@ def flat_do(request, pk):
             old = flat.get_status_display()
             flat.status = "review"
 
+
+
             audit(
                 request,
                 "listing sent to review",
@@ -1212,6 +1363,7 @@ def flat_do(request, pk):
             )
 
             messages.success(request, f"{name} is in the review queue.")
+
 
         flat.save(update_fields=["status"])
 
@@ -1223,6 +1375,7 @@ def flat_do(request, pk):
 def flat_edit(request, pk):
     from adminpanel.orders import flatName
 
+
     flat = (
         Listing.objects.select_for_update()
         .filter(pk=pk)
@@ -1231,16 +1384,22 @@ def flat_edit(request, pk):
     )
 
     if not flat:
-        messages.error(request, "That listing could not be found or is sold. Nothing changed.")
+        messages.error(
+            request, "That listing could not be found or is sold. Nothing changed."
+        )
 
         return redirect("admin_listings")
 
     size = flat.floorAreaSqm
 
+
+
     if size == int(size):
         size = int(size)
 
-    form = ListingDetailsForm(request.POST or None, instance=flat, initial={"floorAreaSqm": size})
+    form = ListingDetailsForm(
+        request.POST or None, instance=flat, initial={"floorAreaSqm": size}
+    )
 
     valid = request.method == "POST" and form.is_valid()
 
@@ -1289,6 +1448,7 @@ def flat_edit(request, pk):
                     section="admin_listings",
                 )
 
+
         flat.save(
             update_fields=[
                 *ListingDetailsForm.Meta.fields,
@@ -1325,6 +1485,11 @@ def flat_edit(request, pk):
 
         return backToList(request, pk)
 
+
+
     context = {"form": form, "flat": flat, "returnQuery": request.GET.get("back", "")}
 
-    return page(request, "adminpanel/listing_form.html", context, section="admin_listings")
+
+    return page(
+        request, "adminpanel/listing_form.html", context, section="admin_listings"
+    )

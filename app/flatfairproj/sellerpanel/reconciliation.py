@@ -24,7 +24,7 @@ def autoSync(report=None):
 
 def stale_q():
     return Q(
-        method="stripe", status="pending", createdAt__lte=timezone.now() - timedelta(minutes=(30))
+        method="stripe", status="pending", createdAt__lte=timezone.now() - timedelta(minutes=30)
     )
 
 
@@ -43,11 +43,14 @@ def syncPay(payment):
             .first()
         )
 
+
         if payment is None:
             return ""
 
         if result is None:
             return "Stripe could not confirm a matching test payment. Nothing changed."
+
+
 
         if payment.status not in ("paid", "refunded", "partly_refunded"):
             payment.status = result["status"]
@@ -68,6 +71,8 @@ def syncPay(payment):
             payment.needsAttention = True
 
         payment.save()
+
+
         text = f"Stripe reports {result['providerStatus']}. Payment is {payment.get_status_display().lower()}."
 
         if payment.status == "paid" and result["status"] == "paid":
@@ -76,6 +81,7 @@ def syncPay(payment):
                 problem
                 or "Purchase placed: " + ", ".join(f"order #{order.pk}" for order in placed) + "."
             )
+
 
         return text
 
@@ -92,6 +98,9 @@ def refunds_due():
 def syncRefund(refund):
     payment = refund.payment if refund.payment_id else refund.order.payment
     result = makeRefund(refund, payment)
+
+
+
     status, changed = endRefund(refund, result)
 
     return f"Refund is {status}." if changed else ""
@@ -102,8 +111,11 @@ def endRefund(refund, result, staff=None):
     from adminpanel.views import audit
     from adminpanel.orders import refundNext
 
+
     payId = refund.payment_id or refund.order.payment_id
     ownerId = refund.payment.seller_id if refund.payment_id else refund.order.seller_id
+
+
 
     with transaction.atomic():
         lock_user(ownerId)
@@ -114,6 +126,7 @@ def endRefund(refund, result, staff=None):
         if refund.status != "pending":
             return refund.status, False
 
+
         if result is not None:
             refund.providerRefundId = result["id"]
             refund.status = (
@@ -121,6 +134,7 @@ def endRefund(refund, result, staff=None):
                 if result.get("status") in ("succeeded", "failed")
                 else "pending"
             )
+
 
         refund.save(update_fields=["providerRefundId", "status"])
         request = SimpleNamespace(user=staff or refund.staff)
@@ -133,6 +147,7 @@ def endRefund(refund, result, staff=None):
 
             order.status = "refunded"
             order.save(update_fields=["status"])
+
 
             if payment:
                 repaid = Refund.objects.filter(
@@ -165,6 +180,8 @@ def endRefund(refund, result, staff=None):
 
 def syncBatch(report=None):
     from storefront.listing_rules import closeSent
+
+
     from storefront.reminders import nudgeAll
 
     nudged = nudgeAll()

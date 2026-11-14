@@ -88,6 +88,8 @@ def staff_role(user):
     if not getattr(user, "is_staff", False):
         return ""
 
+
+
     return staffRole(user) or "Staff"
 
 
@@ -106,12 +108,15 @@ def staff_menu(user):
     if not getattr(user, "is_staff", False):
         return []
 
+
+
     return menu(user)
 
 
 @register.filter
 def staff_menu_groups(user):
     items = {item["page"]: item for item in menu(user)}
+
 
     return [
         {"label": label, "items": [items[name] for name in names]}
@@ -124,7 +129,12 @@ def staff_menu_groups(user):
 def staff_state(kind, value, label=""):
     look = STATE_LOOKS[kind].get(value, ("closed", "clock"))
 
-    words = label or (look[2] if len(look) > 2 else str(value).replace("_", " ").capitalize())
+
+
+    words = label or (
+        look[2] if len(look) > 2 else str(value).replace("_", " ").capitalize()
+    )
+
 
     return {"tone": look[0], "icon": look[1], "label": words}
 
@@ -148,6 +158,8 @@ def order_tone(order):
         "refunded": "st-refunded",
     }
 
+
+
     return status_tones.get(order.status, "st-hidden")
 
 
@@ -163,6 +175,8 @@ def todo_urgency(action):
         "Review queue": "soon",
     }
 
+
+
     return todo_urgency.get(action.get("title"), "info")
 
 
@@ -176,8 +190,12 @@ def menu_tone(item):
         "admin_queue": "soon",
     }
 
+
+
     if not item.get("count"):
         return "none"
+
+
 
     return menu_tones.get(item.get("page"), "info")
 
@@ -185,6 +203,8 @@ def menu_tone(item):
 @register.filter
 def risk_level(score):
     from adminpanel.access import riskLevel
+
+
 
     return riskLevel(score)
 

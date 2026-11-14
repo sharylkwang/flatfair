@@ -18,6 +18,8 @@ class FriendlyDebug404Middleware:
     def __call__(self, request):
         reply = self.get_response(request)
 
+
+
         if (
             settings.DEBUG
             and reply.status_code == 404
@@ -26,6 +28,7 @@ class FriendlyDebug404Middleware:
             and "text/html" in request.headers.get("Accept", "text/html")
         ):
             return render(request, "404.html", status=404)
+
 
         return reply
 
@@ -38,18 +41,27 @@ class SingleAddressMiddleware:
         if not self.onPublicSite(request):
             return self.get_response(request)
 
+
+
         if self.opensInTheTab(request):
             reply = HttpResponse(
-                render_to_string("storefront/shell.html", {"path": request.get_full_path()})
+                render_to_string(
+                    "storefront/shell.html", {"path": request.get_full_path()}
+                )
             )
+
 
             reply["Cache-Control"] = "no-store"
         else:
             reply = self.get_response(request)
 
+
+
         patch_vary_headers(reply, ["Sec-Fetch-Dest"])
 
+
         return reply
+
 
     def onPublicSite(self, request):
         return (
@@ -72,12 +84,16 @@ class RealClientAddressMiddleware:
     def __call__(self, request):
         sentOn = request.META.get("HTTP_CF_CONNECTING_IP", "").strip()
 
+
+
         if (
             sentOn
             and self.fromThisComputer(request.META.get("REMOTE_ADDR", ""))
             and self.validAddress(sentOn)
         ):
             request.META["REMOTE_ADDR"] = sentOn
+
+
 
         return self.get_response(request)
 
@@ -90,6 +106,7 @@ class RealClientAddressMiddleware:
     def validAddress(self, address):
         try:
             ipaddress.ip_address(address)
+
 
             return True
         except Exception as error:

@@ -1,0 +1,442 @@
+{
+  "method": "Leave each live engaged flat out once per seeded demo buyer; remove all its views, saves, offers and bookings from the profile and exclusions.",
+  "buyers": 6,
+  "folds": 49,
+  "cutoff": 6,
+  "meanCandidateCount": 20992.53,
+  "randomSeed": 2108,
+  "randomTrialsPerFold": 1000,
+  "photoModelVersion": "c54c344a58921c4eb4d096cb86f97684be2926cc025c3d5bd876181fa415f3cc",
+  "results": {
+    "contentBased": {
+      "hitRateAt6": 0.408163,
+      "mrr": 0.307606,
+      "mrrAt6": 0.29932
+    },
+    "popularity": {
+      "hitRateAt6": 0.081633,
+      "mrr": 0.081692,
+      "mrrAt6": 0.081633
+    },
+    "random": {
+      "hitRateAt6": 0.000449,
+      "mrr": 0.000554,
+      "mrrAt6": 0.000177
+    }
+  },
+  "foldDetails": [
+    {
+      "buyerId": 2,
+      "heldOutId": 2,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 2,
+      "popularityRank": 1
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 3,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 6153,
+      "popularityRank": 13126
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 4,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 10556,
+      "popularityRank": 13126
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 5,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 47,
+      "popularityRank": 16366
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 6,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 11024,
+      "popularityRank": 15813
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 12,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 1,
+      "popularityRank": 14995
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 1052,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 25,
+      "popularityRank": 17800
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 8012,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 6,
+      "popularityRank": 17174
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 9487,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 7,
+      "popularityRank": 16965
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 10127,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 7,
+      "popularityRank": 20678
+    },
+    {
+      "buyerId": 2,
+      "heldOutId": 21001,
+      "trainingFlats": 10,
+      "candidates": 20990,
+      "contentRank": 4,
+      "popularityRank": 16110
+    },
+    {
+      "buyerId": 19,
+      "heldOutId": 3,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 155,
+      "popularityRank": 13127
+    },
+    {
+      "buyerId": 19,
+      "heldOutId": 4,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 7034,
+      "popularityRank": 13127
+    },
+    {
+      "buyerId": 19,
+      "heldOutId": 5,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 4,
+      "popularityRank": 16368
+    },
+    {
+      "buyerId": 19,
+      "heldOutId": 8,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 103,
+      "popularityRank": 17951
+    },
+    {
+      "buyerId": 19,
+      "heldOutId": 9,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 4,
+      "popularityRank": 17160
+    },
+    {
+      "buyerId": 19,
+      "heldOutId": 10,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 13361,
+      "popularityRank": 13647
+    },
+    {
+      "buyerId": 19,
+      "heldOutId": 11,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 53,
+      "popularityRank": 18132
+    },
+    {
+      "buyerId": 19,
+      "heldOutId": 13,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 4,
+      "popularityRank": 15758
+    },
+    {
+      "buyerId": 20,
+      "heldOutId": 4,
+      "trainingFlats": 5,
+      "candidates": 20995,
+      "contentRank": 14591,
+      "popularityRank": 13128
+    },
+    {
+      "buyerId": 20,
+      "heldOutId": 5,
+      "trainingFlats": 5,
+      "candidates": 20995,
+      "contentRank": 2,
+      "popularityRank": 16369
+    },
+    {
+      "buyerId": 20,
+      "heldOutId": 6,
+      "trainingFlats": 5,
+      "candidates": 20995,
+      "contentRank": 2051,
+      "popularityRank": 15815
+    },
+    {
+      "buyerId": 20,
+      "heldOutId": 9,
+      "trainingFlats": 5,
+      "candidates": 20995,
+      "contentRank": 2,
+      "popularityRank": 17161
+    },
+    {
+      "buyerId": 20,
+      "heldOutId": 10,
+      "trainingFlats": 5,
+      "candidates": 20995,
+      "contentRank": 6770,
+      "popularityRank": 13648
+    },
+    {
+      "buyerId": 20,
+      "heldOutId": 11,
+      "trainingFlats": 5,
+      "candidates": 20995,
+      "contentRank": 12649,
+      "popularityRank": 18134
+    },
+    {
+      "buyerId": 21,
+      "heldOutId": 2,
+      "trainingFlats": 6,
+      "candidates": 20994,
+      "contentRank": 1,
+      "popularityRank": 1
+    },
+    {
+      "buyerId": 21,
+      "heldOutId": 5,
+      "trainingFlats": 6,
+      "candidates": 20994,
+      "contentRank": 1,
+      "popularityRank": 16367
+    },
+    {
+      "buyerId": 21,
+      "heldOutId": 6,
+      "trainingFlats": 6,
+      "candidates": 20994,
+      "contentRank": 9476,
+      "popularityRank": 15813
+    },
+    {
+      "buyerId": 21,
+      "heldOutId": 7,
+      "trainingFlats": 6,
+      "candidates": 20994,
+      "contentRank": 3475,
+      "popularityRank": 14928
+    },
+    {
+      "buyerId": 21,
+      "heldOutId": 10,
+      "trainingFlats": 6,
+      "candidates": 20994,
+      "contentRank": 9846,
+      "popularityRank": 13648
+    },
+    {
+      "buyerId": 21,
+      "heldOutId": 11,
+      "trainingFlats": 6,
+      "candidates": 20994,
+      "contentRank": 7710,
+      "popularityRank": 18133
+    },
+    {
+      "buyerId": 21,
+      "heldOutId": 12,
+      "trainingFlats": 6,
+      "candidates": 20994,
+      "contentRank": 1,
+      "popularityRank": 14995
+    },
+    {
+      "buyerId": 22,
+      "heldOutId": 2,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 287,
+      "popularityRank": 1
+    },
+    {
+      "buyerId": 22,
+      "heldOutId": 3,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 1,
+      "popularityRank": 13126
+    },
+    {
+      "buyerId": 22,
+      "heldOutId": 6,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 8063,
+      "popularityRank": 15812
+    },
+    {
+      "buyerId": 22,
+      "heldOutId": 7,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 1,
+      "popularityRank": 14928
+    },
+    {
+      "buyerId": 22,
+      "heldOutId": 8,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 1644,
+      "popularityRank": 17951
+    },
+    {
+      "buyerId": 22,
+      "heldOutId": 11,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 1,
+      "popularityRank": 18132
+    },
+    {
+      "buyerId": 22,
+      "heldOutId": 12,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 899,
+      "popularityRank": 14995
+    },
+    {
+      "buyerId": 22,
+      "heldOutId": 13,
+      "trainingFlats": 7,
+      "candidates": 20993,
+      "contentRank": 1,
+      "popularityRank": 15757
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 2,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 123,
+      "popularityRank": 1
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 3,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 1,
+      "popularityRank": 13126
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 4,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 1400,
+      "popularityRank": 13126
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 7,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 1,
+      "popularityRank": 14927
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 8,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 162,
+      "popularityRank": 17950
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 9,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 2811,
+      "popularityRank": 17159
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 11,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 1,
+      "popularityRank": 18131
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 12,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 759,
+      "popularityRank": 14994
+    },
+    {
+      "buyerId": 23,
+      "heldOutId": 13,
+      "trainingFlats": 8,
+      "candidates": 20992,
+      "contentRank": 1,
+      "popularityRank": 15756
+    }
+  ],
+  "sourceDatabaseUnchanged": true,
+  "signalWeights": {
+    "VIEW_WEIGHT": 1,
+    "VIEW_CAP": 3,
+    "OLD_VIEW_DAYS": 30,
+    "OLD_VIEW_FACTOR": 0.5,
+    "SAVE_WEIGHT": 3,
+    "OFFER_WEIGHT": 5,
+    "BOOKING_WEIGHT": 4,
+    "SEARCH_WEIGHT": 2
+  },
+  "scoreWeights": {
+    "TOWN_WEIGHT": 3,
+    "TYPE_WEIGHT": 2.5,
+    "PRICE_WEIGHT": 2,
+    "SIZE_WEIGHT": 1,
+    "STOREY_WEIGHT": 0.5,
+    "LEASE_WEIGHT": 0.75,
+    "PHOTO_WEIGHT": 2,
+    "FAIR_WEIGHT": 0.2
+  }
+}

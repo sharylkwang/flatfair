@@ -1,0 +1,7 @@
+/app/flatfairproj/assets/training/*.csv filter=lfs diff=lfs merge=lfs -text
+/app/flatfairproj/assets/training/geo/** filter=lfs diff=lfs merge=lfs -text
+/app/flatfairproj/assets/training/human_labels/** filter=lfs diff=lfs merge=lfs -text
+/app/flatfairproj/assets/training/legacy_mappings.json filter=lfs diff=lfs merge=lfs -text
+/app/flatfairproj/assets/training/*.npz filter=lfs diff=lfs merge=lfs -text
+/app/flatfairproj/assets/seed/** filter=lfs diff=lfs merge=lfs -text
+/app/flatfairproj/assets/training/photo_data/** filter=lfs diff=lfs merge=lfs -text

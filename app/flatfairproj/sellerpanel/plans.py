@@ -24,17 +24,15 @@ FOCUS_ORDER = Case(
 
 def packIssue(product):
     durations = {1: 30, 2: 90, 3: None}
-    names = {
-        "Boost 30 days": 1,
-        "Boost 90 days": 2,
-        "Top spot": 3,
-    }
+    names = {"Boost 30 days": 1, "Boost 90 days": 2, "Top spot": 3}
 
     if product.kind != "package":
         return ""
 
     if product.tier not in durations:
         return "Choose a valid place in search for this package."
+
+
 
     days = durations[product.tier]
 
@@ -45,6 +43,7 @@ def packIssue(product):
 
     tier = names.get(product.name)
     dayMatch = re.fullmatch(r"Boost (\d+) days", product.name, re.IGNORECASE)
+
 
     if (tier is not None and tier != product.tier) or (dayMatch and int(dayMatch[1]) != days):
         return "The package name must match its duration and place in search."
@@ -82,6 +81,8 @@ def goodPacks(now):
         listing__status__in=("sold", "withdrawn")
     )
 
+
+
     span = ExpressionWrapper(
         Cast("durationDays", IntegerField()) * Value(timedelta(days=1)),
         output_field=DurationField(),
@@ -99,6 +100,8 @@ def live_packs(listings, now):
 def packInfo(line, now):
     days = line.durationDays
     expiry = line.order.createdAt + timedelta(days=days) if days is not None else None
+
+
     daysLeft = max(0, (expiry - now).days) if expiry else None
 
     return {
@@ -147,6 +150,8 @@ def plansNow(listings):
         .order_by("-order__createdAt", "-pk")
     )
 
+
+
     plans = {}
 
     for line in lines:
@@ -169,6 +174,8 @@ def myExtras(user):
         .select_related("order")
         .order_by("-order__createdAt")
     )
+
+
 
     extras = []
 
@@ -201,6 +208,8 @@ def packState(line, now=None):
 
     expiry = line.order.createdAt + timedelta(days=days)
 
+
+
     if expiry <= now:
         return "Ended"
 
@@ -231,6 +240,7 @@ def sell_steps(flat):
     hosted = False
     agreed = False
 
+
     if flat is not None:
         listed = flat.status in ("live", "review", "paused", "sold")
         sold = flat.status == "sold"
@@ -238,6 +248,8 @@ def sell_steps(flat):
         hosted = ViewingBooking.objects.filter(
             slot__listing=flat, status__in=("confirmed", "done")
         ).exists()
+
+
 
         agreed = sold or Offer.objects.filter(listing=flat, status="accepted").exists()
 
@@ -276,7 +288,9 @@ def sell_steps(flat):
         else:
             step["state"] = "next"
 
+
     if flat is not None:
         steps[-1]["href"] = reverse("seller_listing", args=[flat.publicId])
+
 
     return steps

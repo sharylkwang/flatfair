@@ -48,6 +48,9 @@ def newSession(request, items, gst, token, listing):
 
     for index, line in enumerate(lines):
         data[f"line_items[{index}][quantity]"] = 1
+
+
+
         data[f"line_items[{index}][price_data][currency]"] = "sgd"
         data[f"line_items[{index}][price_data][unit_amount]"] = cents(line[1])
         data[f"line_items[{index}][price_data][product_data][name]"] = line[0]
@@ -63,9 +66,11 @@ def newSession(request, items, gst, token, listing):
             timeout=TIMEOUT,
         )
 
+
         session = reply.json()
     except (requests.RequestException, ValueError):
         return None
+
 
     if reply.status_code != 200 or not isinstance(session, dict):
         return None
@@ -88,6 +93,8 @@ def getSession(sessionId):
         or not sessionId.replace("_", "").isalnum()
     ):
         return None
+
+
 
     try:
         reply = requests.get(
@@ -123,8 +130,11 @@ def endSession(sessionId):
     except (requests.RequestException, ValueError):
         return ""
 
+
     if reply.status_code != 200 or not isinstance(session, dict):
         return ""
+
+
 
     return session.get("status", "")
 
@@ -133,7 +143,11 @@ def makeRefund(refund, payment):
     if not stripeKey() or not payment.paymentIntentId:
         return None
 
+
+
     headers = {"Authorization": f"Bearer {stripeKey()}", "Idempotency-Key": f"refund-{refund.pk}"}
+
+
 
     try:
         if refund.providerRefundId:
@@ -149,6 +163,7 @@ def makeRefund(refund, payment):
                 headers=headers,
                 timeout=TIMEOUT,
             )
+
 
         result = reply.json()
     except (requests.RequestException, ValueError):
@@ -170,6 +185,8 @@ def makeRefund(refund, payment):
     ):
         return None
 
+
+
     return result
 
 
@@ -187,6 +204,7 @@ def get_intent(intentId):
     except (requests.RequestException, ValueError):
         return None
 
+
     if reply.status_code != 200 or not isinstance(intent, dict):
         return None
 
@@ -199,6 +217,7 @@ def checkPay(payment):
 
         if not session:
             return None
+
 
         meta = session.get("metadata")
 
@@ -239,6 +258,7 @@ def checkPay(payment):
             "paymentIntentId": intentId or "",
             "providerStatus": f"{session.get('status', '')} / {session.get('payment_status', '')}",
         }
+
 
     if not payment.paymentIntentId:
         return None
@@ -290,7 +310,7 @@ def checkSums(groups):
         not amount.is_finite() or amount < 0 or amount > MAX_PURCHASE_TOTAL for amount in amounts
     ):
         raise ValidationError(
-            ("Your cart total including GST is too high. Remove an item or ask our team for help.")
+            "Your cart total including GST is too high. Remove an item or ask our team for help."
         )
 
 
