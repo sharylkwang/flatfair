@@ -43,6 +43,446 @@ from storefront.presentation import readyPics
 from storefront.templatetags.shop_tags import saved_count
 
 
+class CalmMarkup(HTMLParser):
+
+    def __init__(self, html):
+        super().__init__()
+        self.tasks = 0
+        self.images = []
+        self.details = []
+        self.inputs = []
+        self.forms = 0
+        self.nestedForms = False
+        self.ids = []
+        self.saveTargets = []
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if attrs.get("id"):
+            self.ids.append(attrs["id"])
+        if tag == "input" and attrs.get("name") == "next" and ("#save-" in attrs.get("value", "")):
+            self.saveTargets.append(attrs["value"])
+        if attrs.get("data-ui") == "task-card":
+            self.tasks += 1
+        if tag == "img":
+            self.images.append(attrs)
+        if tag == "details":
+            self.details.append(attrs)
+        if tag == "input":
+            self.inputs.append(attrs)
+        if tag == "form":
+            self.nestedForms = self.nestedForms or self.forms > 0
+            self.forms += 1
+
+    def handle_endtag(self, tag):
+        if tag == "form":
+            self.forms -= 1
+
+
+class CalmUiTests(TestCase):
+
+    def setUp(self):
+        self.buyer = makeUser("buyer-calm@test.com")
+        self.seller = makeUser("seller-calm@test.com", "seller")
+        self.admin = makeStaff("admin-calm@test.com")
+        self.otherAdmin = makeStaff("admin2-calm@test.com", "Admin")
+        self.flat = makeListing(self.seller)
+        self.waiting = makeListing(makeUser("waiting-calm@test.com", "seller"), block="124", status="review")
+        for flat in (self.flat, self.waiting):
+            ListingPhoto.objects.create(listing=flat, room="living_room", image="listings/calm-living.jpg")
+        collection = Collection.objects.create(user=self.buyer, name="Shortlist")
+        SavedListing.objects.create(collection=collection, listing=self.flat)
+        Offer.objects.create(listing=self.flat, buyer=self.buyer, amount=500000)
+        slot = ViewingSlot.objects.create(listing=self.flat, startsAt=timezone.now() + timedelta(days=1))
+        ViewingBooking.objects.create(slot=slot, buyer=self.buyer)
+        self.order = makeOrder(
+            self.seller, makeProduct("Calm floor plan", "addon", 40, None), listing=self.flat
+        )
+        Ticket.objects.create(
+            customer=self.buyer, email=self.buyer.email, message="Please help me", topic="other"
+        )
+        recommendation = patch("sellerpanel.views.showTip", return_value=None)
+        recommendation.start()
+        self.addCleanup(recommendation.stop)
+
+    def test_buyer_home_save_menus(self):
+        self.client.force_login(self.buyer)
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.context["buyerSaved"][0].pk, self.flat.pk)
+        self.assertIn(self.flat.pk, [flat.pk for flat in response.context["buyerSuggestions"]])
+        markup = CalmMarkup(response.content.decode())
+        self.assertEqual(len(markup.ids), len(set(markup.ids)))
+        anchors = {urlsplit(target).fragment for target in markup.saveTargets}
+        self.assertEqual(len(anchors), 3)
+        for anchor in anchors:
+            self.assertEqual(markup.ids.count(anchor), 1)
+
+    def test_buyer_home_saved_flats(self):
+        Offer.objects.filter(listing=self.flat, buyer=self.buyer).update(
+            status="accepted", respondedAt=timezone.now()
+        )
+        makeOrder(self.seller, makeProduct(), listing=self.flat)
+        self.client.force_login(self.buyer)
+        response = self.client.get(reverse("home"))
+        flat = response.context["buyerSaved"][0]
+        self.assertEqual(flat.acceptedCount, 1)
+        self.assertEqual(flat.adTag, "Sponsored")
+        self.assertTrue(flat.fairPrice)
+        self.assertContains(response, "Under offer")
+
+    def test_role_landing_at_most(self):
+        self.client.force_login(self.buyer)
+        response = self.client.get(reverse("home"))
+        tasks = response.content.decode().count('<article class="buyer-task">')
+        self.assertGreater(tasks, 0)
+        self.assertLessEqual(tasks, 3)
+        self.assertEqual(
+            response.content.decode()
+            .split('class="buyer-tasks"', 1)[1]
+            .split("</section>", 1)[0]
+            .count("<a "),
+            tasks,
+        )
+        self.assertTemplateNotUsed(response, "storefront/ui/summary_strip.html")
+        for user, name in (
+            (self.seller, "dashboard"),
+            (self.admin, "admin_overview"),
+            (self.otherAdmin, "admin_overview"),
+        ):
+            with self.subTest(role=user.email):
+                self.client.force_login(user)
+                response = self.client.get(reverse(name))
+                self.assertEqual(response.status_code, 200)
+                markup = CalmMarkup(response.content.decode())
+                if name == "admin_overview":
+                    self.assertContains(response, 'class="staff-row todo-line todo-line--')
+                    self.assertTemplateNotUsed(response, "storefront/ui/task_card.html")
+                    self.assertTemplateNotUsed(response, "storefront/ui/summary_strip.html")
+                else:
+                    self.assertGreater(markup.tasks, 0)
+                    self.assertLessEqual(markup.tasks, 3)
+                    self.assertTemplateUsed(response, "storefront/ui/task_card.html")
+                    self.assertTemplateUsed(response, "storefront/ui/summary_strip.html")
+                self.assertFalse(markup.nestedForms)
+                self.assertTrue(all(("alt" in img for img in markup.images)))
+                if user != self.buyer:
+                    more = [
+                        item for item in markup.details if item.get("id") in ("seller-more", "staff-more")
+                    ]
+                    self.assertEqual(len(more), 1)
+                    self.assertNotIn("open", more[0])
+                    self.assertContains(response, "<summary>More numbers</summary>", html=True)
+
+    def test_flat_lists_share_photo(self):
+        for name in ("saved", "my_offers"):
+            with self.subTest(page=name):
+                self.client.force_login(self.buyer)
+                with CaptureQueriesContext(connection) as queries:
+                    response = self.client.get(reverse(name))
+                self.assertContains(response, 'class="buyer-flat')
+                self.assertContains(response, "/photos/living_room")
+                markup = CalmMarkup(response.content.decode())
+                self.assertFalse(markup.nestedForms)
+                self.assertFalse(
+                    [item for item in markup.details if "calm-row-details" in item.get("class", "")]
+                )
+                photoQueries = [
+                    query["sql"]
+                    for query in queries
+                    if 'FROM "storefront_listingphoto"' in query["sql"]
+                    and 'WHERE "storefront_listingphoto"."listing_id" IN' in query["sql"]
+                ]
+                self.assertLessEqual(len(photoQueries), 1)
+        for user, name in ((self.admin, "admin_queue"), (self.admin, "admin_listings")):
+            with self.subTest(page=name):
+                self.client.force_login(user)
+                with CaptureQueriesContext(connection) as queries:
+                    response = self.client.get(reverse(name))
+                self.assertEqual(response.status_code, 200)
+                self.assertTemplateNotUsed(response, "storefront/ui/photo_row.html")
+                self.assertTemplateUsed(response, "storefront/ui/thumbnail.html")
+                self.assertContains(response, "/photos/living_room")
+                markup = CalmMarkup(response.content.decode())
+                self.assertFalse(markup.nestedForms)
+                self.assertFalse(
+                    [item for item in markup.details if "calm-row-details" in item.get("class", "")]
+                )
+                photoQueries = [
+                    query["sql"]
+                    for query in queries
+                    if 'FROM "storefront_listingphoto"' in query["sql"]
+                    and 'WHERE "storefront_listingphoto"."listing_id" IN' in query["sql"]
+                ]
+                self.assertLessEqual(len(photoQueries), 1)
+
+    def test_seller_lists_one_row(self):
+        self.client.force_login(self.seller)
+        for name in ("my_listings", "seller_viewings", "my_orders"):
+            with self.subTest(page=name):
+                with CaptureQueriesContext(connection) as queries:
+                    response = self.client.get(reverse(name))
+                self.assertEqual(response.status_code, 200)
+                self.assertTemplateUsed(response, "sellerpanel/status_badge.html")
+                self.assertTemplateNotUsed(response, "storefront/ui/photo_row.html")
+                markup = CalmMarkup(response.content.decode())
+                self.assertFalse(markup.nestedForms)
+                self.assertTrue(all(("alt" in img for img in markup.images)))
+                self.assertNotContains(response, "<summary>Details")
+                photoQueries = [
+                    query["sql"]
+                    for query in queries
+                    if 'FROM "storefront_listingphoto"' in query["sql"]
+                    and 'WHERE "storefront_listingphoto"."listing_id" IN' in query["sql"]
+                ]
+                self.assertLessEqual(len(photoQueries), 1)
+                if name != "my_orders":
+                    self.assertContains(response, "/photos/living_room")
+
+    def test_queue_selection_remains(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("admin_queue"))
+        markup = CalmMarkup(response.content.decode())
+        selected = [item for item in markup.inputs if item.get("name") == "selected"]
+        self.assertEqual(len(selected), 1)
+        self.assertEqual(selected[0]["form"], "bulk-approve")
+        self.assertEqual(selected[0]["value"], str(self.waiting.pk))
+        self.assertContains(response, f"Select listing {self.waiting.pk} for approval")
+        for field in (f"revision-{self.waiting.pk}", f"status-{self.waiting.pk}"):
+            self.assertTrue(
+                any(
+                    (
+                        item.get("name") == field and item.get("form") == "bulk-approve"
+                        for item in markup.inputs
+                    )
+                )
+            )
+
+    def test_empty_lists_shared_illustration(self):
+        Offer.objects.all().delete()
+        ViewingBooking.objects.all().delete()
+        SavedListing.objects.all().delete()
+        self.client.force_login(self.buyer)
+        for name, heading, style in (
+            ("saved", "This list is empty", "btn btn-brand"),
+            ("my_offers", "No offers or viewings yet", "btn btn-brand btn-sm"),
+        ):
+            with self.subTest(page=name):
+                response = self.client.get(reverse(name))
+                self.assertContains(response, '<span class="empty-icon" aria-hidden="true">', count=1)
+                self.assertContains(response, f"<h3>{heading}</h3>", html=True)
+                self.assertContains(
+                    response,
+                    f'<a class="{style}" href="' + reverse("listings") + '">Browse flats</a>',
+                    count=1,
+                    html=True,
+                )
+
+    def test_photo_preparation_one_query(self):
+        first = Listing.objects.get(pk=self.flat.pk)
+        duplicate = Listing.objects.get(pk=self.flat.pk)
+        second = Listing.objects.get(pk=self.waiting.pk)
+        with self.assertNumQueries(1):
+            readyPics([first, duplicate, second, None])
+        with self.assertNumQueries(0):
+            for flat in (first, duplicate, second):
+                self.assertIsNotNone(flat.coverPhoto())
+            readyPics([first, duplicate, second])
+
+
+class PhoneParser(HTMLParser):
+
+    def __init__(self, html):
+        super().__init__()
+        self.stack = []
+        self.primary = []
+        self.more = []
+        self.footer = []
+        self.target = None
+        self.moreAttrs = None
+        self.toggle = None
+        self.switch = False
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        classes = attrs.get("class", "").split()
+        self.stack.append((tag, classes))
+        if "phone-more" in classes:
+            self.moreAttrs = attrs
+        if "phone-menu-toggle" in classes:
+            self.toggle = attrs
+        if "phone-mode-switch" in classes:
+            self.switch = True
+        if tag == "a":
+            self.target = {"href": attrs["href"], "label": "", "current": attrs.get("aria-current")}
+            for name, group in (
+                ("phone-primary", self.primary),
+                ("phone-more", self.more),
+                ("phone-footer", self.footer),
+            ):
+                if any((name in classes for _, classes in self.stack)):
+                    group.append(self.target)
+        if tag in ("input", "meta", "link", "img", "br"):
+            self.stack.pop()
+
+    def handle_endtag(self, tag):
+        if tag == "a":
+            self.target = None
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                del self.stack[index:]
+                break
+
+    def handle_data(self, data):
+        if self.target and (not any(("unread-badge" in classes for _, classes in self.stack))):
+            self.target["label"] += data.strip()
+
+
+class MobileChromeTests(TestCase):
+
+    def checkPhone(self, page, expected):
+        response = self.client.get(reverse(page))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">',
+            html=True,
+        )
+        self.assertNotContains(response, 'class="tab-bar"')
+        self.assertNotContains(response, "data-tab-bar")
+        phone = PhoneParser(response.content.decode())
+        self.assertEqual([row["label"] for row in phone.primary], [label for label, route in expected])
+        self.assertEqual(
+            [row["href"] for row in phone.primary], [reverse(route) for label, route in expected]
+        )
+        self.assertEqual(phone.toggle["aria-controls"], "phone-sheet")
+        self.assertEqual(phone.toggle["aria-expanded"], "false")
+        self.assertContains(response, '<details class="phone-menu" data-phone-menu>')
+        self.assertEqual(
+            [row["label"] for row in phone.footer],
+            ["FlatFair", "Support", "Terms and privacy", "Community", "Photo credits"],
+        )
+        self.assertContains(response, 'class="wrap footer-desktop"')
+        if phone.moreAttrs is not None:
+            self.assertNotIn("open", phone.moreAttrs)
+            routes = [row["href"] for row in phone.primary + phone.more]
+            self.assertEqual(len(routes), len(set(routes)))
+        return (response, phone)
+
+    def test_guest_menu_compact_footer(self):
+        response, phone = self.checkPhone(
+            "home",
+            (
+                ("Browse flats", "listings"),
+                ("Price check", "valuation"),
+                ("Photo search", "lens"),
+                ("Community", "community"),
+            ),
+        )
+        self.assertIsNone(phone.moreAttrs)
+        self.assertFalse(phone.switch)
+        sheet = response.content.decode().split('id="phone-sheet"', 1)[1].split("</details>", 1)[0]
+        self.assertEqual(sheet.count("btn btn-brand"), 1)
+        self.assertIn("List your flat", sheet)
+        self.assertIn(reverse("signin"), sheet)
+        self.assertNotIn(">Register<", sheet)
+
+    def test_buyer_primary_more_unread(self):
+        buyer = makeUser("mobile-buyer@test.com")
+        ActivityNotice.objects.create(
+            user=buyer, kind="offer_reply", text="Seller replied", url=reverse("my_offers")
+        )
+        self.client.force_login(buyer)
+        response, phone = self.checkPhone(
+            "saved",
+            (
+                ("Browse flats", "listings"),
+                ("Saved", "saved"),
+                ("Offers & viewings", "my_offers"),
+                ("Price check", "valuation"),
+                ("Notifications", "notifications"),
+            ),
+        )
+        self.assertEqual([row["label"] for row in phone.primary if row["current"] == "page"], ["Saved"])
+        self.assertEqual(
+            [row["label"] for row in phone.more],
+            ["Photo search", "Community", "My messages", "Support", "Account", "Start selling"],
+        )
+        self.assertFalse(phone.switch)
+        self.assertContains(
+            response,
+            '<span class="unread-badge">1<span class="visually-hidden"> unread</span></span>',
+            html=True,
+        )
+        self.assertContains(response, 'class="phone-menu-row" type="submit"')
+
+    def test_seller_primary_more_mode(self):
+        self.client.force_login(makeUser("mobile-seller@test.com", "seller"))
+        response, phone = self.checkPhone(
+            "dashboard",
+            (
+                ("Dashboard", "dashboard"),
+                ("My listings", "my_listings"),
+                ("Offers & viewings", "seller_viewings"),
+                ("Orders", "my_orders"),
+                ("Packages", "packages"),
+            ),
+        )
+        self.assertTrue(phone.switch)
+        self.assertIsNotNone(phone.moreAttrs)
+        self.assertEqual([row["label"] for row in phone.primary if row["current"] == "page"], ["Dashboard"])
+        self.assertIn("Account", [row["label"] for row in phone.more])
+
+    def test_dual_role_buyer_menu(self):
+        seller = makeUser("mobile-both@test.com", "seller")
+        self.client.force_login(seller)
+        self.client.post(reverse("switch_mode"), {"mode": "buyer"})
+        response, phone = self.checkPhone(
+            "home",
+            (
+                ("Browse flats", "listings"),
+                ("Saved", "saved"),
+                ("Offers & viewings", "my_offers"),
+                ("Price check", "valuation"),
+                ("Notifications", "notifications"),
+            ),
+        )
+        self.assertTrue(phone.switch)
+        self.assertNotIn(reverse("start_selling"), [row["href"] for row in phone.more])
+
+    def test_admin_phone_menu_groups(self):
+        staff = makeStaff("mobile-admin@test.com")
+        self.client.force_login(staff)
+        expected = [(item["label"], item["page"]) for item in menu(staff)[:4]]
+        response, phone = self.checkPhone("admin_overview", expected)
+        self.assertEqual(
+            [row["href"] for row in phone.more],
+            [reverse(item["page"]) for item in menu(staff)[4:]]
+            + [reverse("home"), reverse("notifications"), reverse("admin_account")],
+        )
+        self.assertFalse(phone.switch)
+        self.assertNotContains(response, "phone-staff-switch")
+        sheet = response.content.decode().split('id="phone-sheet"', 1)[1]
+        for label in ("To do", "Customers", "Catalogue &amp; settings"):
+            self.assertIn(f"<h2>{label}</h2>", sheet)
+
+    def test_admin_phone_menu_also(self):
+        staff = makeStaff("mobile-browsing-admin@test.com")
+        self.client.force_login(staff)
+        expected = [(item["label"], item["page"]) for item in menu(staff)[:4]]
+        response, phone = self.checkPhone("home", expected)
+        pages = {row["href"] for row in phone.primary + phone.more}
+        self.assertTrue(all((reverse(item["page"]) in pages for item in menu(staff))))
+        self.assertNotContains(response, "phone-staff-switch")
+
+    def test_not_found_no_bottom(self):
+        response = self.client.get("/missing-mobile-page/")
+        self.assertEqual(response.status_code, 404)
+        self.assertNotContains(response, "data-tab-bar", status_code=404)
+        self.assertContains(response, 'class="wrap phone-footer"', status_code=404)
+
+
 class StoreHeaderTests(TestCase):
 
     def setUp(self):
