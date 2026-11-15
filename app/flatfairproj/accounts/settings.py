@@ -1,5 +1,3 @@
-from storefront.forms import ErrorAttrsMixin
-
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash

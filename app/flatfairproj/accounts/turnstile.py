@@ -24,7 +24,7 @@ def turnstileField(request):
 
 
 def tokenOk(token, ip):
-    if not token or len(token) > (2048):
+    if not token or len(token) > 2048:
         return False
 
     data = {"secret": settings.TURNSTILE_SECRET_KEY, "response": token, "remoteip": ip}

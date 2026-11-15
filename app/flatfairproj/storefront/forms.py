@@ -1,14 +1,3 @@
-class ErrorAttrsMixin:
-    def full_clean(self):
-        super().full_clean()
-
-        for name in self.errors:
-            if name in self.fields:
-                self.fields[name].widget.attrs.update(
-                    {"aria-invalid": "true", "aria-describedby": f"id_{name}_error"}
-                )
-
-
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password

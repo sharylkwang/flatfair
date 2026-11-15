@@ -103,11 +103,14 @@ def end_login(request, user, path="/"):
     if totpEnabled(user):
         request.session[PENDING_KEY] = {"userId": user.pk, "path": path}
 
+
         return redirect("authenticator")
 
     login(request, user)
 
-    return redirect(reverse("human_check") + "?" + urlencode({"next": path, "force": "1"}))
+    return redirect(
+        reverse("human_check") + "?" + urlencode({"next": path, "force": "1"})
+    )
 
 
 def setEmailOk(user):
@@ -544,24 +547,36 @@ def authenticator(request):
         else:
             code = form.cleaned_data["code"]
 
-            valid = validCode(user.totpDevice.secret, code) or useSpare(user.totpDevice, code)
+
+
+            valid = validCode(user.totpDevice.secret, code) or useSpare(
+                user.totpDevice, code
+            )
 
             if valid:
                 login(request, user)
                 request.session["welcomeAfterCloudflare"] = True
+
+
                 path = safePath(request, pending.get("path", "")) or "/"
                 request.session.pop(PENDING_KEY, None)
                 request.session.pop("totpAttempts", None)
 
                 return redirect(
-                    reverse("human_check") + "?" + urlencode({"next": path, "force": "1"})
+                    reverse("human_check")
+                    + "?"
+                    + urlencode({"next": path, "force": "1"})
                 )
 
             request.session["totpAttempts"] = tries + 1
 
-            form.add_error("code", "That code isn’t right, or it has already been used.")
+            form.add_error(
+                "code", "That code isn’t right, or it has already been used."
+            )
 
-    return render(request, "accounts/authenticator.html", {"form": form, "recovery": True})
+    return render(
+        request, "accounts/authenticator.html", {"form": form, "recovery": True}
+    )
 
 
 @never_cache
@@ -580,14 +595,20 @@ def totpSetup(request):
         if validCode(device.secret, form.cleaned_data["code"]):
             device.enabledAt = timezone.now()
             device.setupRequired = False
+
+
             device.save(update_fields=["enabledAt", "setupRequired"])
             request.session.pop(SETUP_KEY, None)
 
-            messages.success(request, "Microsoft Authenticator is now required when you sign in.")
+            messages.success(
+                request, "Microsoft Authenticator is now required when you sign in."
+            )
 
             return redirect("account_settings")
 
-        form.add_error("code", "That code isn’t valid yet. Please check your Authenticator app.")
+        form.add_error(
+            "code", "That code isn’t valid yet. Please check your Authenticator app."
+        )
 
     return render(
         request,
@@ -611,6 +632,8 @@ class RequiredTotpSetupMiddleware:
 
         needed = needed or (request.user.is_authenticated and needsTotp(request.user))
 
+
+
         if needed and request.user.is_authenticated:
             allowed = {
                 "authenticator_setup",
@@ -620,7 +643,10 @@ class RequiredTotpSetupMiddleware:
                 "account_settings",
             }
 
-            if request.resolver_match and request.resolver_match.url_name not in allowed:
+            if (
+                request.resolver_match
+                and request.resolver_match.url_name not in allowed
+            ):
                 return redirect("authenticator_setup")
 
         return self.get_response(request)

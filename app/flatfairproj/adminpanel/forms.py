@@ -1,5 +1,3 @@
-from storefront.forms import ErrorAttrsMixin
-
 from types import SimpleNamespace
 from django import forms
 from django.contrib.auth.models import User

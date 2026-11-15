@@ -75,13 +75,28 @@ class EmailCheck(models.Model):
 
 
 class TotpDevice(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="totpDevice")
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="totpDevice"
+    )
+
+
     secret = EncryptedTextField()
+
+
+
     setupRequired = models.BooleanField(default=False)
+
+
+
     enabledAt = models.DateTimeField(null=True, blank=True)
 
 
 class RecoveryCode(models.Model):
-    device = models.ForeignKey(TotpDevice, on_delete=models.CASCADE, related_name="recoveryCodes")
+    device = models.ForeignKey(
+        TotpDevice, on_delete=models.CASCADE, related_name="recoveryCodes"
+    )
+
+
+
     codeHash = models.CharField(max_length=128)
     usedAt = models.DateTimeField(null=True, blank=True)

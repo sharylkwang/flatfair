@@ -53,6 +53,8 @@ class TotpForm(forms.Form):
         if len(code) == 6 and code.isdigit():
             return code
 
+
+
         if len(code) == 8 and all(char in "0123456789ABCDEF" for char in code):
             return code
 

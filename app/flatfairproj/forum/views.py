@@ -1,5 +1,3 @@
-from storefront.forms import ErrorAttrsMixin
-
 from urllib.parse import urlencode
 from datetime import timedelta
 from django import forms

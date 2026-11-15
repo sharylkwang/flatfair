@@ -1,7 +1,3 @@
-class DecryptError(Exception):
-    pass
-
-
 import base64
 
 
@@ -30,14 +26,20 @@ PREFIX = "fernet$"
 
 
 def derivedKey(seed, info):
-    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=info).derive(seed.encode())
+    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=info).derive(
+        seed.encode()
+    )
 
 
 def dataKey():
     if settings.DATA_ENCRYPTION_KEY:
         return settings.DATA_ENCRYPTION_KEY.encode()
 
-    return base64.urlsafe_b64encode(derivedKey(settings.DATA_KEY_SEED, (b"flatfair-data-v1")))
+
+
+    return base64.urlsafe_b64encode(
+        derivedKey(settings.DATA_KEY_SEED, b"flatfair-data-v1")
+    )
 
 
 def cipher():
@@ -57,25 +59,31 @@ def is_locked(value):
 
 def unlock(token):
     if not is_locked(token):
-        raise DecryptError("This value is not encrypted data.")
+        raise Exception("This value is not encrypted data.")
+
+
 
     try:
         return cipher().decrypt(token[len(PREFIX) :].encode()).decode()
     except (InvalidToken, UnicodeError):
-        raise DecryptError("This value cannot be read with the current data key.")
+        raise Exception("This value cannot be read with the current data key.")
 
 
 class EncryptedTextField(models.TextField):
     def get_prep_value(self, value):
         value = super().get_prep_value(value)
 
+
+
         if value is None:
             return value
+
 
         return lockText(value)
 
     def from_db_value(self, value, expression, connection):
         if is_locked(value):
             return unlock(value)
+
 
         return value

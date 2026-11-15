@@ -105,13 +105,16 @@ cache = caches["resources"]
 
 
 def tokenKey():
-    return derivedKey(settings.SECRET_KEY, (b"flatfair-jwt-v1"))
+    return derivedKey(settings.SECRET_KEY, b"flatfair-jwt-v1")
 
 
 def issueToken(purpose, claims, seconds):
     now = int(time.time())
     payload = {"jti": secrets.token_urlsafe(24)}
     payload.update(claims)
+
+
+
     payload.update({"iss": ISSUER, "aud": purpose, "iat": now, "exp": now + seconds})
 
     return jwt.encode(payload, tokenKey(), algorithm=ALGORITHM)
@@ -120,6 +123,8 @@ def issueToken(purpose, claims, seconds):
 def readToken(purpose, token):
     if not purpose or not isinstance(token, str):
         return None
+
+
 
     try:
         return jwt.decode(
@@ -157,6 +162,9 @@ def new_secret():
 
 def setupLink(user, secret):
     issuer = getattr(settings, "TOTP_ISSUER", "FlatFair")
+
+
+
     label = f"{issuer}:{user.email}"
 
     return (
@@ -173,10 +181,14 @@ def setupLink(user, secret):
 def codeFor(secret, timestamp=None):
     timestamp = int(time.time() if timestamp is None else timestamp) // 30
     padded = secret + "=" * (-len(secret) % 8)
+
+
+
     key = base64.b32decode(padded, casefold=True)
     digest = hmac.new(key, struct.pack(">Q", timestamp), hashlib.sha1).digest()
     offset = digest[-1] & 15
     value = struct.unpack(">I", digest[offset : offset + 4])[0] & 0x7FFFFFFF
+
 
     return f"{value % 1000000:06d}"
 
@@ -214,6 +226,8 @@ def code_ok(code, codeHash):
 def useSpare(device, code):
     code = code.replace("-", "").strip().upper()
 
+
+
     if not re.fullmatch("[0-9A-F]{8}", code):
         return False
 
@@ -233,5 +247,7 @@ def addDevice(user, required=False):
 
     if created:
         return device, recoveryCodes(device)
+
+
 
     return device, []
